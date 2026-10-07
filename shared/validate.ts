@@ -35,10 +35,26 @@ function optStr(v: unknown, max: number): string | undefined | null {
   return t === "" ? undefined : t;
 }
 
+/**
+ * "undefined" / "null" as a name only ever comes from a bug stringifying a missing value, never from a
+ * person; blank (after trimming) or not a string counts as missing too.
+ */
+export function isJunkName(v: unknown): boolean {
+  if (typeof v !== "string") return true;
+  const t = v.trim();
+  return t === "" || /^(undefined|null)$/i.test(t);
+}
+
+/** A person's or family's name: trimmed, at most `max` chars, never blank or "undefined"/"null"; else null. */
+function cleanName(v: unknown, max = 40): string | null {
+  const t = cleanText(v, max);
+  return t && !isJunkName(t) ? t : null;
+}
+
 /** Validates and normalizes registration/profile input (phones → `+9725XXXXXXXX`). */
 export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
   if (!isObj(input)) return invalid;
-  const name = cleanText(input.name, 40);
+  const name = cleanName(input.name);
   const address = cleanText(input.address ?? "", 200);
   if (!name || address === null) return invalid;
   if (!Array.isArray(input.parents) || input.parents.length < 1 || input.parents.length > MAX_PARENTS) return invalid;
@@ -48,7 +64,7 @@ export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
   const parents: Parent[] = [];
   for (const p of input.parents) {
     if (!isObj(p)) return invalid;
-    const pname = cleanText(p.name, 40);
+    const pname = cleanName(p.name);
     const phone = typeof p.phone === "string" ? normalizePhone(p.phone) : null;
     if (!pname || !phone) return invalid;
     parents.push({ name: pname, phone });
@@ -57,7 +73,7 @@ export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
   const kids: FamilyInput["kids"] = [];
   for (const k of input.kids) {
     if (!isObj(k)) return invalid;
-    const kname = cleanText(k.name, 40);
+    const kname = cleanName(k.name);
     if (!kname) return invalid;
     const kid: FamilyInput["kids"][number] = { name: kname };
     if (k.id !== undefined) {

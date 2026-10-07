@@ -17,6 +17,7 @@ package.json            scripts: dev, build, preview, deploy, test, typecheck, e
 wrangler.jsonc          worker main, assets (SPA), DO binding + sqlite migration, vars
 vite.config.ts          preact() + cloudflare()
 index.html              <html lang="he" dir="rtl">
+public/_headers         asset response headers: the app shell (every SPA route) `no-store`, `/assets/*` immutable
 shared/                 pure TS, no DOM / no Workers APIs — imported by both sides
   types.ts              domain types + API DTOs
   actions.ts            action union + reducer applyAction() + permission checks
@@ -105,8 +106,8 @@ Rules for every call:
 | `GET /api/g/:group` | optional | → `{ group, families: FamilyPublic[] (incl. phones, address), events: EventSummary[], me?: FamilyPrivate }` |
 | `PATCH /api/g/:group` | ✓ | `{ name?, whatsappUrl? }` (at least one) → `{ group: GroupMeta }` · `whatsappUrl: ""` clears it · 400 `invalid`. Bumps the group version and broadcasts `{ t: "group" }`. |
 | `DELETE /api/g/:group` | ✓ | → `{ ok: true }`. Any family (trust model). The DO broadcasts `{ t: "deleted" }`, closes the sockets, deletes the group's R2 images (`list({ prefix: "img/<slug>/" })` + batched `delete`), then `ctx.storage.deleteAll()` (families, events, log, DO-stored images, meta). Afterwards every call for the group is 404 `not_found` (checked before `X-Family-Id`) and `POST /api/groups` can reuse the slug. |
-| `POST /api/g/:group/families` | – | `FamilyInput` → `{ familyId }` (stored on the device) |
-| `PUT /api/g/:group/families/me` | ✓ | `FamilyInput` → `{ me: FamilyPrivate }` |
+| `POST /api/g/:group/families` | – | `FamilyInput` → `{ familyId }` (stored on the device) · 400 `invalid` when the family, a parent or a kid name is blank after trimming, longer than 40, or the literal "undefined"/"null" (any case; only ever a bug stringifying a missing value) |
+| `PUT /api/g/:group/families/me` | ✓ | `FamilyInput` → `{ me: FamilyPrivate }` · same name rules as registration |
 | `POST /api/g/:group/events` | ✓ | `EventInput & { slugWord? }` → `{ eventId }` (the event slug) · 400 when `slugWord` has no Latin letters/digits |
 | `GET /api/g/:group/events/:event` | optional | → `EventView` (seats, kids, everyone's phones and addresses, log tail, `me`) |
 | `POST /api/g/:group/events/:event/actions` | ✓ | `Action` → `{ event: EventView, logId }` · 403 `forbidden` · 409 `seat_taken` / `car_full` / `stale` · 400 `invalid` |
@@ -159,7 +160,7 @@ The permission rules are keyed by the actor family id (`X-Family-Id`). They stop
 
 ### Family labels (shared/familyLabel.ts)
 
-Families are identified by id; names may collide. `familyLabel(family, all)` returns the parts and `he.familyLabel` formats them: "משפחת כהן" when unique; otherwise, each step only while still colliding: first 2 kid names → + a parent's first name → + street (address text before the first digit/comma) → an ordinal by creation order ("משפחת כהן 2"). Used by the identity chip, car cards, log lines, the WhatsApp summary, settings and the picker.
+Families are identified by id; names may collide. `familyLabel(family, all)` returns the parts and `he.familyLabel` formats them: "משפחת כהן" when unique; otherwise, each step only while still colliding: first 2 kid names → + a parent's first name → + street (address text before the first digit/comma) → an ordinal by creation order ("משפחת כהן 2"). A stored name that is missing, blank, "undefined" or "null" (legacy/corrupt data) never shows: `familyDisplayName` falls back to the first parent's first name, then "?"; the family page (`/g/:group/me`) shows that name field empty with the required-field error, so saving needs a real name. Used by the identity chip, car cards, log lines, the WhatsApp summary, settings and the picker.
 
 ## 4. Storage inside GroupDO (SQLite-backed, KV API: `ctx.storage.get/put`)
 
