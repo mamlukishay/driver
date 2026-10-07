@@ -564,6 +564,32 @@ a.who:hover {
 .fld.err input {
   border-color: var(--bad);
 }
+/* An input with a spinner slot (e.g. the group URL name while the AI suggests one). Busy inputs are dir="ltr" with
+   right-aligned text, so the spinner sits at the physical left, the empty side. */
+.inwrap {
+  position: relative;
+  display: block;
+}
+.inwrap.busy input {
+  padding-left: 38px;
+}
+.spin {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-top: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .fld.err .hint,
 .hint.bad {
   color: var(--bad);
