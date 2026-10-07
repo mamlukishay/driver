@@ -13,6 +13,7 @@
   --wa-bg:#EAE4DA; --wa-bubble:#D9FDD3; --wa-ink:#13261A;
   --device:#17191C; --app-bg:#F7F7F3; --inv-bg:#FFF6DC; --inv-ink:#3A2A10;
   --f1:#2F6FD6; --f2:#C2417F; --f3:#7A5AC8; --f4:#138A8A; --f5:#B5651D;
+  --car-red:#C0392B; --car-silver:#B8BEC4; --car-white:#F4F5F2; --car-blue:#3E6FB0; --car-green:#4C8B5E; --car-glass:#A9C6DA; --car-tire:#2B2F34; --car-hub:#B9BEC3;
   --shadow:rgba(20,22,25,.14); --scrim:rgba(15,17,20,.45); --focus:#2F6FD6;
   --ff-display:"Secular One","Rubik",system-ui,sans-serif;
   --ff-body:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
@@ -28,6 +29,7 @@
   --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
   --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
   --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F; --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
   --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
@@ -38,9 +40,11 @@
   --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
   --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
   --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F; --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
   --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--ff-body);font-size:16px;line-height:1.6}
 .page{padding-inline:16px;padding-block:0 64px;background:var(--bg);color:var(--ink);overflow-x:clip}
 .wrap{max-width:1120px;margin-inline:auto}
@@ -198,6 +202,17 @@ section{padding-block:44px 8px}
 .car.me{border-color:var(--fc);border-width:2px}
 .car-h{display:flex;align-items:center;gap:7px;font-size:13px}
 .car-h b{font-size:13.5px}
+.cth{flex:none;width:40px;height:28px;border-radius:7px;overflow:hidden;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center}
+.cth.nop{background:transparent;border-color:transparent}
+.cth svg,.cth img{display:block;width:100%;height:100%}
+.cth img,.cbig img{object-fit:cover}
+.cbig{width:100%;height:90px;border-radius:11px;overflow:hidden;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center}
+.cbig svg,.cbig img{display:block;width:100%;height:100%}
+.cbig.nop{background:var(--sunk)}
+.cbig.nop svg{width:auto}
+.plate{font-family:var(--ff-mono);font-size:12.5px;background:var(--accent-soft);color:var(--ink);border:1px solid var(--ink-3);border-radius:5px;padding:0 6px;direction:ltr;unicode-bidi:isolate}
+.carpick{display:inline-block;align-self:flex-start;position:relative;cursor:pointer}
+.carpick:focus-within{outline:3px solid var(--focus);outline-offset:2px}
 .car-h .num{margin-inline-start:auto;color:var(--ink-2);font-size:12px}
 .seats{display:flex;gap:8px;flex-wrap:wrap}
 .seat{width:42px;height:48px;border-radius:13px 13px 7px 7px;border:2px dashed var(--ink-3);background:transparent;position:relative;display:grid;place-items:center;padding:0;color:var(--ink-3);font-size:18px}
@@ -608,6 +623,7 @@ footer{padding-block:40px 0;color:var(--ink-3);font-size:13px}
         <li>כל כתיבה היא <b>משפט אישור</b> ("להושיב את נועה ברכב של משפחת לוי, הלוך, 10:00?"), טוסט <b>ביטול ל-10 שניות</b> ו<b>היסטוריה</b> של האירוע.</li>
         <li>מכשיר שני: "שלחו לי את הקישור שלי" פותח WhatsApp אליכם עם <code>/me/devices#…</code>. המפתח ב-fragment, כך שלא מגיע ללוגים.</li>
         <li><b>קישור ילד/ה</b>: כתובת עם token לקריאה בלבד, בטוחה לטלפון של ילד.</li>
+        <li><b>תמונת רכב (רשות)</b>: עוזרת לילדים לזהות את הרכב ביציאה. נדחסת בטלפון ל-~800px ונשמרת ב-Blobs תחת <code>car/{familyId}/{carId}</code>. בלי תמונה: אייקון רכב בצבע המשפחה.</li>
       </ul>
     </div>
     <div class="fblk">
@@ -673,13 +689,23 @@ footer{padding-block:40px 0;color:var(--ink-3);font-size:13px}
         <li><b>שיתוף</b>: ההזמנה כתמונת התצוגה בשיתוף ב-WhatsApp (Open Graph דרך edge function) בגרסה 1.1.</li>
       </ul>
     </div>
+    <div class="fblk">
+      <h3>עברית לתצוגה, אנגלית לקוד</h3>
+      <p>כל מה שהמשתמש/ת רואה הוא בעברית ובכיוון RTL. הקוד, המזהים, אובייקטי הנתונים ומפתחות ה-JSON, הכתובות והנתיבים, מפתחות ה-Blobs וה-API הם באנגלית בלבד.</p>
+      <ul>
+        <li>כל מחרוזות הממשק במילון אחד: <code>src/i18n/he.ts</code>.</li>
+        <li>תאריכים ושעות מעוצבים עם <code>Intl</code> ו-<code>he-IL</code>.</li>
+        <li>הפריסה ב-<code>dir="rtl"</code> עם מאפייני CSS לוגיים (<code>margin-inline-start</code> וכדומה).</li>
+        <li>דוגמה: הנתיב <code>/g/class-4b/e/bday12/back</code>, והתצוגה "חזור".</li>
+      </ul>
+    </div>
     <div class="fblk full">
       <h3>מודל הנתונים (JSON ב-Blobs)</h3>
       <pre class="code"><span class="c">group/{groupId}.json</span>   { name, inviteCode, families:[…], createdAt }
 family: { id, color, address, keyHash,
           parents:[{name, phone}],            <span class="c">// phone חובה, "+97250…"</span>
           kids:[{id, name, grade?, phone?}],   <span class="c">// phone רשות</span>
-          cars:[{id, label, seats}] }
+          cars:[{id, label, seats, color?, plate?, photo?}] }
 
 <span class="c">event/{groupId}/{eventId}.json</span>
   { id, title, place, address, date, start, returnTime, hostFamilyId,
@@ -693,6 +719,7 @@ Offer: { id, familyId, carId, seats, departAt, kids:[kidId],
          run?: { startedAt, picked:[kidId] } }
 
 <span class="c">invite/{groupId}/{eventId}</span>   תמונה דחוסה (WebP/JPEG)
+<span class="c">car/{familyId}/{carId}</span>   תמונת רכב דחוסה (רשות)
 <span class="c">event/{id}/log/{timestamp}-{rand}</span>   רק ב-C: כל פעולה blob נפרד</pre>
       <p style="margin-top:10px">כתיבות משתמשות ב-ETag מותנה (<code>onlyIfMatch</code>): אם שני הורים לוחצים יחד, הפונקציה קוראת מחדש, מחילה שוב ומנסה שוב.</p>
     </div>
@@ -778,12 +805,12 @@ Offer: { id, familyId, carId, seats, departAt, kids:[kidId],
 var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
-var DOMAIN='trempush.netlify.app', G='/g/kita-d2', KT='/kid/k7Qp2x', ME='cohen';
-var FAM={cohen:{n:'כהן',c:'f1',p:'050-0000001',a:'רח׳ האלון 7',par:'רונית כהן',car:'מאזדה אדומה'},
-  levi:{n:'לוי',c:'f2',p:'050-0000002',a:'רח׳ הדקל 4',par:'דנה לוי',car:'סקודה כסופה'},
-  mizrahi:{n:'מזרחי',c:'f3',p:'050-0000003',a:'רח׳ השקד 9',par:'אבי מזרחי',car:'טויוטה'},
-  peretz:{n:'פרץ',c:'f4',p:'050-0000004',a:'שד׳ הנשיא 3',par:'יוסי פרץ',car:'קיה לבנה'},
-  avraham:{n:'אברהם',c:'f5',p:'050-0000005',a:'רח׳ הזית 12',par:'מיכל אברהם',car:'יונדאי'}};
+var DOMAIN='trempush.netlify.app', G='/g/class-4b', KT='/kid/k7Qp2x', ME='cohen';
+var FAM={cohen:{n:'כהן',c:'f1',p:'050-0000001',a:'רח׳ האלון 7',par:'רונית כהן',car:'מאזדה אדומה',cc:'red'},
+  levi:{n:'לוי',c:'f2',p:'050-0000002',a:'רח׳ הדקל 4',par:'דנה לוי',car:'סקודה כסופה',cc:'silver',photo:1,plate:'…482'},
+  mizrahi:{n:'מזרחי',c:'f3',p:'050-0000003',a:'רח׳ השקד 9',par:'אבי מזרחי',car:'טויוטה',cc:'blue'},
+  peretz:{n:'פרץ',c:'f4',p:'050-0000004',a:'שד׳ הנשיא 3',par:'יוסי פרץ',car:'קיה לבנה',cc:'white',photo:1,plate:'…917'},
+  avraham:{n:'אברהם',c:'f5',p:'050-0000005',a:'רח׳ הזית 12',par:'מיכל אברהם',car:'יונדאי',cc:'green'}};
 var KIDS={noa:{n:'נועה',f:'cohen',fem:1},itai:{n:'איתי',f:'cohen'},maya:{n:'מאיה',f:'levi',fem:1},yonatan:{n:'יונתן',f:'mizrahi'},tamar:{n:'תמר',f:'mizrahi',fem:1},ori:{n:'אורי',f:'peretz'},shira:{n:'שירה',f:'avraham',fem:1},daniel:{n:'דניאל',f:'avraham'}};
 var LEG={out:'הלוך',back:'חזור'};
 var POS={cohen:[0,0],levi:[.6,.2],mizrahi:[2,1],peretz:[1.8,-.4],avraham:[.4,-.5]};
@@ -800,7 +827,7 @@ var TIPS={
   c:{signup:'לחצו על נועה ובחרו מה היא צריכה. נוצר כרטיס בקשה בראש הפיד ונרשמת שורה ביומן.',
      driver:'לחצו "אני לוקח/ת" על הבקשה של שירה, אשרו, והכרטיס מתקפל ל"סגור ✓". כל פעולה היא blob חדש ביומן, לכן אין התנגשויות.',
      day:'מצב נהג, עצירה אחרי עצירה. "הגעתי" שולח "אני למטה 🚗": אוטומטית בטלגרם למשפחה שהצטרפה, ב-WhatsApp לאחרות.'},
-  reg:'עברו את ההרשמה: הזמנה מהקבוצה, פרטי משפחה, שמירה. נסו להקליד מספר לא תקין, או להוסיף הורה נוסף ולשמור בלי טלפון, כדי לראות את הבדיקה. אחרי השמירה מופיע שבב "פועל/ת בתור" וקישור גיבוי למכשיר שני.',
+  reg:'עברו את ההרשמה: הזמנה מהקבוצה, פרטי משפחה, שמירה. נסו להקליד מספר לא תקין, או להוסיף הורה נוסף ולשמור בלי טלפון, כדי לראות את הבדיקה. אחרי השמירה מופיע שבב "פועל/ת בתור" וקישור גיבוי למכשיר שני. בכרטיס "רכב" אפשר להוסיף תמונת רכב (רשות): היא נדחסת בדפדפן ומופיעה ככרטיס הרכב ובדף הילד/ה.',
   create:'גררו תמונה לאזור המקווקו, בחרו מהגלריה או לחצו על ההזמנה לדוגמה. הזיהוי באב-הטיפוס מדומה ותמיד מחזיר את פרטי הדוגמה; התמונה שלכם נדחסת בדפדפן ונשארת כעטיפה. "צור אירוע" מוביל לדף האירוע.',
   kid:'תצוגת ילד/ה: דף לקריאה בלבד בכתובת עם token. ב"יום ההסעה" נסו "אני מוכנה". לחצו על כרטיס נסיעה לפרטים, ואז חזרה.'
 };
@@ -814,6 +841,13 @@ function dot(f){return '<span class="fdot" style="--fc:var(--'+FAM[f].c+')"></sp
 function av(k){return '<span class="av" style="--fc:var(--'+FAM[KIDS[k].f].c+')" aria-hidden="true">'+kn(k).charAt(0)+'</span>'}
 function addMin(t,m){var p=t.split(':'),x=(+p[0])*60+(+p[1])+m;x=(x+1440)%1440;return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')}
 function intl(p){return '972'+p.replace(/\D/g,'').slice(1)}
+function carArt(f,size){var c=FAM[f].cc||'silver';
+  return '<svg viewBox="0 0 120 64" height="'+(size||64)+'" role="img" aria-label="'+esc(FAM[f].car)+'" preserveAspectRatio="xMidYMid meet"><path d="M8 40a6 6 0 016-6h4l8-14a6 6 0 015-3h40a6 6 0 015 3l10 14h6a6 6 0 016 6v8a4 4 0 01-4 4H12a4 4 0 01-4-4z" fill="var(--car-'+c+')" stroke="var(--line)" stroke-width="1.6" stroke-linejoin="round"/><path d="M33 33l7-12h17v12zm29 0V21h15l8 12z" fill="var(--car-glass)" stroke="var(--line)" stroke-width="1"/><g fill="var(--car-tire)" stroke="var(--line)" stroke-width="1.2"><circle cx="34" cy="52" r="9"/><circle cx="90" cy="52" r="9"/></g><g fill="var(--car-hub)"><circle cx="34" cy="52" r="3.5"/><circle cx="90" cy="52" r="3.5"/></g></svg>'}
+function carGlyph(f,size){return '<svg viewBox="0 0 24 24" height="'+(size||24)+'" width="'+(size||24)+'" aria-hidden="true" style="color:var(--'+FAM[f].c+')"><path d="M5 11l1.6-4.2A2 2 0 018.5 5.5h7a2 2 0 011.9 1.3L19 11a2 2 0 011.5 1.9V17a1 1 0 01-1 1H18a1.5 1.5 0 01-3 0H9a1.5 1.5 0 01-3 0H4.5a1 1 0 01-1-1v-4.1A2 2 0 015 11z" fill="currentColor"/><path d="M7.5 11l1-2.6h7l1 2.6z" fill="var(--car-glass)"/></svg>'}
+function carPic(f,s,big){var ph=f===ME&&s.carPhoto,has=ph||FAM[f].photo,c=big?'cbig':'cth',inner=ph?'<img src="'+ph+'" alt="'+esc(FAM[f].car)+'">':FAM[f].photo?carArt(f,big?90:28):carGlyph(f,big?64:24);
+  return '<span class="'+c+(has?'':' nop')+'">'+inner+'</span>'}
+function carPlate(f,s){var v=f===ME?String(s.form.cplate!=null?s.form.cplate:'').replace(/\D/g,'').slice(-3):'';return f===ME?(v?'…'+v:''):(FAM[f].plate||'')}
+function carCap(f,s){var pl=carPlate(f,s);return '<span class="k muted small">חפשי את הרכב הזה</span><span class="row"><b>'+esc(FAM[f].car)+(f===ME&&s.form.ccolor?' · '+esc(s.form.ccolor):'')+'</b>'+(pl?'<span class="plate" dir="ltr">'+esc(pl)+'</span>':'')+'</span>'}
 function car(id,f,seats,dep,kids){return {id:id,f:f,label:FAM[f].car,seats:seats,dep:dep,kids:kids||[]}}
 var KPH={noa:'050-0000011',maya:'050-0000012',shira:'050-0000015'};
 var PHI='<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align:-2px;margin-inline-end:4px"><path d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1z" fill="currentColor"/></svg>';
@@ -896,7 +930,7 @@ function evStart(alt,m,s){var E=s.E;
 }
 function startRoutes(alt,per,m,s){
   if(per==='kid')return [{scr:'kid',path:KT}];
-  if(m==='reg')return [{scr:'join',path:'/join/kita-d2'}];
+  if(m==='reg')return [{scr:'join',path:'/join/class-4b'}];
   if(m==='create')return [{scr:'group',path:G},{scr:'newev',path:G+'/new'}];
   return [{scr:'group',path:G},evStart(alt,m,s)];
 }
@@ -927,7 +961,10 @@ SCR.me=function(p){var s=p.s,f=s.form,id=p.id;function fld(k,l,v,t){return '<lab
   '<div class="card"><div class="hs">ילדים · טלפון לילד/ה הוא רשות</div><div class="row">'+av('noa')+'<b>נועה</b></div>'+ph('k_noa','הטלפון של נועה','050-0000011',false)+
     (kok.ok&&kok.n?'<button class="mini" data-act="kidlink" style="align-self:flex-start">שליחת הקישור האישי לנועה ב-WhatsApp</button>':'')+
     '<div class="row">'+av('itai')+'<b>איתי</b></div>'+ph('k_itai','הטלפון של איתי','',false)+'<button class="mini" data-act="flash" data-arg="kid" style="align-self:flex-start">+ ילד/ה</button></div>'+
-  '<div class="card"><div class="hs">רכב</div><div class="row sp"><span>מאזדה אדומה</span><span class="step"><button data-act="pseats" data-arg="-1" aria-label="פחות">−</button><b>'+s.pseats+' מק׳</b><button data-act="pseats" data-arg="1" aria-label="יותר">+</button></span></div><small class="muted">מקומות לילדים, בלי הנהג/ת</small></div>'+
+  '<div class="card"><div class="hs">רכב</div><div class="row sp"><span>מאזדה אדומה</span><span class="step"><button data-act="pseats" data-arg="-1" aria-label="פחות">−</button><b>'+s.pseats+' מק׳</b><button data-act="pseats" data-arg="1" aria-label="יותר">+</button></span></div><small class="muted">מקומות לילדים, בלי הנהג/ת</small>'+
+    fld('ccolor','צבע (רשות)','')+fld('cplate','3 ספרות אחרונות (רשות)','','tel')+
+    '<div class="row">'+(s.carPhoto?carPic(ME,s):'')+'<label class="mini carpick" for="'+id+'-carfile">'+(s.carPhoto?'החלפת תמונת הרכב':'+ תמונת הרכב (רשות)')+'<input type="file" id="'+id+'-carfile" accept="image/*" class="vh" data-carfile="1"></label></div>'+
+    (s.carPhoto&&s.carMeta?'<small class="muted">נדחס בדפדפן: '+s.carMeta.o+'KB ← '+s.carMeta.c+'KB · נשמר ב-Blobs תחת car/cohen/c1</small>':'')+'</div>'+
   extra+'<button class="btn big" data-act="save">שמירה והצטרפות</button>'}};
 SCR.newev=function(p){var s=p.s,cr=s.cr,id=p.id;
   if(cr.phase==='drop')return {t:'אירוע חדש',b:
@@ -951,7 +988,7 @@ SCR.newev=function(p){var s=p.s,cr=s.cr,id=p.id;
     fld('place','מקום')+fld('addr','כתובת')+'</div>'+
     '<button class="btn big" data-act="create">צור אירוע</button>'};
 };
-SCR.invite=function(p){return {t:'ההזמנה',b:'<div class="inv-full">'+coverHTML(p.s.ev)+'</div><div class="note">נשמרה ב-Blobs תחת <code>invite/kita-d2/'+p.s.E.split('/').pop()+'</code>. גלויה רק לחברי הקבוצה.</div>'}};
+SCR.invite=function(p){return {t:'ההזמנה',b:'<div class="inv-full">'+coverHTML(p.s.ev)+'</div><div class="note">נשמרה ב-Blobs תחת <code>invite/class-4b/'+p.s.E.split('/').pop()+'</code>. גלויה רק לחברי הקבוצה.</div>'}};
 
 /* A */
 SCR.a_rsvp=function(p){var s=p.s;
@@ -961,7 +998,7 @@ SCR.a_rsvp=function(p){var s=p.s;
 SCR.a_board=function(p,c){var s=p.s,leg=c.leg,g=gapInfo(s,leg),mine=s.cars[leg].some(function(x){return x.f===ME});
   var cars=s.cars[leg].map(function(cr){var seats='';for(var i=0;i<cr.seats;i++){var k=cr.kids[i];
       seats+=k?'<span class="seat full" style="--fc:var(--'+FAM[KIDS[k].f].c+')" aria-label="'+kn(k)+'">'+av(k)+'<span class="nm">'+kn(k)+'</span></span>':'<button class="seat'+(s.sel?' arm':'')+'" data-act="seat" data-arg="'+cr.id+'" aria-label="מושב פנוי ברכב של '+fn(cr.f)+'">+</button>'}
-    return '<div class="car'+(cr.f===ME?' me':'')+'" style="--fc:var(--'+FAM[cr.f].c+')"><div class="car-h">'+dot(cr.f)+'<b>משפחת '+fn(cr.f)+'</b><span class="muted">'+cr.label+' · '+cr.dep+'</span><span class="num">'+cr.kids.length+'/'+cr.seats+'</span></div><div class="seats seat-wrap">'+seats+'</div></div>'}).join('');
+    return '<div class="car'+(cr.f===ME?' me':'')+'" style="--fc:var(--'+FAM[cr.f].c+')"><div class="car-h">'+carPic(cr.f,s)+dot(cr.f)+'<b>משפחת '+fn(cr.f)+'</b><span class="muted">'+cr.label+' · '+cr.dep+'</span><span class="num">'+cr.kids.length+'/'+cr.seats+'</span></div><div class="seats seat-wrap">'+seats+'</div></div>'}).join('');
   return {t:esc(s.ev.title),b:evHead(p)+
   '<div class="tabs" role="group" aria-label="כיוון"><button aria-pressed="'+(leg==='out')+'" data-act="leg" data-arg="out">הלוך · '+esc(s.ev.start)+'</button><button aria-pressed="'+(leg==='back')+'" data-act="leg" data-arg="back">חזור · '+esc(s.ev.ret)+'</button></div>'+
   gapHTML(s,leg)+
@@ -1003,7 +1040,7 @@ SCR.b_done=function(p){return {t:esc(p.s.ev.title),b:evHead(p)+'<div class="card
 SCR.b_plan=function(p){var s=p.s,pl=bPlan(s),h='';
   ['out','back'].forEach(function(leg){var P=pl[leg];h+='<div class="hs">'+LEG[leg]+' · '+(leg==='out'?esc(s.ev.start):esc(s.ev.ret))+'</div>';
     if(P.un.length)h+='<div class="gm gap"><div class="gm-t"><b>חסר נהג אחד ל'+LEG[leg]+'</b><span>'+P.un.map(kn).join(', ')+' בלי מקום</span></div><button class="mini" data-act="ask" data-arg="'+leg+'">בקש מהקבוצה</button></div>';
-    P.drv.forEach(function(d){h+='<div class="car'+(d.f===ME?' me':'')+'" style="--fc:var(--'+FAM[d.f].c+')"><div class="car-h">'+dot(d.f)+'<b>משפחת '+fn(d.f)+'</b><span class="fair">הסיעו '+FAIR[d.f]+' פעמים החודש</span><span class="num">'+d.kids.length+'/'+d.seats+'</span></div>'+
+    P.drv.forEach(function(d){h+='<div class="car'+(d.f===ME?' me':'')+'" style="--fc:var(--'+FAM[d.f].c+')"><div class="car-h">'+carPic(d.f,s)+dot(d.f)+'<b>משפחת '+fn(d.f)+'</b><span class="fair">הסיעו '+FAIR[d.f]+' פעמים החודש</span><span class="num">'+d.kids.length+'/'+d.seats+'</span></div>'+
       d.kids.map(function(x){return '<div class="row">'+av(x.k)+'<span>'+kn(x.k)+'</span><span class="why">· '+x.why+'</span></div>'}).join('')+'</div>'})});
   return {t:'הצעת שיבוץ',b:'<div class="note">האפליקציה הציעה לפי קרבה לבית, הכיוון שכל אחד ביקש, והוגנות. אפשר לשנות לפני אישור.</div>'+h+
     (s.b.ok?'<div class="note ok"><b>השיבוץ אושר ונשלח ✓</b></div>':'<button class="btn big" data-act="planok">אשר ושלח</button>')}};
@@ -1030,7 +1067,7 @@ function cCard(p,key){var s=p.s,a=key.split(':'),t=s.kt[key]||'08:42';
   if(free<=0)return '<div class="fc closed"><span class="ck">✓</span><span>מלא · הרכב של משפחת '+fn(c.f)+' ב'+LEG[lg]+'</span></div>';
   var myk=['noa'].filter(function(k){return s.need[k][lg]&&s.rsvp[k]==='yes'&&!seatedIn(s,lg,k)})[0],act2='';
   if(c.f!==ME&&myk)act2=s.confirm===key?'<div class="conf"><span>להושיב את <b>'+kn(myk)+'</b> ברכב של <b>משפחת '+fn(c.f)+'</b>, '+LEG[lg]+', '+c.dep+'? <span class="small muted">הם יראו את זה מיד, עם השם שלך.</span></span><div class="row"><button class="btn grow1" data-act="seatmeok" data-arg="'+c.id+'">כן, להושיב</button><button class="btn ghost" data-act="noconf">לא</button></div></div>':'<button class="btn big" data-act="seatme" data-arg="'+key+'">תושיב/י את '+kn(myk)+'</button>';
-  return '<div class="fc'+(c.f===ME?' mine':'')+'"><div class="fc-h"><span class="tag off">הצעה</span>'+(c.f===ME?'<span class="tag me">שלי</span>':'')+dot(c.f)+'<span>משפחת '+fn(c.f)+'</span><span class="t">'+t+'</span></div><div class="fc-b"><b>יש '+(free===1?'מקום אחד':free+' מקומות')+' ב'+LEG[lg]+', יציאה '+c.dep+'</b><small>'+c.label+(c.kids.length?' · כבר נוסעים: '+c.kids.map(kn).join(', '):'')+'</small></div>'+act2+'</div>';}
+  return '<div class="fc'+(c.f===ME?' mine':'')+'"><div class="fc-h">'+carPic(c.f,s)+'<span class="tag off">הצעה</span>'+(c.f===ME?'<span class="tag me">שלי</span>':'')+dot(c.f)+'<span>משפחת '+fn(c.f)+'</span><span class="t">'+t+'</span></div><div class="fc-b"><b>יש '+(free===1?'מקום אחד':free+' מקומות')+' ב'+LEG[lg]+', יציאה '+c.dep+'</b><small>'+c.label+(c.kids.length?' · כבר נוסעים: '+c.kids.map(kn).join(', '):'')+'</small></div>'+act2+'</div>';}
 SCR.c_feed=function(p){var s=p.s;
   return {t:esc(s.ev.title),b:evHead(p)+'<div class="gms" style="position:sticky;top:-4px;z-index:2;background:var(--app-bg);padding-block:4px">'+gapHTML(s,'out',{short:1})+gapHTML(s,'back',{short:1})+'</div>'+
   '<div class="card"><div class="hs">מה הילדים שלי צריכים?</div><div class="chips"><button class="kchip" data-act="need" data-arg="noa">'+av('noa')+'נועה</button><span class="kchip ro">'+av('itai')+'איתי · לא מגיע</span></div><button class="btn ghost" data-act="offer">אני יכול/ה להסיע</button></div>'+
@@ -1052,11 +1089,11 @@ SCR.kid=function(p){var s=p.s,m=s.m,R=KIDR[m];
   if(m==='reg')return {t:'ההסעות שלי',b:h+'<div class="legc wait"><span class="k">עוד אין הסעות</span><span class="muted">כשההורים ירשמו אותך לאירוע, הוא יופיע כאן.</span></div><div class="note">טיפ: שמרו את הדף במסך הבית של הטלפון.</div>'};
   ['out','back'].forEach(function(l){var r=R&&R[l];
     if(!r)h+='<div class="legc wait"><span class="k">'+LEG[l]+' · '+(l==='out'?esc(s.ev.start):esc(s.ev.ret))+'</span><b style="color:var(--gap)">עוד מחפשים לך הסעה</b><span class="small muted">ההורים שלך יקבלו עדכון</span></div>';
-    else h+='<div class="legc"><span class="k">'+LEG[l]+' · איסוף <span class="num">'+r.t+'</span></span><span class="row">'+dot(r.f)+'<b>'+FAM[r.f].par+' מסיע/ה</b></span><span class="muted">'+FAM[r.f].car+' · איתך: '+r.w.map(kn).join(', ')+'</span>'+(m==='day'&&l==='out'?'<span class="live">בדרך אלייך · ~8 דק׳</span>':'')+'<div class="row"><button class="btn sm" data-act="kcall" data-arg="'+r.f+'">'+PHI+'התקשרי ל'+FAM[r.f].par.split(' ')[0]+'</button><button class="lnk" data-act="kidleg" data-arg="'+l+'">פרטים</button></div></div>';});
+    else h+='<div class="legc"><span class="k">'+LEG[l]+' · איסוף <span class="num">'+r.t+'</span></span><span class="row">'+dot(r.f)+'<b>'+FAM[r.f].par+' מסיע/ה</b></span><span class="muted">'+FAM[r.f].car+' · איתך: '+r.w.map(kn).join(', ')+'</span>'+carPic(r.f,s,1)+carCap(r.f,s)+(m==='day'&&l==='out'?'<span class="live">בדרך אלייך · ~8 דק׳</span>':'')+'<div class="row"><button class="btn sm" data-act="kcall" data-arg="'+r.f+'">'+PHI+'התקשרי ל'+FAM[r.f].par.split(' ')[0]+'</button><button class="lnk" data-act="kidleg" data-arg="'+l+'">פרטים</button></div></div>';});
   if(m==='day')h+=s.ready?'<div class="note ok"><b>שלחת "אני מוכנה" ✓</b> '+(p.alt==='b'?'משפחת לוי קיבלה Push.':p.alt==='c'?'נרשם ביומן, ומשפחת לוי רואה את זה.':'משפחת לוי תראה את זה ברענון.')+'</div>':'<button class="readybtn" data-act="ready">אני מוכנה</button>';
   return {t:'ההסעות שלי',b:h}};
 SCR.kid_leg=function(p,c){var R=KIDR[p.s.m],r=R[c.leg],f=FAM[r.f];
-  return {t:LEG[c.leg],b:'<div class="card"><span class="muted small">'+LEG[c.leg]+' · איסוף <span class="num">'+r.t+'</span></span><div class="row">'+dot(r.f)+'<b style="font-size:17px">'+f.par+'</b></div><span>'+f.car+'</span><span class="muted">'+(c.leg==='out'?'אוספים אותך מהבית':'איסוף מ'+esc(p.s.ev.place))+'</span></div>'+
+  return {t:LEG[c.leg],b:'<div class="card"><span class="muted small">'+LEG[c.leg]+' · איסוף <span class="num">'+r.t+'</span></span><div class="row">'+dot(r.f)+'<b style="font-size:17px">'+f.par+'</b></div><span class="muted">'+(c.leg==='out'?'אוספים אותך מהבית':'איסוף מ'+esc(p.s.ev.place))+'</span>'+carPic(r.f,p.s,1)+carCap(r.f,p.s)+'</div>'+
   '<div class="card"><span class="muted small">טלפון של הנהג/ת</span><div class="row sp"><b class="num" dir="ltr">'+f.p+'</b><span class="row"><button class="btn sm" data-act="kcall" data-arg="'+r.f+'">'+PHI+'התקשרי</button><button class="mini" data-act="copynum" data-arg="'+r.f+'">העתקה</button></span></div></div>'+
   '<div class="card"><span class="muted small">נוסעים איתך</span><div class="chips">'+r.w.map(function(k){return '<span class="kchip ro">'+av(k)+kn(k)+'</span>'}).join('')+'</div></div>'}};
 
@@ -1071,7 +1108,7 @@ SHEET.offer=function(p){var d=p.s.draft;d.leg=d.leg||'back';return '<h4>אני �
 /* ---------- phone ---------- */
 function Phone(el,alt){this.root=el;this.alt=alt;this.id='p'+alt;var me=this;
   el.addEventListener('click',function(e){me.onClick(e)});
-  el.addEventListener('change',function(e){if(e.target.matches('[data-file]'))me.handleFile(e.target.files&&e.target.files[0])});
+  el.addEventListener('change',function(e){if(e.target.matches('[data-file]'))me.handleFile(e.target.files&&e.target.files[0]);else if(e.target.matches('[data-carfile]'))me.handleCarFile(e.target.files&&e.target.files[0])});
   el.addEventListener('input',function(e){var t=e.target;if(t.dataset&&t.dataset.ph){var r=vPhone(t.value,t.dataset.ph==='req'),l=t.closest('.fld'),m=l&&l.querySelector('[data-msg]');if(l){l.classList.toggle('err',!r.ok&&(!!t.value||!!me.s.tried));l.classList.toggle('okv',r.ok&&!!r.n)}if(m)m.textContent=t.value||me.s.tried?r.msg:(t.dataset.ph==='req'?'חובה · לדוגמה 050-1234567':'רשות · לדוגמה 050-1234567')}
   var k=e.target.dataset&&e.target.dataset.ed;if(k){me.s.cr.edited=me.s.cr.edited||{};me.s.cr.edited[k]=1;var l=e.target.closest('.fld');if(l){l.classList.remove('hl');var t=l.querySelector('.auto');if(t)t.remove()}}});
   el.addEventListener('dragover',function(e){var d=e.target.closest&&e.target.closest('[data-drop]');if(d){e.preventDefault();d.classList.add('over')}});
@@ -1119,6 +1156,13 @@ Phone.prototype.handleFile=function(file){var me=this;
       try{cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);url=cv.toDataURL('image/jpeg',.8)}catch(e){url=fr.result}
       me.s.cr.img=url;me.s.cr.orig=file.size;me.s.cr.comp=Math.round(url.length*.75);me.startScan()};
     img.onerror=function(){me.toastShow('לא הצלחנו לפתוח את התמונה. אפשר לנסות אחרת או למלא ידנית.',{warn:1});me.render('keep')};img.src=fr.result};
+  fr.readAsDataURL(file)};
+Phone.prototype.handleCarFile=function(file){var me=this;
+  if(!file||!/^image\//.test(file.type)){this.toastShow('זה לא נראה כמו תמונה. נסו קובץ JPG או PNG.',{warn:1});this.render('keep');return}
+  var fr=new FileReader();fr.onload=function(){var img=new Image();img.onload=function(){var mx=800,sc=Math.min(1,mx/Math.max(img.width,img.height)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*sc));cv.height=Math.max(1,Math.round(img.height*sc));var url;
+      try{cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);url=cv.toDataURL('image/jpeg',.8)}catch(e){url=fr.result}
+      me.s.carPhoto=url;me.s.carMeta={o:Math.max(1,Math.round(file.size/1024)),c:Math.max(1,Math.round(url.length*.75/1024))};me.render('keep')};
+    img.onerror=function(){me.toastShow('לא הצלחנו לפתוח את התמונה. אפשר לנסות אחרת.',{warn:1});me.render('keep')};img.src=fr.result};
   fr.readAsDataURL(file)};
 Phone.prototype.startScan=function(){var me=this;this.s.cr.phase='scan';this.s.cr.manual=false;this.s.cr.edited={};this.render('top');clearTimeout(this.st);
   this.st=setTimeout(function(){me.s.cr.phase='form';me.s.cr.fields=Object.assign({},SAMPLE);Object.keys(me.s.form).forEach(function(k){if(k.indexOf('ev_')===0)delete me.s.form[k]});if(me.cur().scr==='newev')me.render('top')},1500)};
