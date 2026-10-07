@@ -59,9 +59,13 @@ interface Props {
   onEmptySeat: () => void;
   onKid: (kidId: string) => void;
   actions?: ComponentChildren;
+  /** The event's time changed since this departure time was set ("בדקו שעת יציאה"). */
+  departCheck?: boolean;
+  /** The owner's "אישור שעה" (shown with `departCheck`). */
+  onConfirmDepart?: (() => void) | undefined;
 }
 
-export function CarCard({ group, offer, car, familyLabel, color, mine, kids, armed, onEmptySeat, onKid, actions }: Props) {
+export function CarCard({ group, offer, car, familyLabel, color, mine, kids, armed, onEmptySeat, onKid, actions, departCheck, onConfirmDepart }: Props) {
   const empty = Math.max(0, offer.seats - kids.length);
   return (
     <article class={cx("car", mine && "me")} style={{ "--fc": famColor(color) }}>
@@ -82,6 +86,7 @@ export function CarCard({ group, offer, car, familyLabel, color, mine, kids, arm
           {he.board.seatCount(kids.length, offer.seats)}
         </span>
       </div>
+      {departCheck && <DepartCheck onConfirm={onConfirmDepart} />}
       <div class="seats">
         {kids.map((k) => (
           <span class="seat-wrap">
@@ -110,5 +115,19 @@ export function CarCard({ group, offer, car, familyLabel, color, mine, kids, arm
       </div>
       {actions && <div class="row wrap">{actions}</div>}
     </article>
+  );
+}
+
+/** "בדקו שעת יציאה" with the owner's "אישור שעה" button. */
+export function DepartCheck({ onConfirm }: { onConfirm?: (() => void) | undefined }) {
+  return (
+    <div class="dchk" role="status">
+      <b>{he.manage.checkDepart}</b>
+      {onConfirm && (
+        <button type="button" class="mini" onClick={onConfirm}>
+          {he.manage.confirmDepart}
+        </button>
+      )}
+    </div>
   );
 }

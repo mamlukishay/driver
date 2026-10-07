@@ -10,7 +10,8 @@ import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { useEvent } from "../store.ts";
 import { appUrl, cx, eventIndex, kidPath } from "../util.ts";
-import { EventHead, runAction } from "./eventCommon.tsx";
+import { DepartCheck } from "../components/CarCard.tsx";
+import { EventHead, kidPhonePath, runAction } from "./eventCommon.tsx";
 
 export function Drive({ group, event, leg }: { group: string; event: string; leg: Leg }) {
   const res = useEvent(group, event);
@@ -99,13 +100,23 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
     if (ok) setJustStarted(true);
   };
 
+  const frozen = !!ev.cancelled;
+  const confirmDepart = () => runAction(group, ev, { type: "confirmDeparture", offerId: offer.id }, he.manage.toastConfirmed);
+
   return (
     <>
       <EventHead group={group} ev={ev} />
+      {frozen && (
+        <p class="note cancel-note" role="status">
+          <b>{he.manage.cancelled}</b>
+          <span class="small">{he.manage.cancelledNote}</span>
+        </p>
+      )}
+      {offer.departAtCheck && !frozen && <DepartCheck onConfirm={confirmDepart} />}
       {offer.run ? (
         <span class="live">{he.drive.onTheWay}</span>
       ) : (
-        <button type="button" class="btn big" onClick={start} disabled={busy || offer.kidIds.length === 0}>
+        <button type="button" class="btn big" onClick={start} disabled={busy || frozen || offer.kidIds.length === 0}>
           {he.drive.start}
         </button>
       )}
@@ -142,14 +153,21 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
           {order.map((kidId) => {
             const k = idx.kid(kidId);
             if (!k) return null;
-            const parent = k.family.parents.find((p) => p.phone);
-            const to = k.phone ? { phone: k.phone, label: he.drive.shareTo(k.name) } : parent?.phone ? { phone: parent.phone, label: he.drive.shareToParent(k.name, parent.name) } : { phone: undefined, label: he.drive.shareTo(k.name) };
+            // KISS: send only to the kid's own phone. No phone: my kid gets an "add a phone" shortcut.
             return (
               <div class="row sp">
                 <b>{k.name}</b>
-                <WaButton class="btn wa sm" phone={to.phone} text={he.wa.trackRide(appUrl(kidPath(group, kidId, ev.id)))}>
-                  {to.label}
-                </WaButton>
+                {k.phone ? (
+                  <WaButton class="btn wa sm" phone={k.phone} text={he.wa.trackRide(appUrl(kidPath(group, kidId, ev.id)))}>
+                    {he.drive.shareTo(k.name)}
+                  </WaButton>
+                ) : k.family.id === ev.me ? (
+                  <a class="lnk" href={kidPhonePath(group, kidId)}>
+                    {he.manage.noPhone(k.name)}
+                  </a>
+                ) : (
+                  <small class="muted">{he.manage.noPhoneOther(k.name)}</small>
+                )}
               </div>
             );
           })}

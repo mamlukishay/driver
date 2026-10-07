@@ -15,7 +15,7 @@ import {
   type User,
 } from "./helpers.ts";
 
-const A = { name: "כהן", parent: "רונית", phone: "052-111-1111", kid: "נועה" };
+const A = { name: "כהן", parent: "רונית", phone: "052-111-1111", kid: "נועה", kidPhone: "053-111-1111" };
 const B = { name: "לוי", parent: "דוד", phone: "054-222-2222", kid: "דני", car: { label: "מאזדה אדומה", seats: 3 } };
 
 /** Tomorrow in the group's zone, so the legs are never "over" whatever time the suite runs. */
@@ -64,14 +64,24 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     await a.page.getByRole("dialog").getByRole("button", { name: he.seatSheet.confirm }).click();
     await expect(seatedKid(a.page, A.kid)).toBeVisible();
 
+    // --- The kid has no phone: no sending, only a shortcut to add one (KISS). Add it. ---
+    await a.page.goto(eventUrl);
+    await expect(a.page.getByRole("link", { name: he.event.sendToKidLabel(A.kid) })).toHaveCount(0);
+    await a.page.getByRole("link", { name: he.manage.noPhone(A.kid) }).click();
+    await expect(a.page).toHaveURL(/\/me\?focus=kid-[a-z0-9]+-phone$/);
+    await expect(a.page.getByLabel(he.form.kidPhone)).toBeFocused();
+    await a.page.getByLabel(he.form.kidPhone).fill(A.kidPhone);
+    await a.page.getByRole("button", { name: he.common.save }).click();
+    await expect(a.page.getByText(he.profile.saved)).toBeVisible();
+
     // --- A shares the per-event link from the event page ("my kids") ---
     await a.page.goto(eventUrl);
     const send = a.page.getByRole("link", { name: he.event.sendToKidLabel(A.kid) });
     await expect(send).toBeVisible();
     await expect(send).toContainText(he.event.sendToKid(A.kid));
     const href = (await send.getAttribute("href"))!;
-    // The kid has no phone, so it's the chat chooser.
-    expect(href.startsWith("https://wa.me/?text=")).toBe(true);
+    // Straight to the kid's phone.
+    expect(href.startsWith("https://wa.me/972531111111?text=")).toBe(true);
     const text = new URL(href).searchParams.get("text")!;
     expect(text).toContain(title);
     expect(text).toContain(he.wa.legLine("out", { family: he.family(B.name), departAt: "" }).replace(/ $/, ""));
@@ -94,12 +104,12 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     await expect(backStatus).toContainText(he.kid.status.waiting);
     await expect(kid.page.getByRole("button", { name: he.kid.ready })).toBeVisible();
 
-    // --- Driver mode: the share card lists the kid with a wa.me link (to the parent: the kid has no phone) ---
+    // --- Driver mode: the share card lists the kid with a wa.me link to the kid's own phone ---
     await b.page.goto(`${eventUrl}/drive/out`);
     const share = b.page.getByRole("region", { name: he.drive.shareTitle });
     await expect(share).toContainText(A.kid);
-    const shareLink = share.getByRole("link", { name: he.drive.shareToParent(A.kid, A.parent) });
-    await expect(shareLink).toHaveAttribute("href", /^https:\/\/wa\.me\/972521111111\?text=/);
+    const shareLink = share.getByRole("link", { name: he.drive.shareTo(A.kid) });
+    await expect(shareLink).toHaveAttribute("href", /^https:\/\/wa\.me\/972531111111\?text=/);
     const shareText = new URL((await shareLink.getAttribute("href"))!).searchParams.get("text")!;
     expect(shareText).toContain(`/g/${groupId}/kid/${kidId}/e/${eventId}`);
 

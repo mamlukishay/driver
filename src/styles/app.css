@@ -1533,3 +1533,148 @@ a.who:hover {
     transition: none !important;
   }
 }
+
+/* ---------- event tabs, ⋯ menu, edit / cancel ---------- */
+.evframe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap, 14px);
+}
+.evh-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.evh-row .evh {
+  flex: 1;
+  min-inline-size: 0;
+}
+.dots {
+  flex: none;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  padding-inline: 4px;
+}
+.gdot {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--ink-3);
+}
+.gdot.missing {
+  background: var(--gap);
+}
+.gdot.unassigned {
+  background: var(--accent);
+}
+.gdot.ok {
+  background: var(--ok);
+}
+.is-cancelled .evh,
+.is-cancelled .gm,
+.is-cancelled .car,
+.is-cancelled .chips,
+.is-cancelled .rsvp,
+.evcard.is-cancelled {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.is-cancelled .evh-t b,
+.evcard.is-cancelled .evm b {
+  text-decoration: line-through;
+}
+.tag.off {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.note.upd {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.upd-h {
+  inline-size: 100%;
+}
+.tag.upd-tag {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.note .xbtn {
+  min-block-size: 32px;
+}
+.dchk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--gap-soft);
+  color: var(--gap);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+.menu-list {
+  display: flex;
+  flex-direction: column;
+}
+.menu-i {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 52px;
+  padding-inline: 4px;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+.menu-i:last-child {
+  border-block-end: 0;
+}
+.menu-i.bad {
+  color: var(--bad);
+}
+.sheet.full {
+  max-block-size: 100dvh;
+  block-size: 100dvh;
+  border-radius: 0;
+}
+details.past > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+details.past[open] > summary {
+  margin-block-end: 10px;
+}
+.kidchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block-start: 4px;
+}
+.kchip {
+  font-size: 12.5px;
+  background: var(--sunk);
+  border-radius: 999px;
+  padding: 2px 9px;
+}

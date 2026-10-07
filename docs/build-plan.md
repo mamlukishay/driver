@@ -53,17 +53,19 @@ e2e/                    Playwright smoke (mobile viewport, Hebrew)
 | `/join/:group` | Invite link. No family on this device → "מי אתם?". `?new=1` → registration form (warns when the family name already exists: "זו המשפחה שלכם?"). |
 | `/g/:group/who?next=` | "מי אתם?": the group's families as big buttons (color dot, label, kids' names) → confirm sheet → back to `next`. Also "משפחה חדשה — הרשמה" and "רק להסתכל" (view-only for this tab). |
 | `/g/:group/settings` | Acting as family X · "החלפת משפחה" · "עריכת פרטי המשפחה" · "התנתקות מהטלפון הזה" · group link + WhatsApp. From the header gear and the identity chip. |
-| `/g/:group` | Group home: upcoming events with mini gap meters, "+ אירוע חדש". |
+| `/g/:group` | Group home: upcoming events sorted by date (date block, title, mini gap meters per leg, a chip per kid of mine: "נועה: הלוך ✓ · חזור ?" with ✓ seated, ? needs a ride, – not needed / not coming), "+ אירוע חדש". Past events sit under a collapsed `<details>` "אירועים שעברו" for 30 days after their date, then drop off the list (the server omits them; data and direct links stay; `shownOnGroupHome` in `shared/dates.ts`, Israel dates). Cancelled events stay in place, greyed, with a "בוטל" tag. |
 | `/g/:group/new` | Create event. Invitation image drop zone first, then a prefilled form (or manual). |
-| `/g/:group/e/:event` | Event: header + RSVP for my kids (3 toggles each; with rsvp yes, a "שליחה ל{kid}" WhatsApp button: event, one line per leg, the per-event kid link) + both legs' gap meters + share summary. |
-| `/g/:group/e/:event/out`, `/back` | The **board** for that leg: waiting kids chips, car cards with seat slots, "+ אני נוהג/ת", history. |
+| `/g/:group/e/:event` | Event, tab **פרטים**: RSVP for my kids (3 toggles each; with rsvp yes and a kid phone, a "שליחה ל{kid}" WhatsApp button to the kid: event, one line per leg, the per-event kid link; without a phone, "+ הוספת טלפון ל{kid}" → `/g/:group/me?focus=kid-<id>-phone`) + history. |
+| `/g/:group/e/:event/out`, `/back` | Tabs **הלוך** / **חזור**: the **board** for that leg: waiting kids chips, car cards with seat slots, "+ אני נוהג/ת". |
 | `/g/:group/e/:event/invite` | Invitation image full screen. |
-| `/g/:group/e/:event/drive/:leg` | Driver mode: "יצאתי", "שיתוף עם הנוסעים" (per kid in the car: WhatsApp with the per-event kid link, to the kid's phone, else the parent's, else the chooser; highlighted and scrolled to after "יצאתי"), pickup checklist in pickup order with "הגעתי" (`setArrived`) and "עלה/תה" per stop, call/WhatsApp ("אני למטה") per kid/parent, Maps/Waze links. |
-| `/g/:group/me` | Family profile: parents + phones, address, kids (+ optional phones, kid links), cars (seats, color, plate, photo). |
+| `/g/:group/e/:event/drive/:leg` | Driver mode: "בדקו שעת יציאה" + "אישור שעה" when flagged, "יצאתי" (disabled while cancelled), "שיתוף עם הנוסעים" (per kid in the car: WhatsApp with the per-event kid link to the kid's own phone only; no phone → "+ הוספת טלפון" for my own kid, else "אין טלפון"; highlighted and scrolled to after "יצאתי"), pickup checklist in pickup order with "הגעתי" (`setArrived`) and "עלה/תה" per stop, call/WhatsApp ("אני למטה") per kid/parent, Maps/Waze links. |
+| `/g/:group/me` | Family profile: parents + phones, address, kids (+ optional phones, kid links: sent only to a kid with a phone), cars (seats, color, plate, photo). `?focus=kid-<kidId>-phone` scrolls to and focuses that kid's phone field. |
 | `/g/:group/kid/:kidId` | Kid view, permanent link (read-only, never asks "מי אתם?"): the next upcoming rides; per leg a big live status, who picks me up, when, car photo, call driver, "אני מוכן/ה". Old `/kid/:group/:token` links redirect here. |
 | `/g/:group/kid/:kidId/e/:event` | Kid view focused on one event (both legs, any date), same live status. Shared from the event page and driver mode. |
 
 **Kid live status** (`kidLegStatus` in `shared/view.ts`, per leg the kid needs): `waiting` (no car) → `assigned` (driver, time, car photo) → `onTheWay` (run started) → `next` (run started and every earlier stop in the pickup order is picked; `KidRide.ahead === 0`) → `arrived` (driver tapped "הגעתי" at this kid's stop) → `picked` → `done`. `done` once the leg is over (`legOver`: 30 min after the start for out, 90 min after the return time for back, on the client's local clock), except while a started run hasn't picked the kid yet. Pickup order (`pickupStops`, also used by driver mode): out = one stop per family in seating order; back = one stop (everyone boards at the venue). Both kid pages subscribe to the group WebSocket and refetch on event updates.
+
+**Event tabs** (`src/screens/EventFrame.tsx`, shared by the three tab routes): the event header (cover, title, date, times, place) with a **⋯** button (SVG icon) → `?sheet=menu`: "עריכת פרטים" (→ `?sheet=edit`, a full-screen form: title, date, start, return time, place, address, cover replace/remove; save sends `editEvent` + undo toast; back closes without saving), "שיתוף לקבוצה" (the group summary WhatsApp; the cancellation text when cancelled), "ביטול אירוע" (→ `?sheet=cancel` confirm → `cancelEvent`) or "שחזור" (`restoreEvent`). The menu swaps to the next sheet with a replace, so back closes it. Below the header: a cancelled note ("האירוע בוטל", ride controls disabled, everything greyed) or the **"עודכן" banner** (the newest not-undone `editEvent` log entry from the last 48 h that changed date/start/return time: "השעה השתנתה מ-X ל-Y" etc., a "שתף עדכון לקבוצה" WhatsApp, dismissible per device in localStorage `trempush.dismissedUpdates`), then the tab bar "פרטים | הלוך | חזור". Each leg tab shows a dot for its gap state (missing / unassigned / ok / none). Switching tabs (tap or horizontal swipe, RTL: finger right = next tab; swipes starting within 24 px of a screen edge are ignored) is a route **replace** that keeps the entry's history state, so tabs don't pile up history and back leaves the event. The in-app back arrow goes up when there is no in-app history: tab/board/invite → event פרטים → group home → my groups.
 
 Every `/g/:group/…` route except `who` and `kid`, and `/join/:group`, sends a device with no family for that group (and not in "רק להסתכל" mode) to `/g/:group/who?next=<original URL>` (a replace, so back doesn't bounce).
 
@@ -123,7 +125,9 @@ Feedback endpoints (`worker/feedback.ts`, pure parts in `shared/feedback.ts`) ha
 | `startRun { offerId }` / `setPicked { offerId, kidId, picked }` | Offer owner. Picking a kid also clears their `arrived`. |
 | `setArrived { offerId, kidId, arrived }` | Offer owner; needs a started run; `arrived: true` is invalid for a picked kid. Stored in `Run.arrived: kidId[]` (absent when empty). Inverse: `setArrived` with the previous value. |
 | `setKidReady { offerId, kidId, ready }` | Kid's family (the DO runs it for `/api/g/…/kid/…/ready` acting as that family). Stored in `Offer.ready`. |
-| `editEvent { … }` | Host family. |
+| `editEvent { patch }` | Any family. `patch` ⊆ title, date, start, returnTime, place, address, coverImageId (`null` removes); validated like `EventInput`; unchanged fields are ignored and an empty change is `invalid`. The slug never changes. The log stores only the changed fields plus `prev` (their old values; `loggedAction`). A changed date or start flags every out-leg offer `departAtCheck`; a changed date or returnTime flags every back-leg offer. Undo restores fields and flags. |
+| `cancelEvent` / `restoreEvent` | Any family; `invalid` when already in that state. Stored as `EventState.cancelled: true` (absent when live). While cancelled, `setKidPlan`, `offerCar`, `updateOffer`, `removeOffer`, `seatKid`, `unseatKid`, `startRun`, `setPicked`, `setArrived`, `setKidReady` and `confirmDeparture` fail with `event_cancelled` (409); editing and undo still work. |
+| `confirmDeparture { offerId }` | Offer owner ("אישור שעה"); `invalid` when not flagged. Clears `departAtCheck`; so does `updateOffer` with `departAt`. Inverse: system `setDepartAtCheck`. |
 
 Every applied action:
 1. appends a `LogEntry { id, at, familyId, action, inverse }`;
@@ -148,7 +152,7 @@ Families are identified by id; names may collide. `familyLabel(family, all)` ret
 ```
 meta                 { id (= group slug), name, createdAt, version }
 family:{id}          Family (kids[{id,name,phone?}], cars[{id,label,seats,color?,plate?,photoId?}])
-event:{slug}         EventState (materialized; version; `id` = slug)
+event:{slug}         EventState (materialized; version; `id` = slug; `cancelled?: true`; offers may carry `departAtCheck?: true`)
 log:{eventSlug}:{seq} LogEntry (append-only, zero-padded seq)
 img:{id}             { mime, bytes: ArrayBuffer, createdAt }
 ```
@@ -214,6 +218,8 @@ Result: `https://trempush.<account>.workers.dev`. No card needed for the base ap
 ## 9. M1 notes (as built)
 - `Family.name` = family surname for the "משפחת X" chip.
 - Inverses are action lists and may contain system-only actions (`clearKidPlan`, `restoreOffer`, `setRun`), accepted only with `ctx.system` (set by `undo`).
+- `ErrorCode` also has `event_cancelled` (409, ride action on a cancelled event). System action `setDepartAtCheck { offerId, check }` (inverse only).
+- `EventSummary` carries `cancelled?`, `kidPlans` and `seated: { out, back }` (kid ids) for the group home chip; `EventView` / `KidEventView` carry `cancelled?`.
 - Offer limits (second offer per leg, seats below seated / above car) → `invalid`; kid already on that leg → `seat_taken`. `stale` (version mismatch) is the DO's job.
 - `shared/validate.ts`: `validateFamilyInput`, `validateEventInput`, `buildFamily`, `createEventState`. `shared/index.ts` re-exports all.
 - `bun run typecheck` runs `tsc` per tsconfig (TS 7 + reference-only root checks nothing).

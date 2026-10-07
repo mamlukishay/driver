@@ -2,7 +2,6 @@ import { useState } from "preact/hooks";
 import type { EventView, KidPlan } from "../../shared/types.ts";
 import { LEGS } from "../../shared/types.ts";
 import { Switch } from "../components/Field.tsx";
-import { GapMeter } from "../components/GapMeter.tsx";
 import { Header, whoUrl } from "../components/Header.tsx";
 import { Avatar } from "../components/KidChip.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
@@ -11,7 +10,8 @@ import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { useEvent } from "../store.ts";
 import { appUrl, eventIndex, fmtDate, kidPath } from "../util.ts";
-import { EventHead, runAction, summaryText } from "./eventCommon.tsx";
+import { kidPhonePath, runAction } from "./eventCommon.tsx";
+import { EventFrame, EventHistory } from "./EventFrame.tsx";
 
 export function EventPage({ group, event }: { group: string; event: string }) {
   const res = useEvent(group, event);
@@ -30,9 +30,7 @@ export function EventPage({ group, event }: { group: string; event: string }) {
 function EventBody({ group, ev }: { group: string; ev: EventView }) {
   const mine = ev.families.find((f) => f.id === ev.me);
   return (
-    <>
-      <EventHead group={group} ev={ev} />
-
+    <EventFrame group={group} ev={ev} tab="details">
       <section class="card" aria-labelledby="rsvp-h">
         <h2 class="hs" id="rsvp-h">
           {he.event.myKids}
@@ -51,37 +49,8 @@ function EventBody({ group, ev }: { group: string; ev: EventView }) {
         )}
       </section>
 
-      <section aria-labelledby="legs-h" class="stack">
-        <h2 class="hs" id="legs-h">
-          {he.event.legs}
-        </h2>
-        {LEGS.map((leg) => {
-          const myOffer = ev.offers[leg].find((o) => o.familyId === ev.me);
-          return (
-            <div class="legcard">
-              <a class="leglink" href={`/g/${group}/e/${ev.id}/${leg}`}>
-                <span class="row sp">
-                  <b>
-                    {he.legName[leg]} · <time class="num">{leg === "out" ? ev.start : ev.returnTime}</time>
-                  </b>
-                  <span class="lnk">{he.event.toBoard} ←</span>
-                </span>
-                <GapMeter gap={ev.gaps[leg]} leg={leg} />
-              </a>
-              {myOffer && (
-                <a class="mini" href={`/g/${group}/e/${ev.id}/drive/${leg}`}>
-                  {he.event.driveMode}
-                </a>
-              )}
-            </div>
-          );
-        })}
-      </section>
-
-      <WaButton class="btn dark big" text={summaryText(group, ev)}>
-        {he.event.share}
-      </WaButton>
-    </>
+      <EventHistory ev={ev} />
+    </EventFrame>
   );
 }
 
@@ -99,6 +68,7 @@ function KidRsvp({
   plan: KidPlan | undefined;
 }) {
   const [busy, setBusy] = useState(false);
+  const frozen = !!ev.cancelled;
   const coming = plan?.rsvp === "yes";
   const save = async (next: KidPlan) => {
     setBusy(true);
@@ -115,16 +85,23 @@ function KidRsvp({
       <Switch
         label={he.event.coming}
         checked={coming}
-        disabled={busy}
+        disabled={busy || frozen}
         onChange={(v) => save(v ? { rsvp: "yes", out: true, back: true } : { rsvp: "no", out: false, back: false })}
       />
-      <Switch label={he.event.out} checked={coming && !!plan?.out} disabled={busy || !coming} onChange={(v) => save({ rsvp: "yes", out: v, back: !!plan?.back })} />
-      <Switch label={he.event.back} checked={coming && !!plan?.back} disabled={busy || !coming} onChange={(v) => save({ rsvp: "yes", out: !!plan?.out, back: v })} />
-      {coming && (
-        <WaButton class="btn wa sm" phone={kid.phone} text={kidEventText(group, ev, kid)} label={he.event.sendToKidLabel(kid.name)}>
-          {he.event.sendToKid(kid.name)}
-        </WaButton>
-      )}
+      <Switch label={he.event.out} checked={coming && !!plan?.out} disabled={busy || frozen || !coming} onChange={(v) => save({ rsvp: "yes", out: v, back: !!plan?.back })} />
+      <Switch label={he.event.back} checked={coming && !!plan?.back} disabled={busy || frozen || !coming} onChange={(v) => save({ rsvp: "yes", out: !!plan?.out, back: v })} />
+      {coming &&
+        !frozen &&
+        // KISS: only offer sending when the kid has a phone; otherwise a shortcut to add one.
+        (kid.phone ? (
+          <WaButton class="btn wa sm" phone={kid.phone} text={kidEventText(group, ev, kid)} label={he.event.sendToKidLabel(kid.name)}>
+            {he.event.sendToKid(kid.name)}
+          </WaButton>
+        ) : (
+          <a class="lnk start" href={kidPhonePath(group, kid.id)}>
+            {he.manage.noPhone(kid.name)}
+          </a>
+        ))}
     </div>
   );
 }

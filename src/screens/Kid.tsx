@@ -47,6 +47,7 @@ function KidBody({ group, token, event, v }: { group: string; token: string; eve
   // so only that one gets the button.
   let next: string | null = null;
   for (const e of events) {
+    if (e.cancelled) continue;
     for (const leg of LEGS) {
       const r = e.legs[leg].ride;
       if (!next && r && !r.picked) next = `${e.id}:${leg}`;
@@ -80,7 +81,7 @@ function KidBody({ group, token, event, v }: { group: string; token: string; eve
 
 function KidEvent({ group, token, focused, e, next }: { group: string; token: string; focused: boolean; e: KidEventView; next: string | null }) {
   return (
-    <section class="stack" aria-label={e.title}>
+    <section class={e.cancelled ? "stack is-cancelled" : "stack"} aria-label={e.title}>
       <div class="evh">
         {e.coverImageId && (
           <span class="cov">
@@ -94,7 +95,11 @@ function KidEvent({ group, token, focused, e, next }: { group: string; token: st
           </small>
         </div>
       </div>
-      {focused && e.rsvp !== "yes" ? (
+      {e.cancelled ? (
+        <div class="legc dim" role="status">
+          <b>{he.manage.kidCancelled}</b>
+        </div>
+      ) : focused && e.rsvp !== "yes" ? (
         <div class="legc dim">
           <span class="muted">{e.rsvp === "no" ? he.kid.notComing : he.kid.noRide}</span>
         </div>

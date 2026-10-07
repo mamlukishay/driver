@@ -13,7 +13,8 @@ export type ErrorCode =
   | "feature_off"
   | "too_large"
   | "undo_expired"
-  | "slug_taken";
+  | "slug_taken"
+  | "event_cancelled";
 
 export const ERROR_STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
@@ -26,6 +27,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   too_large: 413,
   undo_expired: 409,
   slug_taken: 409,
+  event_cancelled: 409,
 };
 
 /* ---------- families ---------- */
@@ -158,6 +160,8 @@ export interface Offer {
   /** Kids who tapped "אני מוכן/ה" (subset of kidIds). */
   ready?: string[];
   run?: Run;
+  /** The event's date or this leg's time changed since the driver set `departAt` ("בדקו שעת יציאה"). Absent when false. */
+  departAtCheck?: true;
 }
 
 /** Stored as `event:{id}`; the materialized result of the action log. */
@@ -169,6 +173,8 @@ export interface EventState extends EventInput {
   version: number;
   kidPlans: Record<string, KidPlan>;
   offers: Record<Leg, Offer[]>;
+  /** Set by `cancelEvent` (rides frozen); absent when not cancelled. */
+  cancelled?: true;
 }
 
 export type EventPatch = Partial<Omit<EventInput, "coverImageId">> & {
@@ -189,13 +195,18 @@ export type PublicAction =
   | { type: "setPicked"; offerId: string; kidId: string; picked: boolean }
   | { type: "setKidReady"; offerId: string; kidId: string; ready: boolean }
   | { type: "setArrived"; offerId: string; kidId: string; arrived: boolean }
-  | { type: "editEvent"; patch: EventPatch };
+  /** `prev` is filled in for the log (previous values of the changed fields); ignored on input. */
+  | { type: "editEvent"; patch: EventPatch; prev?: EventPatch }
+  | { type: "cancelEvent" }
+  | { type: "restoreEvent" }
+  | { type: "confirmDeparture"; offerId: string };
 
 /** Only produced as inverses; rejected unless applied with `ctx.system`. */
 export type SystemAction =
   | { type: "clearKidPlan"; kidId: string }
   | { type: "restoreOffer"; leg: Leg; offer: Offer }
-  | { type: "setRun"; offerId: string; run: Run | null };
+  | { type: "setRun"; offerId: string; run: Run | null }
+  | { type: "setDepartAtCheck"; offerId: string; check: boolean };
 
 export type Action = PublicAction | SystemAction;
 export type ActionType = Action["type"];
@@ -248,6 +259,11 @@ export interface EventSummary {
   hostFamilyId: string;
   version: number;
   gaps: Gaps;
+  cancelled?: true;
+  /** For the "my kids" chip on the group home. */
+  kidPlans: Record<string, KidPlan>;
+  /** Kid ids seated per leg. */
+  seated: Record<Leg, string[]>;
 }
 
 /** A family inside an event view (everyone sees everything; kid phone/address only when set). */
@@ -276,6 +292,7 @@ export interface EventView extends EventInput {
   waiting: Record<Leg, string[]>;
   log: LogEntryView[];
   me: string | null;
+  cancelled?: true;
 }
 
 export interface KidRide {
@@ -311,6 +328,7 @@ export interface KidEventView {
   coverImageId?: string;
   rsvp: Rsvp | null;
   legs: Record<Leg, KidLegView>;
+  cancelled?: true;
 }
 
 export interface KidView {

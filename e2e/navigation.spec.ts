@@ -59,12 +59,14 @@ test("every screen has its own URL", async () => {
   await expect(page).toHaveURL(/\/out$/);
 });
 
-test("back and forward move between event, leg board and drive mode", async () => {
+test("back and forward move between group, event tabs and drive mode", async () => {
   const { page } = user;
-  const { eventUrl } = scene;
+  const { eventUrl, groupId } = scene;
   const path = () => new URL(page.url()).pathname;
 
-  // event -> board (out)
+  // group -> event -> (tab, a replace) board (out)
+  await page.goto(`/g/${groupId}`);
+  await page.getByRole("link", { name: new RegExp(EVENT_TITLE) }).click();
   await expect(page).toHaveURL(new RegExp(`${eventUrl}$`));
   await page.getByRole("link", { name: new RegExp(he.legName.out) }).first().click();
   await expect(page).toHaveURL(new RegExp(`${eventUrl}/out$`));
@@ -76,15 +78,14 @@ test("back and forward move between event, leg board and drive mode", async () =
   await expect(page).toHaveURL(new RegExp(`${eventUrl}/drive/out$`));
   await expect(page.getByRole("heading", { level: 1, name: he.drive.title("out") })).toBeVisible();
 
-  // back: drive -> board -> event. The offer sheet did not leave a stale entry behind.
+  // back: drive -> board -> group (tabs replace, so they don't pile up). The offer sheet left no stale entry.
   await page.goBack();
   await expect.poll(path).toBe(`${eventUrl}/out`);
   await expect(page.getByRole("heading", { level: 1, name: `${EVENT_TITLE} · ${he.legName.out}` })).toBeVisible();
   await page.goBack();
-  await expect.poll(path).toBe(eventUrl);
-  await expect(page.getByRole("heading", { level: 1, name: EVENT_TITLE })).toBeVisible();
+  await expect.poll(path).toBe(`/g/${groupId}`);
 
-  // forward: event -> board -> drive
+  // forward: group -> board -> drive
   await page.goForward();
   await expect.poll(path).toBe(`${eventUrl}/out`);
   await expect(page.getByRole("heading", { level: 1, name: `${EVENT_TITLE} · ${he.legName.out}` })).toBeVisible();
@@ -95,6 +96,24 @@ test("back and forward move between event, leg board and drive mode", async () =
   // The in-app back button walks history too (same result as the browser's back).
   await page.getByRole("button", { name: he.common.back }).click();
   await expect.poll(path).toBe(`${eventUrl}/out`);
+});
+
+test("the header back arrow goes up the hierarchy without in-app history", async () => {
+  const { page } = user;
+  const { eventUrl, groupId } = scene;
+  const path = () => new URL(page.url()).pathname;
+  await page.goto("/");
+  for (const [from, up] of [
+    // (Each start differs from where the previous step landed, so `goto` is a fresh entry.)
+    [eventUrl, `/g/${groupId}`],
+    [`${eventUrl}/back`, eventUrl],
+    [`${eventUrl}/invite`, eventUrl],
+    [`/g/${groupId}`, "/"],
+  ] as const) {
+    await page.goto(from);
+    await page.getByRole("button", { name: he.common.back }).click();
+    await expect.poll(path, from).toBe(up);
+  }
 });
 
 test("a sheet pushes ?sheet= and back closes it without leaving the board", async () => {
@@ -120,8 +139,6 @@ test("a sheet pushes ?sheet= and back closes it without leaving the board", asyn
   await dialog.getByRole("button", { name: he.common.close }).click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(board);
-  await page.goBack();
-  await expect(page).toHaveURL(new RegExp(`${eventUrl}$`));
 
   // A reload on an open sheet keeps it open (the sheet lives in the URL).
   await page.goto(`${eventUrl}/out?sheet=car`);

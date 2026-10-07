@@ -14,7 +14,8 @@ import type {
   WsMessage,
 } from "../shared/types.ts";
 import { FAMILY_ID_HEADER, LEGS, MAX_IMAGE_BYTES } from "../shared/types.ts";
-import { applyAction, undo } from "../shared/actions.ts";
+import { applyAction, loggedAction, undo } from "../shared/actions.ts";
+import { shownOnGroupHome } from "../shared/dates.ts";
 import type { ActionCtx } from "../shared/actions.ts";
 import { eventSummary, familyPrivate, familyPublic, kidView, LOG_TAIL, viewFor } from "../shared/view.ts";
 import {
@@ -185,7 +186,8 @@ export class GroupDO extends DurableObject<Env> {
     const meta = await this.meta();
     const [families, events] = await Promise.all([this.families(), this.events()]);
     const today = todayIL();
-    const summaries = events.map(eventSummary);
+    // Past events drop off the list 30 days after their date (the data and direct links stay).
+    const summaries = events.filter((e) => shownOnGroupHome(e.date, today)).map(eventSummary);
     const key = (e: { date: string; start: string }) => e.date + e.start;
     const upcoming = summaries.filter((e) => e.date >= today).sort((a, b) => key(a).localeCompare(key(b)));
     const past = summaries.filter((e) => e.date < today).sort((a, b) => key(b).localeCompare(key(a)));
@@ -294,7 +296,7 @@ export class GroupDO extends DurableObject<Env> {
       eventId,
       at: now,
       familyId: family.id,
-      action: action as unknown as Action,
+      action: loggedAction(action as unknown as Action, result.inverse),
       inverse: result.inverse,
     };
     await this.ctx.storage.put({ [`event:${eventId}`]: result.state, [logKey(eventId, entry.id)]: entry });

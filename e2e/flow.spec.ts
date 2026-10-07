@@ -84,7 +84,8 @@ test("main flow: two families, live seating, undo, driver phones, shared contact
     await a.page.getByRole("link", { name: new RegExp(he.legName.back) }).click();
     await expect(a.page).toHaveURL(/\/back$/);
     await expect(waitingSection(a.page, "back").getByRole("button", { name: A.kid })).toBeVisible();
-    await a.page.goBack();
+    // Tabs replace the history entry, so switching back is another tab tap (not browser back).
+    await a.page.getByRole("link", { name: new RegExp(he.legName.out) }).click();
     await expect(a.page).toHaveURL(/\/out$/);
 
     // --- A seats again ---

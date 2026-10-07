@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { applyAction, undo, type ActionCtx, type ApplyResult } from "./actions.ts";
+import { applyAction, loggedAction, undo, type ActionCtx, type ApplyResult } from "./actions.ts";
 import type { Action, EventState, LogEntry } from "./types.ts";
 import { baseEvent, ctx, deepFreeze } from "./test/fixtures.ts";
 
@@ -276,14 +276,112 @@ describe("setArrived", () => {
 });
 
 describe("editEvent", () => {
-  test("host only; validates fields", () => {
-    const s = ok(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "  New  title ", start: "11:00" } }, "fama", NOW));
+  test("any family; validates fields; slug never changes", () => {
+    const s = ok(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "  New  title ", start: "11:00", date: "2026-10-21" } }, "famb", NOW));
     expect(s.title).toBe("New title");
     expect(s.start).toBe("11:00");
-    expect(err(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "x" } }, "famb", NOW))).toBe("forbidden");
+    expect(s.id).toBe("ev1");
+    expect(err(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "x" } }, "nobody", NOW))).toBe("forbidden");
     expect(err(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { date: "2026-02-30" } }, "fama", NOW))).toBe("invalid");
+    expect(err(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { start: "25:00" } }, "fama", NOW))).toBe("invalid");
+    // Nothing actually changed.
+    expect(err(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "Party", start: "10:00" } }, "fama", NOW))).toBe("invalid");
     expect(err(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "" } }, "fama", NOW))).toBe("invalid");
     expect(err(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { hostFamilyId: "famb" } as never }, "fama", NOW))).toBe("invalid");
+  });
+
+  test("the log entry keeps only changed fields, with old values", () => {
+    const a: Action = { type: "editEvent", patch: { title: "Party", start: "10:30", place: "Park" } };
+    const r = applyAction(baseEvent(), ctx(), a, "famc", NOW);
+    if (!r.ok) throw new Error(r.error);
+    expect(loggedAction(a, r.inverse)).toEqual({ type: "editEvent", patch: { start: "10:30", place: "Park" }, prev: { start: "10:00", place: "Hall" } });
+    // Other actions are logged as sent.
+    const seatA: Action = { type: "seatKid", offerId: "o1", kidId: "a1" };
+    expect(loggedAction(seatA, [])).toBe(seatA);
+  });
+
+  test("start/date flag out cars, returnTime/date flag back cars", () => {
+    const before = run([offerA("out"), offerB("back")]);
+    const start = ok(applyAction(before, ctx(), { type: "editEvent", patch: { start: "10:30" } }, "famc", NOW));
+    expect(start.offers.out[0]!.departAtCheck).toBe(true);
+    expect(start.offers.back[0]!.departAtCheck).toBeUndefined();
+    const ret = ok(applyAction(before, ctx(), { type: "editEvent", patch: { returnTime: "14:00" } }, "famc", NOW));
+    expect(ret.offers.out[0]!.departAtCheck).toBeUndefined();
+    expect(ret.offers.back[0]!.departAtCheck).toBe(true);
+    const date = ok(applyAction(before, ctx(), { type: "editEvent", patch: { date: "2026-10-22" } }, "famc", NOW));
+    expect(date.offers.out[0]!.departAtCheck).toBe(true);
+    expect(date.offers.back[0]!.departAtCheck).toBe(true);
+    const title = ok(applyAction(before, ctx(), { type: "editEvent", patch: { title: "Renamed" } }, "famc", NOW));
+    expect(title.offers.out[0]!.departAtCheck).toBeUndefined();
+  });
+
+  test("undo restores fields and flags", () => {
+    const before = run([offerA("out"), offerB("back")]);
+    const { after, entry } = logged(before, "famc", { type: "editEvent", patch: { date: "2026-10-22", start: "08:00" } });
+    expect(body(ok(undo(after, ctx(), entry, "famc", NOW)))).toEqual(body(before));
+  });
+});
+
+describe("departure check", () => {
+  const flagged = () => run([offerA("out"), ["famc", { type: "editEvent", patch: { start: "10:30" } }]]);
+
+  test("confirmDeparture: owner only, clears the flag, undoable", () => {
+    const s = flagged();
+    expect(err(applyAction(s, ctx(), { type: "confirmDeparture", offerId: "o1" }, "famb", NOW))).toBe("forbidden");
+    const { after, entry } = logged(s, "fama", { type: "confirmDeparture", offerId: "o1" });
+    expect(after.offers.out[0]!.departAtCheck).toBeUndefined();
+    expect(err(applyAction(after, ctx(), { type: "confirmDeparture", offerId: "o1" }, "fama", NOW))).toBe("invalid");
+    expect(body(ok(undo(after, ctx(), entry, "fama", NOW)))).toEqual(body(s));
+  });
+
+  test("updating departAt clears it (seats alone don't); undo brings it back", () => {
+    const s = flagged();
+    expect(ok(applyAction(s, ctx(), { type: "updateOffer", offerId: "o1", seats: 3 }, "fama", NOW)).offers.out[0]!.departAtCheck).toBe(true);
+    const { after, entry } = logged(s, "fama", { type: "updateOffer", offerId: "o1", departAt: "09:50" });
+    expect(after.offers.out[0]!.departAtCheck).toBeUndefined();
+    expect(body(ok(undo(after, ctx(), entry, "fama", NOW)))).toEqual(body(s));
+  });
+
+  test("setDepartAtCheck is system-only", () => {
+    expect(err(applyAction(flagged(), ctx(), { type: "setDepartAtCheck", offerId: "o1", check: false }, "fama", NOW))).toBe("forbidden");
+  });
+});
+
+describe("cancel / restore", () => {
+  test("any family; cancelling twice or restoring a live event is invalid; undoable", () => {
+    const before = run([offerA()]);
+    const { after, entry } = logged(before, "famd", { type: "cancelEvent" });
+    expect(after.cancelled).toBe(true);
+    expect(err(applyAction(after, ctx(), { type: "cancelEvent" }, "famb", NOW))).toBe("invalid");
+    expect(err(applyAction(before, ctx(), { type: "restoreEvent" }, "famb", NOW))).toBe("invalid");
+    expect(body(ok(undo(after, ctx(), entry, "famd", NOW)))).toEqual(body(before));
+    const restored = ok(applyAction(after, ctx(), { type: "restoreEvent" }, "famb", NOW));
+    expect(restored.cancelled).toBeUndefined();
+    expect(body(restored)).toEqual(body(before));
+  });
+
+  test("every ride action is rejected while cancelled; editing still works", () => {
+    const s = run([offerA("out"), seat("fama", "o1", "a1"), ["famc", { type: "editEvent", patch: { start: "10:30" } }], ["famb", { type: "cancelEvent" }]]);
+    const blocked: [string, Action][] = [
+      ["famb", { type: "setKidPlan", kidId: "b1", rsvp: "no", out: false, back: false }],
+      ["famb", { type: "offerCar", leg: "out", carId: "carb", seats: 2, departAt: "09:00" }],
+      ["fama", { type: "updateOffer", offerId: "o1", seats: 3 }],
+      ["fama", { type: "removeOffer", offerId: "o1" }],
+      ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],
+      ["fama", { type: "unseatKid", offerId: "o1", kidId: "a1" }],
+      ["fama", { type: "startRun", offerId: "o1" }],
+      ["fama", { type: "setKidReady", offerId: "o1", kidId: "a1", ready: true }],
+      ["fama", { type: "confirmDeparture", offerId: "o1" }],
+    ];
+    for (const [actor, a] of blocked) expect(err(applyAction(s, ctx(), a, actor, NOW))).toBe("event_cancelled");
+    expect(ok(applyAction(s, ctx(), { type: "editEvent", patch: { title: "Later" } }, "famb", NOW)).title).toBe("Later");
+  });
+
+  test("an earlier ride action can still be undone while cancelled", () => {
+    const before = run([offerA()]);
+    const { after, entry } = logged(before, "famb", { type: "seatKid", offerId: "o1", kidId: "b1" });
+    const cancelled = run([["famc", { type: "cancelEvent" }]], after);
+    expect(ok(undo(cancelled, ctx(), entry, "famb", NOW)).offers.out[0]!.kidIds).toEqual([]);
   });
 });
 

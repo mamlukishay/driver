@@ -49,8 +49,11 @@ export function eventSummary(state: EventState): EventSummary {
     hostFamilyId: state.hostFamilyId,
     version: state.version,
     gaps: gapsFor(state),
+    kidPlans: Object.fromEntries(Object.entries(state.kidPlans).map(([k, p]) => [k, { ...p }])),
+    seated: { out: state.offers.out.flatMap((o) => o.kidIds), back: state.offers.back.flatMap((o) => o.kidIds) },
   };
   if (state.coverImageId) s.coverImageId = state.coverImageId;
+  if (state.cancelled) s.cancelled = true;
   return s;
 }
 
@@ -115,6 +118,7 @@ export function viewFor(
     me,
   };
   if (state.coverImageId) view.coverImageId = state.coverImageId;
+  if (state.cancelled) view.cancelled = true;
   return view;
 }
 
@@ -236,6 +240,7 @@ export function kidView(
         legs: { out: legView(e, "out"), back: legView(e, "back") },
       };
       if (e.coverImageId) v.coverImageId = e.coverImageId;
+      if (e.cancelled) v.cancelled = true;
       return v;
     });
 

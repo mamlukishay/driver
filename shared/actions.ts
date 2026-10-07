@@ -168,6 +168,42 @@ const isSeats = (n: unknown): n is number => Number.isInteger(n) && (n as number
 const isLeg = (l: unknown): l is Leg => l === "out" || l === "back";
 const isStr = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 64;
 
+/** Actions rejected with `event_cancelled` while the event is cancelled. */
+const RIDE_ACTIONS: ReadonlySet<string> = new Set([
+  "setKidPlan",
+  "offerCar",
+  "updateOffer",
+  "removeOffer",
+  "seatKid",
+  "unseatKid",
+  "startRun",
+  "setPicked",
+  "setArrived",
+  "setKidReady",
+  "confirmDeparture",
+]);
+
+/** Which legs' offers need "בדקו שעת יציאה" after an edit touching these fields. */
+function legsTouched(changed: readonly string[]): Leg[] {
+  const legs: Leg[] = [];
+  if (changed.includes("date") || changed.includes("start")) legs.push("out");
+  if (changed.includes("date") || changed.includes("returnTime")) legs.push("back");
+  return legs;
+}
+
+/**
+ * The action as it goes into the log. `editEvent` keeps only the fields that changed and gains
+ * `prev` (their old values), so history and the "עודכן" banner can say "10:00 → 10:30".
+ */
+export function loggedAction(action: Action, inverse: Inverse): Action {
+  if (action.type !== "editEvent") return action;
+  const inv = inverse.find((x): x is Extract<Action, { type: "editEvent" }> => x.type === "editEvent");
+  if (!inv) return action;
+  const patch: EventPatch = {};
+  for (const k of Object.keys(inv.patch) as (keyof EventPatch)[]) (patch as Record<string, unknown>)[k] = action.patch[k];
+  return { type: "editEvent", patch, prev: { ...inv.patch } };
+}
+
 /* ---------- the reducer step (mutates the clone) ---------- */
 
 function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: number): StepResult {
@@ -176,6 +212,8 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
   if (!actorFamily && !sys) return fail("forbidden");
   if (!a || typeof a !== "object") return fail("invalid");
   const ownsKid = (kidId: string) => !!actorFamily?.kids.some((k) => k.id === kidId);
+  // A cancelled event freezes its rides (undo replays run with `system` and stay allowed).
+  if (!sys && s.cancelled && RIDE_ACTIONS.has(a.type)) return fail("event_cancelled");
 
   switch (a.type) {
     case "setKidPlan": {
@@ -237,11 +275,51 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
         inv.seats = offer.seats;
         offer.seats = a.seats;
       }
+      const inverse: Inverse = [inv];
       if (a.departAt !== undefined) {
         inv.departAt = offer.departAt;
         offer.departAt = a.departAt;
+        // The driver looked at the time again: the "בדקו שעת יציאה" flag is done.
+        if (offer.departAtCheck) {
+          delete offer.departAtCheck;
+          inverse.push({ type: "setDepartAtCheck", offerId: offer.id, check: true });
+        }
       }
-      return { ok: true, inverse: [inv] };
+      return { ok: true, inverse };
+    }
+
+    case "confirmDeparture": {
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      if (!sys && offer.familyId !== actor) return fail("forbidden");
+      if (!offer.departAtCheck) return fail("invalid");
+      delete offer.departAtCheck;
+      return { ok: true, inverse: [{ type: "setDepartAtCheck", offerId: offer.id, check: true }] };
+    }
+
+    case "setDepartAtCheck": {
+      if (!sys) return fail("forbidden");
+      if (typeof a.check !== "boolean") return fail("invalid");
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      const was = !!offer.departAtCheck;
+      if (a.check) offer.departAtCheck = true;
+      else delete offer.departAtCheck;
+      return { ok: true, inverse: [{ type: "setDepartAtCheck", offerId: offer.id, check: was }] };
+    }
+
+    case "cancelEvent": {
+      if (s.cancelled) return fail("invalid");
+      s.cancelled = true;
+      return { ok: true, inverse: [{ type: "restoreEvent" }] };
+    }
+
+    case "restoreEvent": {
+      if (!s.cancelled) return fail("invalid");
+      delete s.cancelled;
+      return { ok: true, inverse: [{ type: "cancelEvent" }] };
     }
 
     case "removeOffer": {
@@ -369,7 +447,7 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
     }
 
     case "editEvent": {
-      if (!sys && s.hostFamilyId !== actor) return fail("forbidden");
+      // Any family may edit (trust model: logged and undoable). The slug never changes.
       const patch = a.patch;
       if (!patch || typeof patch !== "object") return fail("invalid");
       const keys = Object.keys(patch) as (keyof EventPatch)[];
@@ -383,23 +461,27 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
           case "address": {
             const v = cleanText(value, key === "address" ? 200 : 100);
             if (v === null || (key === "title" && v === "")) return fail("invalid");
+            if (v === s[key]) break;
             inv[key] = s[key];
             s[key] = v;
             break;
           }
           case "date":
             if (!isDate(value)) return fail("invalid");
+            if (value === s.date) break;
             inv.date = s.date;
             s.date = value;
             break;
           case "start":
           case "returnTime":
             if (!isTime(value)) return fail("invalid");
+            if (value === s[key]) break;
             inv[key] = s[key];
             s[key] = value;
             break;
           case "coverImageId":
             if (value !== null && !isStr(value)) return fail("invalid");
+            if ((value ?? undefined) === s.coverImageId) break;
             inv.coverImageId = s.coverImageId ?? null;
             if (value === null) delete s.coverImageId;
             else s.coverImageId = value;
@@ -408,7 +490,18 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
             return fail("invalid");
         }
       }
-      return { ok: true, inverse: [{ type: "editEvent", patch: inv }] };
+      const changed = Object.keys(inv);
+      // Nothing changed: a mistake from a client, but a harmless no-op when replaying an undo.
+      if (changed.length === 0) return sys ? { ok: true, inverse: [] } : fail("invalid");
+      const inverse: Inverse = [{ type: "editEvent", patch: inv }];
+      // Drivers' times don't move on their own; flag every car on a leg whose time may have moved.
+      for (const leg of legsTouched(changed)) {
+        for (const o of s.offers[leg]) {
+          if (!o.departAtCheck) inverse.push({ type: "setDepartAtCheck", offerId: o.id, check: false });
+          o.departAtCheck = true;
+        }
+      }
+      return { ok: true, inverse };
     }
 
     default:

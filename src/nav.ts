@@ -113,6 +113,18 @@ export function useBack(up: string): () => void {
   };
 }
 
+/**
+ * Swaps the current entry for `url` (event tabs, one sheet for another). The entry keeps its key and
+ * `prev`, so back still leaves the screen the way it was entered instead of walking through tabs.
+ */
+export function useReplace(): (url: string) => void {
+  const { route } = useLocation();
+  return (url: string) => {
+    pendingReplace = state();
+    route(url, true);
+  };
+}
+
 /* ---------- sheets ---------- */
 
 export function withQuery(path: string, q: Record<string, string | undefined>): string {
@@ -136,7 +148,12 @@ export function useSheet() {
       loc.route(loc.path, true);
     }
   };
-  return { name, query: loc.query, open, close };
+  /** Replaces the open sheet with another (back then closes it instead of returning to the first). */
+  const swap = (sheet: string, params: Record<string, string | undefined> = {}) => {
+    pendingReplace = state();
+    loc.route(withQuery(loc.path, { sheet, ...params }), true);
+  };
+  return { name, query: loc.query, open, close, swap };
 }
 
 /** Remembers the element that opened a sheet so focus can return to it. */
