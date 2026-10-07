@@ -1,3 +1,4 @@
+import { aiReplyPayload } from "../shared/aiReply.ts";
 import { parseInviteReply } from "../shared/inviteParse.ts";
 import type { InviteParseResponse } from "../shared/types.ts";
 import type { StoredImage } from "./images.ts";
@@ -71,14 +72,6 @@ const INVITE_JSON_SCHEMA = {
   },
   required: ["title", "date", "times", "place", "address"],
 };
-
-/** Pulls the generated text (or already-parsed JSON object) out of the shapes Workers AI text models return. */
-function aiReplyPayload(out: unknown): unknown {
-  if (typeof out === "string") return out;
-  if (typeof out !== "object" || out === null) return null;
-  const o = out as { response?: unknown; choices?: { message?: { content?: unknown } }[] };
-  return o.response ?? o.choices?.[0]?.message?.content ?? null;
-}
 
 /**
  * Reads an invitation image with Workers AI (free default). Never throws: an empty result means "fill it in by hand".

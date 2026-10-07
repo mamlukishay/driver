@@ -28,13 +28,15 @@ import { byCreation, safeNext } from "./Who.tsx";
 export function useConfig() {
   const [places, setPlaces] = useState(false);
   const [inviteParse, setInviteParse] = useState(false);
+  const [slugSuggest, setSlugSuggest] = useState(false);
   useEffect(() => {
     void api.getConfig().then((c) => {
       setPlaces(c.features.places);
       setInviteParse(c.features.inviteParse);
+      setSlugSuggest(Boolean(c.features.slugSuggest));
     });
   }, []);
-  return { places, inviteParse };
+  return { places, inviteParse, slugSuggest };
 }
 
 /** This device's family in another group, to copy into the registration form. */

@@ -345,7 +345,11 @@ export interface ErrorResponse {
   error: ErrorCode;
 }
 export interface ConfigResponse {
-  features: { places: boolean; routes: boolean; inviteParse: boolean };
+  features: { places: boolean; routes: boolean; inviteParse: boolean; slugSuggest: boolean };
+}
+/** `POST /api/groups/suggest-slug` reply: a free English URL name for the group, when the AI came up with one. */
+export interface SuggestSlugResponse {
+  slug?: string;
 }
 export interface CreateGroupRequest {
   name: string;

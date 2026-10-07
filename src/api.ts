@@ -14,6 +14,7 @@ import type {
   PlacesResponse,
   PublicAction,
   RegisterFamilyResponse,
+  SuggestSlugResponse,
   UndoResponse,
   UpdateGroupRequest,
   UpdateGroupResponse,
@@ -40,6 +41,7 @@ interface ReqOpts {
   raw?: Blob;
   /** Group whose identity (family id) to attach. */
   group?: string;
+  signal?: AbortSignal;
 }
 
 async function req<T>(path: string, o: ReqOpts = {}): Promise<T> {
@@ -56,7 +58,7 @@ async function req<T>(path: string, o: ReqOpts = {}): Promise<T> {
   }
   let res: Response;
   try {
-    res = await fetch(path, { method: o.method ?? (body ? "POST" : "GET"), headers, body });
+    res = await fetch(path, { method: o.method ?? (body ? "POST" : "GET"), headers, body, signal: o.signal });
   } catch {
     throw new ApiError("network");
   }
@@ -98,7 +100,7 @@ export const api = {
     if (!configPromise) {
       configPromise = req<ConfigResponse>("/api/config").catch(() => {
         configPromise = null;
-        return { features: { places: false, routes: false, inviteParse: false } };
+        return { features: { places: false, routes: false, inviteParse: false, slugSuggest: false } };
       });
     }
     return configPromise;
@@ -106,6 +108,9 @@ export const api = {
 
   createGroup: (name: string, slug: string, whatsappUrl?: string) =>
     req<CreateGroupResponse>("/api/groups", { body: whatsappUrl ? { name, slug, whatsappUrl } : { name, slug } }),
+
+  /** An English URL name for a (Hebrew) group name, from Workers AI; `{}` when it has none. */
+  suggestSlug: (name: string, signal?: AbortSignal) => req<SuggestSlugResponse>("/api/groups/suggest-slug", { body: { name }, signal }),
 
   /** A 404 for a group this device has a family in means it was deleted: forget it here. */
   getGroup: (group: string) =>

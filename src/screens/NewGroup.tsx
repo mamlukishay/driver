@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { isSlug, slugify, suggestGroupSlug } from "../../shared/slug.ts";
 import { normalizeWaGroupUrl } from "../../shared/whatsapp.ts";
 import { Field } from "../components/Field.tsx";
@@ -9,6 +9,7 @@ import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { clearGroupDeleted } from "../identity.ts";
 import { appUrl } from "../util.ts";
+import { useConfig } from "./Join.tsx";
 
 /** Typing helper: lowercase, spaces → hyphens, drop anything not URL-safe (keeps a trailing hyphen while typing). */
 const cleanSlugInput = (v: string) =>
@@ -18,6 +19,9 @@ const cleanSlugInput = (v: string) =>
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-{2,}/g, "-")
     .slice(0, 40);
+
+/** Quiet time after the last name keystroke before asking the AI for an English URL name. */
+const SUGGEST_DEBOUNCE_MS = 500;
 
 export function NewGroup() {
   const [name, setName] = useState("");
@@ -31,16 +35,60 @@ export function NewGroup() {
   const [wa, setWa] = useState("");
   const [waErr, setWaErr] = useState<string | null>(null);
 
+  const { slugSuggest } = useConfig();
+  const [suggesting, setSuggesting] = useState(false);
+  // Debounced AI suggestion for names without usable Latin (Hebrew): the pending timer / request, the latest name,
+  // and the last slug the AI gave (kept while the name changes, until a new one arrives).
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inflight = useRef<AbortController | null>(null);
+  const latestName = useRef("");
+  const aiSlug = useRef<string | null>(null);
+
+  const cancelSuggest = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    inflight.current?.abort();
+    inflight.current = null;
+    setSuggesting(false);
+  };
+  useEffect(() => cancelSuggest, []);
+
+  const askSuggestion = (v: string) => {
+    const ctrl = new AbortController();
+    inflight.current = ctrl;
+    setSuggesting(true);
+    api
+      .suggestSlug(v.trim(), ctrl.signal)
+      .then((r) => {
+        if (inflight.current !== ctrl || latestName.current !== v || !r.slug) return;
+        aiSlug.current = r.slug;
+        setSlug(r.slug);
+      })
+      .catch(() => {
+        /* no suggestion: keep the fallback */
+      })
+      .finally(() => {
+        if (inflight.current !== ctrl) return;
+        inflight.current = null;
+        setSuggesting(false);
+      });
+  };
+
   const onName = (v: string) => {
     setName(v);
     setErr(null);
-    // Follow the name until the user edits the URL name; keep the random fallback stable.
+    latestName.current = v;
+    // Follow the name until the user edits the URL name; keep the random fallback (or the AI's slug) stable.
     if (!slugTouched) {
       const s = slugify(v);
-      setSlug(isSlug(s) ? s : slug.startsWith("group-") ? slug : suggestGroupSlug(v));
+      const keep = slug.startsWith("group-") || slug === aiSlug.current;
+      setSlug(isSlug(s) ? s : keep ? slug : suggestGroupSlug(v));
+      cancelSuggest();
+      if (slugSuggest && v.trim() && !isSlug(s)) timer.current = setTimeout(() => askSuggestion(v), SUGGEST_DEBOUNCE_MS);
     }
   };
   const onSlug = (v: string) => {
+    cancelSuggest();
     const c = cleanSlugInput(v);
     setSlug(c);
     setSlugTouched(true);
@@ -123,8 +171,12 @@ export function NewGroup() {
             dir="ltr"
             autoComplete="off"
             maxLength={40}
+            busy={suggesting}
             onInput={onSlug}
           >
+            <span class="vh" role="status">
+              {suggesting ? he.newGroup.suggestingSlug : ""}
+            </span>
             {suggestion && (
               <button type="button" class="lnk" onClick={() => onSlug(suggestion)}>
                 {he.newGroup.useSuggestion(suggestion)}
