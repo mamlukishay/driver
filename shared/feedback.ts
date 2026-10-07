@@ -38,6 +38,8 @@ export interface FeedbackInput {
   audioId?: string;
   /** Transcript returned by the audio upload, echoed back so the issue can show it. */
   transcript?: string;
+  /** Recording length in whole seconds (client-measured); kept only with `audioId`. Shown on the issue's player card. */
+  audioSeconds?: number;
   screenshotId?: string;
   context: FeedbackContext;
 }
@@ -142,6 +144,9 @@ export function validateFeedback(body: unknown): FeedbackValidated {
     const t = stripControl(body.transcript).slice(0, FEEDBACK_MAX_TRANSCRIPT);
     if (t) value.transcript = t;
   }
+  if (value.audioId && typeof body.audioSeconds === "number" && Number.isFinite(body.audioSeconds)) {
+    value.audioSeconds = Math.min(FEEDBACK_MAX_RECORD_SECONDS + 5, Math.max(0, Math.round(body.audioSeconds)));
+  }
   if (!value.text && !value.audioId) return bad;
   return { ok: true, value };
 }
@@ -151,8 +156,8 @@ export function validateFeedback(body: unknown): FeedbackValidated {
 export const KIND_LABEL_HE: Record<FeedbackKind, string> = { improve: "לשיפור", keep: "לשימור" };
 const VOICE_HE = "הקלטה קולית";
 
-export function issueTitle(f: Pick<FeedbackInput, "kind" | "text">): string {
-  const first = f.text.replace(/\s+/g, " ").trim();
+export function issueTitle(f: Pick<FeedbackInput, "kind" | "text" | "transcript">): string {
+  const first = f.text.replace(/\s+/g, " ").trim() || (f.transcript ?? "").replace(/\s+/g, " ").trim();
   const head = first ? (first.length > 60 ? `${first.slice(0, 60)}…` : first) : VOICE_HE;
   return `[${KIND_LABEL_HE[f.kind]}] ${head}`;
 }
@@ -161,15 +166,30 @@ export const issueLabels = (kind: FeedbackKind): string[] => ["feedback", kind];
 
 /** Escapes a value for a markdown table cell. */
 const cell = (s: string) => s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n/g, " ");
-/** Quotes user text as a blockquote so headings/HTML in it can't restructure the issue. */
+/**
+ * Quotes user text as a blockquote so headings/HTML in it can't restructure the issue, inside a right-to-left
+ * div (Hebrew). `<` is escaped, so nothing in the text can open or close a tag; the blank lines around the
+ * markdown keep GitHub rendering it as markdown inside the HTML block.
+ */
 const quote = (s: string) =>
-  s
-    .split("\n")
-    .map((l) => `> ${l.replace(/</g, "&lt;")}`)
-    .join("\n");
+  [
+    '<div dir="rtl">',
+    "",
+    s
+      .split("\n")
+      .map((l) => `> ${l.replace(/</g, "&lt;")}`)
+      .join("\n"),
+    "",
+    "</div>",
+  ].join("\n");
 
 export interface IssueLinks {
+  /** Raw recording bytes (download fallback). */
   audioUrl?: string;
+  /** SVG image that looks like an audio player (`…/audio/:id/card.svg?s=…`). */
+  audioCardUrl?: string;
+  /** Tiny page with an `<audio>` element (`…/audio/:id/play`); the card links here. */
+  audioPlayerUrl?: string;
   screenshotUrl?: string;
 }
 
@@ -192,9 +212,16 @@ const CONTEXT_ROWS: [keyof FeedbackContext, string][] = [
 export function issueBody(r: Pick<FeedbackRecord, "id" | "kind" | "text" | "transcript" | "context">, links: IssueLinks = {}): string {
   const out: string[] = [];
   out.push(`**${KIND_LABEL_HE[r.kind]}** (${r.kind})`, "");
-  out.push(r.text ? quote(r.text) : "_(no text)_", "");
-  if (r.transcript) out.push("### Transcript", "", quote(r.transcript), "");
-  if (links.audioUrl) out.push(`🎙️ [Audio recording](${links.audioUrl})`, "");
+  const hasVoice = !!(r.transcript || links.audioUrl || links.audioPlayerUrl);
+  if (r.text) out.push(quote(r.text), "");
+  else if (!hasVoice) out.push("_(no text)_", "");
+  if (hasVoice) {
+    out.push("### 🎙️ Voice recording (transcript)", "");
+    out.push(r.transcript ? quote(r.transcript) : "_(transcription unavailable)_", "");
+    if (links.audioPlayerUrl && links.audioCardUrl) out.push(`[![▶ Play recording](${links.audioCardUrl})](${links.audioPlayerUrl})`);
+    if (links.audioUrl) out.push(`<sub>[download](${links.audioUrl})</sub>`);
+    if (links.audioUrl || links.audioPlayerUrl) out.push("");
+  }
   if (links.screenshotUrl) out.push("### Screenshot", "", `![screenshot](${links.screenshotUrl})`, "");
   out.push("<details><summary>Context</summary>", "", "| Field | Value |", "| --- | --- |");
   for (const [k, label] of CONTEXT_ROWS) {
