@@ -7,6 +7,7 @@ import { useBack } from "../nav.ts";
 import { api } from "../api.ts";
 import { keys, useResource } from "../store.ts";
 import { famColor, famLabel, useForce } from "../util.ts";
+import { Logo } from "./Logo.tsx";
 
 /** This device's family id for the group (re-renders on change). */
 export function useIdentity(group: string | undefined): string | null {
@@ -74,7 +75,7 @@ export function Header({ title, up, group, noChip, groupLine, crumb, children }:
             </svg>
           </button>
         ) : (
-          <span class="brand-dot" aria-hidden="true" />
+          <Logo class="brand" size={30} />
         )}
         {crumb || (groupLine && group) ? (
           <div class="attl-w">

@@ -209,21 +209,11 @@ mark {
 .bk:hover {
   background: var(--sunk);
 }
-.brand-dot {
-  inline-size: 22px;
-  block-size: 8px;
-  border-radius: 3px;
-  background: var(--asphalt);
-  position: relative;
+/* The app mark (components/Logo.tsx) on root screens, where the back arrow would be. */
+.brand {
+  display: block;
   flex: none;
-}
-.brand-dot::after {
-  content: "";
-  position: absolute;
-  inset-inline: 4px;
-  inset-block-start: 3px;
-  block-size: 2px;
-  background: var(--accent);
+  margin-inline-end: 2px;
 }
 .who {
   display: inline-flex;
