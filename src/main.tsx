@@ -1,12 +1,8 @@
 import { render } from "preact";
+import { App } from "./app.tsx";
+import { initHistory } from "./nav.ts";
+import "./styles/tokens.css";
+import "./styles/app.css";
 
-function App() {
-  return (
-    <main>
-      <h1>טרמפוש</h1>
-      <p>בקרוב: הסעות משותפות לאירועים.</p>
-    </main>
-  );
-}
-
+initHistory();
 render(<App />, document.getElementById("app")!);

@@ -1,0 +1,334 @@
+/** Registration / profile form: family name, parents + phones, address, kids, cars. */
+import { useEffect, useRef, useState } from "preact/hooks";
+import type { FamilyInput, FamilyPrivate } from "../../shared/types.ts";
+import { formatPhoneLocal, normalizePhone } from "../../shared/phone.ts";
+import { api } from "../api.ts";
+import { he } from "../i18n/he.ts";
+import { getIdentity } from "../identity.ts";
+import { CarGlyph } from "./CarCard.tsx";
+import { Field, PhoneInput, phoneError, Stepper } from "./Field.tsx";
+import { ImagePicker } from "./ImagePicker.tsx";
+
+export interface CarDraft {
+  id?: string;
+  label: string;
+  seats: number;
+  color: string;
+  plate: string;
+  photoId?: string;
+  photoBlob?: Blob;
+  photoPreview?: string;
+}
+
+export interface FamilyDraft {
+  name: string;
+  parents: { name: string; phone: string }[];
+  address: string;
+  kids: { id?: string; name: string; phone: string; kidToken?: string }[];
+  cars: CarDraft[];
+}
+
+const MAX_SEATS_UI = 8;
+
+export function emptyDraft(): FamilyDraft {
+  return { name: "", parents: [{ name: "", phone: "" }], address: "", kids: [{ name: "", phone: "" }], cars: [] };
+}
+
+const local = (p?: string) => (p ? (formatPhoneLocal(p) ?? p) : "");
+
+export function draftFrom(f: FamilyInput | FamilyPrivate): FamilyDraft {
+  return {
+    name: f.name,
+    address: f.address,
+    parents: f.parents.length ? f.parents.map((p) => ({ name: p.name, phone: local(p.phone) })) : [{ name: "", phone: "" }],
+    kids: f.kids.map((k) => ({
+      ...("id" in k && k.id ? { id: k.id } : {}),
+      ...("kidToken" in k ? { kidToken: k.kidToken } : {}),
+      name: k.name,
+      phone: local(k.phone),
+    })),
+    cars: f.cars.map((c) => ({
+      ...(c.id ? { id: c.id } : {}),
+      label: c.label,
+      seats: Math.min(MAX_SEATS_UI, Math.max(1, c.seats)),
+      color: c.color ?? "",
+      plate: c.plate ?? "",
+      ...(c.photoId ? { photoId: c.photoId } : {}),
+    })),
+  };
+}
+
+export function draftToInput(d: FamilyDraft): FamilyInput {
+  return {
+    name: d.name.trim(),
+    address: d.address.trim(),
+    parents: d.parents.map((p) => ({ name: p.name.trim(), phone: normalizePhone(p.phone) ?? p.phone })),
+    kids: d.kids
+      .filter((k) => k.name.trim())
+      .map((k) => ({
+        ...(k.id ? { id: k.id } : {}),
+        name: k.name.trim(),
+        ...(k.phone.trim() ? { phone: normalizePhone(k.phone) ?? k.phone } : {}),
+      })),
+    cars: d.cars.map((c) => ({
+      ...(c.id ? { id: c.id } : {}),
+      label: c.label.trim(),
+      seats: c.seats,
+      ...(c.color.trim() ? { color: c.color.trim() } : {}),
+      ...(c.plate.trim() ? { plate: c.plate.trim() } : {}),
+      ...(c.photoId ? { photoId: c.photoId } : {}),
+    })),
+  };
+}
+
+function validate(d: FamilyDraft): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!d.name.trim()) e["fam-name"] = he.form.requiredField;
+  d.parents.forEach((p, i) => {
+    if (!p.name.trim()) e[`parent-${i}-name`] = he.form.requiredField;
+    const pe = phoneError(p.phone, true);
+    if (pe) e[`parent-${i}-phone`] = pe;
+  });
+  d.kids.forEach((k, i) => {
+    if (!k.name.trim() && (k.phone.trim() || d.kids.length === 1)) e[`kid-${i}-name`] = he.form.requiredField;
+    const ke = phoneError(k.phone, false);
+    if (ke) e[`kid-${i}-phone`] = ke;
+  });
+  d.cars.forEach((c, i) => {
+    if (!c.label.trim()) e[`car-${i}-label`] = he.form.requiredField;
+    if (c.plate && !/^\d{1,3}$/.test(c.plate.trim())) e[`car-${i}-plate`] = he.form.plateInvalid;
+  });
+  return e;
+}
+
+interface Props {
+  group: string;
+  initial: FamilyDraft;
+  submitLabel: string;
+  places: boolean;
+  onSubmit: (d: FamilyDraft) => Promise<void>;
+}
+
+export function FamilyForm({ group, initial, submitLabel, places, onSubmit }: Props) {
+  const [d, setD] = useState<FamilyDraft>(initial);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [tried, setTried] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const up = (f: (x: FamilyDraft) => FamilyDraft) => setD((x) => f(cloneDraft(x)));
+
+  const submit = async (ev: Event) => {
+    ev.preventDefault();
+    const e = validate(d);
+    setErrors(e);
+    setTried(true);
+    const first = Object.keys(e)[0];
+    if (first) {
+      document.getElementById(first)?.focus();
+      return;
+    }
+    setBusy(true);
+    try {
+      await onSubmit(d);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const err = (id: string) => (tried ? (errors[id] ?? null) : null);
+  useEffect(() => {
+    if (tried) setErrors(validate(d));
+  }, [d]);
+
+  return (
+    <form class="stack-form" onSubmit={submit} noValidate>
+      <section class="card">
+        <Field id="fam-name" label={he.form.familyName} hint={he.form.familyNameHint} value={d.name} error={err("fam-name")} autoComplete="family-name" onInput={(v) => up((x) => ({ ...x, name: v }))} />
+      </section>
+
+      <section class="card" aria-labelledby="parents-h">
+        <h2 class="hs" id="parents-h">{he.form.parents}</h2>
+        {d.parents.map((p, i) => (
+          <div class="sub">
+            <Field id={`parent-${i}-name`} label={he.form.parentName} value={p.name} error={err(`parent-${i}-name`)} autoComplete="given-name" onInput={(v) => up((x) => (x.parents[i]!.name = v, x))} />
+            <PhoneInput id={`parent-${i}-phone`} label={he.form.parentPhone} value={p.phone} required showErrors={tried} onInput={(v) => up((x) => (x.parents[i]!.phone = v, x))} />
+            {i > 0 && (
+              <button type="button" class="lnk bad" onClick={() => up((x) => (x.parents.splice(i, 1), x))}>
+                {he.form.removeParent}
+              </button>
+            )}
+          </div>
+        ))}
+        {d.parents.length < 4 && (
+          <button type="button" class="mini" onClick={() => up((x) => (x.parents.push({ name: "", phone: "" }), x))}>
+            {he.form.addParent}
+          </button>
+        )}
+      </section>
+
+      <section class="card">
+        <AddressField group={group} places={places} value={d.address} onInput={(v) => up((x) => ({ ...x, address: v }))} />
+      </section>
+
+      <section class="card" aria-labelledby="kids-h">
+        <h2 class="hs" id="kids-h">
+          {he.form.kids} <span class="muted small">· {he.form.kidsHint}</span>
+        </h2>
+        {d.kids.map((k, i) => (
+          <div class="sub">
+            <Field id={`kid-${i}-name`} label={he.form.kidName} value={k.name} error={err(`kid-${i}-name`)} onInput={(v) => up((x) => (x.kids[i]!.name = v, x))} />
+            <PhoneInput id={`kid-${i}-phone`} label={he.form.kidPhone} value={k.phone} showErrors={tried} onInput={(v) => up((x) => (x.kids[i]!.phone = v, x))} />
+            {d.kids.length > 1 && (
+              <button type="button" class="lnk bad" onClick={() => up((x) => (x.kids.splice(i, 1), x))}>
+                {he.form.removeKid}
+              </button>
+            )}
+          </div>
+        ))}
+        {d.kids.length < 12 && (
+          <button type="button" class="mini" onClick={() => up((x) => (x.kids.push({ name: "", phone: "" }), x))}>
+            {he.form.addKid}
+          </button>
+        )}
+      </section>
+
+      <section class="card" aria-labelledby="cars-h">
+        <h2 class="hs" id="cars-h">{he.form.cars}</h2>
+        {d.cars.length === 0 && <p class="small muted">{he.form.carsHint}</p>}
+        {d.cars.map((c, i) => (
+          <div class="sub">
+            <Field id={`car-${i}-label`} label={he.form.carLabel} placeholder={he.form.carLabelPlaceholder} value={c.label} error={err(`car-${i}-label`)} onInput={(v) => up((x) => (x.cars[i]!.label = v, x))} />
+            <Stepper id={`car-${i}-seats`} label={he.form.carSeats} hint={he.form.carSeatsHint} value={c.seats} min={1} max={MAX_SEATS_UI} onChange={(n) => up((x) => (x.cars[i]!.seats = n, x))} />
+            <div class="grid2">
+              <Field id={`car-${i}-color`} label={he.form.carColor} value={c.color} onInput={(v) => up((x) => (x.cars[i]!.color = v, x))} />
+              <Field id={`car-${i}-plate`} label={he.form.carPlate} value={c.plate} inputMode="numeric" maxLength={3} dir="ltr" error={err(`car-${i}-plate`)} onInput={(v) => up((x) => (x.cars[i]!.plate = v.replace(/\D/g, ""), x))} />
+            </div>
+            <div class="row">
+              <span class="cth">
+                {c.photoPreview || c.photoId ? (
+                  <img src={c.photoPreview ?? api.imageUrl(group, c.photoId!)} alt={c.label} />
+                ) : (
+                  <CarGlyph color={0} size={22} />
+                )}
+              </span>
+              <ImagePicker
+                id={`car-${i}-photo`}
+                variant="button"
+                maxDim={800}
+                onPicked={(blob) =>
+                  up((x) => {
+                    const car = x.cars[i]!;
+                    car.photoBlob = blob;
+                    car.photoPreview = URL.createObjectURL(blob);
+                    delete car.photoId;
+                    return x;
+                  })
+                }
+              >
+                {c.photoPreview || c.photoId ? he.form.carPhotoReplace : he.form.carPhoto}
+              </ImagePicker>
+              {(c.photoPreview || c.photoId) && (
+                <button
+                  type="button"
+                  class="lnk"
+                  onClick={() =>
+                    up((x) => {
+                      const car = x.cars[i]!;
+                      delete car.photoId;
+                      delete car.photoBlob;
+                      delete car.photoPreview;
+                      return x;
+                    })
+                  }
+                >
+                  {he.form.carPhotoRemove}
+                </button>
+              )}
+            </div>
+            <button type="button" class="lnk bad" onClick={() => up((x) => (x.cars.splice(i, 1), x))}>
+              {he.form.removeCar}
+            </button>
+          </div>
+        ))}
+        {d.cars.length < 5 && (
+          <button type="button" class="mini" onClick={() => up((x) => (x.cars.push({ label: "", seats: 4, color: "", plate: "" }), x))}>
+            {he.form.addCar}
+          </button>
+        )}
+      </section>
+
+      {tried && Object.keys(errors).length > 0 && (
+        <p class="note gap" role="alert">
+          {he.form.fixErrors}
+        </p>
+      )}
+      <button type="submit" class="btn big sticky-cta" disabled={busy}>
+        {busy ? he.common.saving : submitLabel}
+      </button>
+    </form>
+  );
+}
+
+function cloneDraft(x: FamilyDraft): FamilyDraft {
+  return {
+    ...x,
+    parents: x.parents.map((p) => ({ ...p })),
+    kids: x.kids.map((k) => ({ ...k })),
+    cars: x.cars.map((c) => ({ ...c })),
+  };
+}
+
+function AddressField({ group, places, value, onInput }: { group: string; places: boolean; value: string; onInput: (v: string) => void }) {
+  const [sugs, setSugs] = useState<string[]>([]);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const picked = useRef(false);
+  // Places needs a family key; at first registration there is none yet, so it stays a plain field.
+  const canSuggest = places && !!getIdentity(group);
+  useEffect(() => {
+    if (!canSuggest || picked.current || value.trim().length < 3) {
+      setSugs([]);
+      picked.current = false;
+      return;
+    }
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      api
+        .places(group, value.trim())
+        .then((r) => setSugs((r.suggestions ?? []).map((s) => s.text).slice(0, 5)))
+        .catch(() => setSugs([]));
+    }, 300);
+    return () => clearTimeout(timer.current);
+  }, [value, canSuggest]);
+  return (
+    <Field id="fam-address" label={he.form.address} hint={he.form.addressHint} value={value} autoComplete="street-address" onInput={onInput}>
+      {sugs.length > 0 && (
+        <ul class="sug" aria-label={he.form.addressSuggestions}>
+          {sugs.map((s) => (
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  picked.current = true;
+                  setSugs([]);
+                  onInput(s);
+                }}
+              >
+                {s}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Field>
+  );
+}
+
+/** Uploads any newly picked car photos (needs a family key) and returns the draft with photoIds. */
+export async function uploadCarPhotos(group: string, d: FamilyDraft): Promise<FamilyDraft> {
+  const out = cloneDraft(d);
+  for (const c of out.cars) {
+    if (!c.photoBlob) continue;
+    const r = await api.uploadImage(group, c.photoBlob);
+    c.photoId = r.imageId;
+    delete c.photoBlob;
+  }
+  return out;
+}
