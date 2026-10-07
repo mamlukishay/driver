@@ -65,6 +65,7 @@ const routes = {
   me: guarded((x) => <Profile group={p(x, "group")} />),
   settings: guarded((x) => <Settings group={p(x, "group")} />),
   kid: (x: P) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} />,
+  kidEvent: (x: P) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} event={p(x, "event")} />,
 };
 
 function Shell() {
@@ -84,6 +85,7 @@ function Shell() {
         <Route path="/g/:group/me" component={routes.me} />
         <Route path="/g/:group/settings" component={routes.settings} />
         <Route path="/g/:group/kid/:kidId" component={routes.kid} />
+        <Route path="/g/:group/kid/:kidId/e/:event" component={routes.kidEvent} />
         <Route path="/g/:group/e/:event" component={routes.event} />
         <Route path="/g/:group/e/:event/out" component={routes.out} />
         <Route path="/g/:group/e/:event/back" component={routes.back} />

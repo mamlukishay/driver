@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { applyAction } from "./actions.ts";
-import type { Action, EventState, LogEntry } from "./types.ts";
-import { familyPrivate, familyPublic, kidView, viewFor } from "./view.ts";
+import type { Action, EventState, KidLegView, KidRide, LogEntry } from "./types.ts";
+import { familyPrivate, familyPublic, kidLegStatus, kidsAhead, kidView, legOver, pickupStops, viewFor } from "./view.ts";
 import { A, B, baseEvent, C, ctx, deepFreeze, FAMILIES } from "./test/fixtures.ts";
 
 function chain(steps: [string, Action][]): EventState {
@@ -107,5 +107,89 @@ describe("kidView", () => {
     expect(e.legs.out).toEqual({ needed: true, ride: null });
     expect(e.legs.back.ride).toMatchObject({ offerId: "o2", departAt: "13:00", car: { label: "Kia" }, started: false, picked: false, ready: false });
     expect(e.legs.back.ride!.driver.parents).toEqual(B.parents);
+  });
+});
+
+describe("kidView: live fields and per-event focus", () => {
+  const group = { id: "grp", name: "Class", createdAt: 0, version: 1 };
+  // A drives out: seating order b1 (Levi), a1 (Cohen), c1 (Mizrahi).
+  const s0 = chain([
+    ["fama", { type: "offerCar", leg: "out", carId: "cara", seats: 4, departAt: "09:30" }],
+    ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],
+    ["fama", { type: "seatKid", offerId: "o1", kidId: "a1" }],
+    ["famc", { type: "seatKid", offerId: "o1", kidId: "c1" }],
+    ["fama", { type: "startRun", offerId: "o1" }],
+    ["fama", { type: "setArrived", offerId: "o1", kidId: "b1", arrived: true }],
+  ]);
+  const ride = (st: EventState, kid: string) => kidView(group, FAMILIES, [st], kid, "2026-10-07")!.events[0]!.legs.out.ride!;
+
+  test("arrived and ahead follow the driver's pickup order", () => {
+    expect(ride(s0, "b1")).toMatchObject({ started: true, arrived: true, ahead: 0 });
+    expect(ride(s0, "a1")).toMatchObject({ arrived: false, ahead: 1 });
+    expect(ride(s0, "c1")).toMatchObject({ ahead: 2 });
+  });
+
+  test("eventId shows only that event, even when past; unknown id → no events", () => {
+    const past = deepFreeze({ ...baseEvent(), id: "old", date: "2026-01-01" });
+    expect(kidView(group, FAMILIES, [past, state], "c1", "2026-10-07", "old")!.events.map((e) => e.id)).toEqual(["old"]);
+    expect(kidView(group, FAMILIES, [past, state], "c1", "2026-10-07", "nope")!.events).toEqual([]);
+  });
+});
+
+describe("pickupStops / kidsAhead", () => {
+  const famOf = (k: string) => ({ a1: "A", a2: "A", b1: "B", c1: "C" })[k];
+  test("out: one stop per family in seating order; back: one stop", () => {
+    expect(pickupStops("out", ["b1", "a1", "c1", "a2"], famOf)).toEqual([["b1"], ["a1", "a2"], ["c1"]]);
+    expect(pickupStops("back", ["b1", "a1"], famOf)).toEqual([["b1", "a1"]]);
+    expect(pickupStops("back", [], famOf)).toEqual([]);
+  });
+  test("counts unpicked kids at earlier stops", () => {
+    const stops = [["b1"], ["a1", "a2"], ["c1"]];
+    expect(kidsAhead(stops, "b1", [])).toBe(0);
+    expect(kidsAhead(stops, "c1", [])).toBe(3);
+    expect(kidsAhead(stops, "c1", ["b1", "a1"])).toBe(1);
+    expect(kidsAhead(stops, "a2", ["b1"])).toBe(0);
+  });
+});
+
+describe("legOver", () => {
+  const e = { date: "2026-10-20", start: "10:00", returnTime: "23:00" };
+  test("out is over 30 min after start, back 90 min after the return time (across midnight)", () => {
+    expect(legOver(e, "out", "2026-10-20T10:29")).toBe(false);
+    expect(legOver(e, "out", "2026-10-20T10:30")).toBe(true);
+    expect(legOver(e, "back", "2026-10-21T00:29")).toBe(false);
+    expect(legOver(e, "back", "2026-10-21T00:30")).toBe(true);
+    expect(legOver(e, "out", "2026-10-19T23:00")).toBe(false);
+    expect(legOver(e, "back", "2026-11-01T08:00")).toBe(true);
+  });
+});
+
+describe("kidLegStatus", () => {
+  const r = (over: Partial<KidRide> = {}): KidRide => ({
+    offerId: "o1",
+    departAt: "09:30",
+    driver: { familyId: "fama", name: "Cohen", color: 0, parents: A.parents },
+    car: A.cars[0]!,
+    started: false,
+    picked: false,
+    ready: false,
+    arrived: false,
+    ahead: 2,
+    ...over,
+  });
+  const leg = (ride: KidRide | null, needed = true): KidLegView => ({ needed, ride });
+
+  test("each state", () => {
+    expect(kidLegStatus(leg(null, false), false)).toBeNull();
+    expect(kidLegStatus(leg(null), false)).toBe("waiting");
+    expect(kidLegStatus(leg(r()), false)).toBe("assigned");
+    expect(kidLegStatus(leg(r({ ahead: 0 })), false)).toBe("assigned");
+    expect(kidLegStatus(leg(r({ started: true })), false)).toBe("onTheWay");
+    expect(kidLegStatus(leg(r({ started: true, ahead: 0 })), false)).toBe("next");
+    expect(kidLegStatus(leg(r({ started: true, arrived: true, ahead: 1 })), false)).toBe("arrived");
+    expect(kidLegStatus(leg(r({ started: true, picked: true, ahead: 0 })), false)).toBe("picked");
+    expect(kidLegStatus(leg(r({ started: true, picked: true })), true)).toBe("done");
+    expect(kidLegStatus(leg(null), true)).toBe("done");
+    expect(kidLegStatus(leg(null, false), true)).toBeNull();
   });
 });

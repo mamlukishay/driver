@@ -44,6 +44,16 @@ export function todayYmd(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** The local wall clock as `yyyy-mm-ddTHH:MM` (for `legOver`). */
+export function nowLocal(): string {
+  const d = new Date();
+  return `${todayYmd()}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** The read-only kid page: permanent (next rides) or focused on one event. */
+export const kidPath = (group: string, kidId: string, event?: string) =>
+  `/g/${group}/kid/${kidId}${event ? `/e/${event}` : ""}`;
+
 export function addMinutes(hhmm: string, mins: number): string {
   const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
   if (!m) return hhmm;

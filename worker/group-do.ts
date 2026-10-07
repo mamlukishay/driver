@@ -77,7 +77,7 @@ export class GroupDO extends DurableObject<Env> {
     if (rest[0] === "kid") {
       const kid = rest[1];
       if (!kid || kid.length > 64 || !/^[a-z0-9]+$/.test(kid)) throw new ApiError("not_found");
-      if (rest.length === 2 && m === "GET") return this.kidGet(kid);
+      if (rest.length === 2 && m === "GET") return this.kidGet(kid, url.searchParams.get("event"));
       if (rest.length === 3 && rest[2] === "ready" && m === "POST") return this.kidReady(request, kid);
       throw new ApiError("not_found");
     }
@@ -349,11 +349,14 @@ export class GroupDO extends DurableObject<Env> {
     throw new ApiError("not_found");
   }
 
-  private async kidGet(kidParam: string): Promise<Response> {
+  /** `?event=<slug>` focuses the view on that one event (any date); 404 when it doesn't exist. */
+  private async kidGet(kidParam: string, eventParam: string | null): Promise<Response> {
     const meta = await this.meta();
     const { kidId } = await this.kidFamily(kidParam);
+    if (eventParam !== null && !isSlug(eventParam)) throw new ApiError("not_found");
     const [families, events] = await Promise.all([this.families(), this.events()]);
-    const view = kidView(meta, families, events, kidId, todayIL());
+    if (eventParam !== null && !events.some((e) => e.id === eventParam)) throw new ApiError("not_found");
+    const view = kidView(meta, families, events, kidId, todayIL(), eventParam ?? undefined);
     if (!view) throw new ApiError("not_found");
     return json(view);
   }
@@ -361,17 +364,20 @@ export class GroupDO extends DurableObject<Env> {
   /**
    * "אני מוכן/ה": marks the kid ready on the next ride they are seated in
    * (earliest upcoming event, outbound before return, skipping rides already picked up).
-   * Optional body `{ ready?: boolean }` (default true).
+   * Optional body `{ ready?: boolean (default true), event?: slug }`; with `event`, only rides in that
+   * event (any date) are considered.
    */
   private async kidReady(request: Request, kidParam: string): Promise<Response> {
     const body = await readJson(request, true);
     const ready = isObj(body) && typeof body.ready === "boolean" ? body.ready : true;
+    const only = isObj(body) && typeof body.event === "string" ? body.event : null;
+    if (only !== null && !isSlug(only)) throw new ApiError("invalid");
     await this.meta();
     const { family, kidId } = await this.kidFamily(kidParam);
     const row = { kidId };
 
     const events = (await this.events())
-      .filter((e) => e.date >= todayIL())
+      .filter((e) => (only !== null ? e.id === only : e.date >= todayIL()))
       .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
     let target: { state: EventState; leg: Leg; offerId: string } | null = null;
     outer: for (const state of events) {

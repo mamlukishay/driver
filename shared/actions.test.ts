@@ -222,6 +222,59 @@ describe("setKidReady", () => {
   });
 });
 
+describe("setArrived", () => {
+  const s = run([offerA(), seat("famb", "o1", "b1"), seat("famc", "o1", "c1")]);
+  const started = run([["fama", { type: "startRun", offerId: "o1" }]], s);
+  const arrive = (kidId: string, arrived = true): Action => ({ type: "setArrived", offerId: "o1", kidId, arrived });
+
+  test("offer owner only; needs a started run and a seated kid", () => {
+    expect(err(applyAction(s, ctx(), arrive("b1"), "fama", NOW))).toBe("invalid");
+    expect(err(applyAction(started, ctx(), arrive("b1"), "famb", NOW))).toBe("forbidden");
+    expect(err(applyAction(started, ctx(), arrive("a1"), "fama", NOW))).toBe("not_found");
+    expect(err(applyAction(started, ctx(), { type: "setArrived", offerId: "zz", kidId: "b1", arrived: true }, "fama", NOW))).toBe("not_found");
+    expect(err(applyAction(started, ctx(), { ...arrive("b1"), arrived: "yes" } as unknown as Action, "fama", NOW))).toBe("invalid");
+    const after = ok(applyAction(started, ctx(), arrive("b1"), "fama", NOW));
+    expect(after.offers.out[0]!.run).toEqual({ startedAt: NOW, picked: [], arrived: ["b1"] });
+  });
+
+  test("setting false clears it (and drops the empty list); repeating is a no-op", () => {
+    const a = run([["fama", arrive("b1")], ["fama", arrive("b1")]], started);
+    expect(a.offers.out[0]!.run!.arrived).toEqual(["b1"]);
+    const cleared = run([["fama", arrive("b1", false)]], a);
+    expect(cleared.offers.out[0]!.run).toEqual({ startedAt: NOW, picked: [] });
+  });
+
+  test("picking the kid clears arrived for that kid only", () => {
+    const a = run([["fama", arrive("b1")], ["fama", arrive("c1")], ["fama", { type: "setPicked", offerId: "o1", kidId: "b1", picked: true }]], started);
+    expect(a.offers.out[0]!.run).toEqual({ startedAt: NOW, picked: ["b1"], arrived: ["c1"] });
+    expect(err(applyAction(a, ctx(), arrive("b1"), "fama", NOW))).toBe("invalid");
+  });
+
+  test("undo: setArrived and the pick that cleared it both round-trip", () => {
+    const { after, entry } = logged(started, "fama", arrive("b1"));
+    expect(body(ok(undo(after, ctx(), entry, "fama", NOW)))).toEqual(body(started));
+    const arrived = run([["fama", arrive("b1")]], started);
+    const pick = logged(arrived, "fama", { type: "setPicked", offerId: "o1", kidId: "b1", picked: true });
+    expect(pick.after.offers.out[0]!.run!.arrived).toBeUndefined();
+    expect(body(ok(undo(pick.after, ctx(), pick.entry, "fama", NOW)))).toEqual(body(arrived));
+  });
+
+  test("unseating an arrived kid is undone with the arrived flag", () => {
+    const arrived = run([["fama", arrive("b1")]], started);
+    const { after, entry } = logged(arrived, "famb", { type: "unseatKid", offerId: "o1", kidId: "b1" });
+    expect(after.offers.out[0]!.run!.arrived).toBeUndefined();
+    const restored = ok(undo(after, ctx(), entry, "famb", NOW)).offers.out[0]!;
+    expect(restored.kidIds).toContain("b1");
+    expect(restored.run!.arrived).toEqual(["b1"]);
+  });
+
+  test("setRun restores arrived (undo of removeOffer keeps it)", () => {
+    const arrived = run([["fama", arrive("c1")]], started);
+    const { after, entry } = logged(arrived, "fama", { type: "removeOffer", offerId: "o1" });
+    expect(body(ok(undo(after, ctx(), entry, "fama", NOW)))).toEqual(body(arrived));
+  });
+});
+
 describe("editEvent", () => {
   test("host only; validates fields", () => {
     const s = ok(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "  New  title ", start: "11:00" } }, "fama", NOW));

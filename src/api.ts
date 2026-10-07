@@ -132,10 +132,12 @@ export const api = {
 
   imageUrl: (group: string, imageId: string) => `${g(group)}/images/${encodeURIComponent(imageId)}`,
 
-  getKid: (group: string, kidId: string) => req<KidView>(`${g(group)}/kid/${encodeURIComponent(kidId)}`),
+  /** With `event`, the view holds only that event (`?event=<slug>`). */
+  getKid: (group: string, kidId: string, event?: string) =>
+    req<KidView>(`${g(group)}/kid/${encodeURIComponent(kidId)}${event ? `?event=${encodeURIComponent(event)}` : ""}`),
 
-  kidReady: (group: string, kidId: string, ready = true) =>
-    req<{ ok: true }>(`${g(group)}/kid/${encodeURIComponent(kidId)}/ready`, { body: { ready } }),
+  kidReady: (group: string, kidId: string, ready = true, event?: string) =>
+    req<{ ok: true }>(`${g(group)}/kid/${encodeURIComponent(kidId)}/ready`, { body: event ? { ready, event } : { ready } }),
 
   parseInvite: (group: string, imageId: string) =>
     req<InviteParseResponse>(`${g(group)}/invite/parse`, { body: { imageId }, group }),

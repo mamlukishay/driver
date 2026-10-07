@@ -244,6 +244,8 @@ export const he = {
     share: "שתף סיכום לקבוצה",
     joinToRsvp: "כדי לרשום את הילדים, בחרו את המשפחה שלכם או הירשמו.",
     savedPlan: (kid: string) => `עודכן: ${kid}`,
+    sendToKid: (kid: string) => `שליחה ל${kid}`,
+    sendToKidLabel: (kid: string) => `שליחת פרטי ההסעה והקישור ל${kid} ב-WhatsApp`,
   },
 
   gap: {
@@ -332,6 +334,8 @@ export const he = {
     planSaved: (kid: string) => `עודכן: ${kid}`,
     started: "סימנו שיצאת",
     picked: (kid: string) => `${kid} עלה/תה`,
+    arrived: (kid: string) => `סומן: הגעת לאסוף את ${kid}`,
+    unarrived: (kid: string) => `בוטל "הגעתי" אצל ${kid}`,
     unpicked: (kid: string) => `${kid} סומן/ה כלא עלה/תה`,
     undone: "בוטל",
     saved: "נשמר",
@@ -355,6 +359,7 @@ export const he = {
     startRun: "יצאו לדרך",
     setPicked: (kid: string, picked: boolean) => (picked ? `${kid} עלה/תה לרכב` : `ביטלו איסוף של ${kid}`),
     setKidReady: (kid: string) => `${kid} מוכן/ה`,
+    setArrived: (kid: string, arrived: boolean) => (arrived ? `הגיעו לאסוף את ${kid}` : `ביטלו "הגעתי" אצל ${kid}`),
     editEvent: "עדכנו את פרטי האירוע",
     undo: "ביטלו פעולה",
     other: "פעולה",
@@ -383,12 +388,20 @@ export const he = {
     waze: "Waze לעצירה הבאה",
     tooMany: "יש יותר מ-8 עצירות, Maps יציג את 8 הראשונות.",
     noAddress: "אין כתובות גלויות לניווט.",
+    arrived: "הגעתי",
+    arrivedOn: "הגעתי ✓",
+    arrivedLabel: (kid: string) => `הגעתי לאסוף את ${kid}`,
+    pickedBtn: "עלה/תה",
+    shareTitle: "שיתוף עם הנוסעים",
+    shareHint: "שלחו לכל נוסע/ת קישור שמראה בזמן אמת איפה ההסעה.",
+    shareTo: (kid: string) => `שליחה ל${kid}`,
+    shareToParent: (kid: string, parent: string) => `שליחה ל${parent} (עבור ${kid})`,
   },
 
   profile: {
     title: "המשפחה שלי",
     kidLinks: "קישור אישי לכל ילד/ה",
-    kidLinksHint: "הקישור לקריאה בלבד, אפשר לשלוח לטלפון של הילד/ה.",
+    kidLinksHint: "קישור קבוע: תמיד מראה את ההסעה הבאה. לקריאה בלבד, אפשר לשלוח לטלפון של הילד/ה.",
     sendKidLink: (kid: string) => `שליחת הקישור ל${kid} ב-WhatsApp`,
     saved: "הפרופיל נשמר",
     notRegistered: "עוד לא בחרתם משפחה בטלפון הזה.",
@@ -413,6 +426,18 @@ export const he = {
     onTheWay: "בדרך אליך",
     pickedUp: "עלית לרכב ✓",
     notComing: "סומן שלא מגיע/ה",
+    allRides: "כל ההסעות שלי",
+    statusLabel: (leg: Leg) => `מצב ההסעה ב${legName[leg]}`,
+    status: {
+      waiting: "עוד מחפשים לך הסעה",
+      onTheWay: (driver: string) => `${driver} יצא/ה לדרך`,
+      next: "את/ה הבא/ה בתור",
+      nextHint: "תתכוננו, עוד רגע מגיעים",
+      arrived: (driver: string) => `${driver} למטה! 🚗`,
+      arrivedHint: "צאו לרכב",
+      picked: "עלית לרכב ✓",
+      done: "ההסעה הזאת הסתיימה",
+    },
   },
 
   invite: {
@@ -457,6 +482,12 @@ export const he = {
     leftHome: (kids: string[]) => `היי, יצאתי 🚗 אגיע לאסוף את ${joinNames(kids)} בעוד ~10 דק׳`,
     downstairs: (kid: string) => `היי ${kid}, אני למטה 🚗`,
     downstairsParent: (kid: string) => `היי, אני למטה עם הרכב, מחכה ל${kid} 🚗`,
+    /** Per-event message to a kid: event, one line per leg, and the live kid link. */
+    kidEvent: (p: { kid: string; title: string; date: string; legs: string[]; url: string }) =>
+      `היי ${p.kid} 💛\n🎈 ${p.title} · ${p.date}\n${p.legs.join("\n")}\nעוקבים אחרי ההסעה כאן:\n${p.url}`,
+    legLine: (leg: Leg, ride: { family: string; departAt: string } | null) =>
+      ride ? `${legName[leg]}: ${ride.family}, יציאה ${ride.departAt}` : `${legName[leg]}: עוד מחפשים הסעה`,
+    trackRide: (url: string) => `אני בדרך לאסוף אותך! עוקבים כאן: ${url}`,
     kidLink: (kid: string, url: string) =>
       `היי ${kid} 💛 זה הקישור שלך לטרמפוש. שם רואים מי אוסף אותך ומתי:\n${url}`,
   },

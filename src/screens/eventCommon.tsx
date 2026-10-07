@@ -114,6 +114,9 @@ export function logLine(ev: EventView, entry: EventView["log"][number]): string 
     case "setKidReady":
       text = L.setKidReady(idx.kidName(a.kidId));
       break;
+    case "setArrived":
+      text = L.setArrived(idx.kidName(a.kidId), a.arrived);
+      break;
     case "editEvent":
       text = L.editEvent;
       break;
