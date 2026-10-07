@@ -1,0 +1,992 @@
+<title>אירועים · סדנה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Secular+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ---------- tokens (ported from src/styles/tokens.css) ---------- */
+:root{
+  --bg:#F3F3EE; --surface:#FFFFFF; --sunk:#E8E9E3; --line:#D4D6CF;
+  --ink:#1C1F23; --ink-2:#555B62; --ink-3:#80868C;
+  --asphalt:#2B2F34; --asphalt-2:#3B4047; --on-asphalt:#EEF0EA; --on-asphalt-2:#AEB4B9;
+  --accent:#F2B705; --accent-soft:#FBEDB8; --on-accent:#1C1F23;
+  --ok:#22804E; --ok-soft:#DCF0E3; --gap:#C0570A; --gap-soft:#FCE6D2; --bad:#B8382A; --bad-soft:#F8DEDA;
+  --wa-bg:#EAE4DA; --wa-bubble:#D9FDD3; --wa-ink:#13261A;
+  --device:#17191C; --app-bg:#F7F7F3; --inv-bg:#FFF6DC; --inv-ink:#3A2A10;
+  --f1:#2F6FD6; --f2:#C2417F; --f3:#7A5AC8; --f4:#138A8A; --f5:#B5651D;
+  --car-glass:#A9C6DA;
+  --shadow:rgba(20,22,25,.14); --scrim:rgba(15,17,20,.45); --focus:#2F6FD6;
+  --ff-display:"Secular One","Rubik",system-ui,sans-serif;
+  --ff-body:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --ff-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gutter:16px; --tap:44px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --car-glass:#4F6E86;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --car-glass:#4F6E86;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}
+
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ff-body);font-size:16px;line-height:1.5;overflow-x:clip}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{line-height:1.25;text-wrap:balance}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.num,time{font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-2)}
+.small{font-size:13.5px}
+.grow1{flex:1;min-inline-size:0}
+.row{display:flex;align-items:center;gap:8px;min-inline-size:0}
+.row.sp{justify-content:space-between}
+.row.wrap{flex-wrap:wrap}
+.stack{display:flex;flex-direction:column;gap:12px;min-inline-size:0}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+
+/* ---------- workshop page ---------- */
+.w-ctl{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);border-block-end:1px solid var(--line)}
+.w-seg{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;padding-block:8px;padding-inline:16px;max-inline-size:1180px;margin-inline:auto;scrollbar-width:none}
+.w-seg::-webkit-scrollbar{display:none}
+.w-seg a{flex:none;white-space:nowrap;text-decoration:none;border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 14px;font-size:14.5px;font-weight:500;min-block-size:38px;display:inline-flex;align-items:center;gap:6px}
+.w-seg a b{font-family:var(--ff-mono);font-weight:500}
+.w-seg a[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.w-wrap{max-inline-size:1180px;margin-inline:auto;padding-inline:16px;padding-block:20px 80px;display:flex;flex-direction:column;gap:40px}
+.w-intro{display:flex;flex-direction:column;gap:10px;max-inline-size:760px}
+.w-intro h1{font-family:var(--ff-display);font-weight:400;font-size:30px}
+.w-lane{block-size:10px;background:var(--asphalt);border-radius:3px;position:relative;max-inline-size:220px}
+.w-lane::after{content:"";position:absolute;inset-inline:8px;inset-block-start:4px;block-size:2px;background:repeating-linear-gradient(to left,var(--accent) 0 20px,transparent 20px 34px)}
+.w-sec{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 64px);display:flex;flex-direction:column;gap:16px;min-inline-size:0}
+.w-sec > h2{font-family:var(--ff-display);font-weight:400;font-size:26px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.w-sec > h2 .w-k{font-family:var(--ff-mono);font-size:15px;background:var(--accent);color:var(--on-accent);border-radius:6px;padding:0 8px}
+.w-lead{color:var(--ink-2);max-inline-size:720px}
+.w-opt{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:28px;align-items:start}
+.w-side{display:flex;flex-direction:column;gap:14px;min-inline-size:0}
+.w-pc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.w-pc > div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.w-pc h3{font-size:14px;font-weight:700;margin-block-end:6px}
+.w-pc .pro h3{color:var(--ok)}
+.w-pc .con h3{color:var(--gap)}
+.w-pc ul,.w-ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
+.w-try{background:var(--sunk);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink-2)}
+.w-try ol{margin:4px 0 0;padding-inline-start:18px}
+.w-url{font-family:var(--ff-mono);font-size:12.5px;color:var(--ink-2);direction:ltr;text-align:center;background:var(--sunk);border-radius:8px;padding:4px 8px;inline-size:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-url b{color:var(--ink);font-weight:500}
+.w-cmp{display:flex;gap:20px;overflow-x:auto;padding-block:4px 12px;scroll-snap-type:x mandatory;overscroll-behavior-x:contain}
+.w-cmp > div{flex:none;inline-size:340px;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px}
+.w-cmp h3{font-size:16px}
+.w-tblw{overflow-x:auto}
+.w-tbl{border-collapse:collapse;inline-size:100%;min-inline-size:560px;font-size:14px;background:var(--surface);border-radius:12px;overflow:hidden}
+.w-tbl th,.w-tbl td{border-block-end:1px solid var(--line);padding:8px 10px;text-align:start;vertical-align:top}
+.w-tbl thead th{background:var(--sunk);font-weight:700}
+.w-tbl td.rec{background:var(--accent-soft)}
+.w-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.w-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-inline-size:0}
+.w-card h3{font-size:17px}
+.w-card .lbl{font-size:12px;font-weight:700;color:var(--ink-2)}
+.w-rec{background:var(--accent-soft);border:2px solid var(--accent);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;max-inline-size:760px}
+.w-rec h2{font-family:var(--ff-display);font-weight:400;font-size:24px}
+.w-q{counter-reset:q;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-inline-size:760px}
+.w-q li{counter-increment:q;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:10px}
+.w-q li::before{content:counter(q);font-family:var(--ff-mono);background:var(--ink);color:var(--bg);border-radius:6px;padding:0 7px;block-size:max-content}
+.w-q small{display:block;color:var(--ink-2)}
+.w-diag{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
+.w-diag svg{display:block;min-inline-size:640px;inline-size:100%;block-size:auto}
+.w-two{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:28px;align-items:start}
+.w-wa{background:var(--wa-bg);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.w-wa pre{margin:0;white-space:pre-wrap;font-family:var(--ff-body);font-size:14px;background:var(--wa-bubble);color:var(--wa-ink);border-radius:10px 10px 2px 10px;padding:8px 10px;align-self:flex-start;max-inline-size:100%}
+.w-wa .btn{align-self:flex-start}
+.w-wa .cp-ok{font-size:12.5px;color:var(--wa-ink)}
+
+/* ---------- device ---------- */
+.dev{inline-size:100%;max-inline-size:360px;block-size:740px;background:var(--device);border-radius:34px;padding:9px;box-shadow:0 14px 34px var(--shadow);margin-inline:auto;flex:none}
+.scr{position:relative;inline-size:100%;block-size:100%;border-radius:26px;overflow:hidden;background:var(--app-bg);display:flex;flex-direction:column;isolation:isolate}
+.sbar{flex:none;block-size:24px;display:flex;justify-content:space-between;align-items:center;padding-inline:20px;font-size:11.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.scr-body{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin}
+
+/* ---------- app components (ported from src/styles/app.css) ---------- */
+.hdr{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--app-bg) 92%,transparent);backdrop-filter:blur(8px);padding-block:2px 8px;padding-inline:14px;border-block-end:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.hdr-row{display:flex;align-items:center;gap:4px;min-block-size:44px}
+.attl{font-size:17px;font-weight:700;min-inline-size:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.bk,.gear,.dots{border:0;background:transparent;inline-size:40px;block-size:40px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--ink-2)}
+.bk{margin-inline-start:-8px;color:var(--ink)}
+.gear{margin-inline-end:-8px}
+.dots{font-size:22px;font-weight:700;color:var(--ink);line-height:1}
+.dots[aria-expanded="true"]{background:var(--sunk)}
+.bk:hover,.gear:hover,.dots:hover{background:var(--sunk)}
+.who{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);border:1.5px solid var(--fc,var(--line));border-radius:20px;padding:2px 12px;background:var(--surface);align-self:flex-start;max-inline-size:100%;min-block-size:28px}
+.who b{color:var(--fc,var(--ink))}
+.fdot{inline-size:10px;block-size:10px;border-radius:50%;background:var(--fc);display:inline-block;flex:none}
+.content{padding-inline:14px;padding-block:14px 90px;display:flex;flex-direction:column;gap:14px}
+.hs{font-size:14px;color:var(--ink-2);font-weight:500}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-inline-size:0}
+.note{border-radius:11px;padding:10px 12px;background:var(--sunk);font-size:14px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.note.upd{background:var(--accent-soft);color:var(--ink);border-inline-start:4px solid var(--accent)}
+.note.cxl{background:var(--bad-soft);color:var(--bad);border-inline-start:4px solid var(--bad)}
+.note.cxl b,.note.upd b{color:inherit}
+.btn{border:0;background:var(--accent);color:var(--on-accent);border-radius:12px;padding:11px 16px;min-block-size:var(--tap);font-weight:700;font-size:15.5px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.btn.big{inline-size:100%;padding:13px 16px;font-size:16px}
+.btn.sm{min-block-size:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn.dark{background:var(--ink);color:var(--bg)}
+.btn.wa{background:var(--ok);color:var(--surface)}
+.btn.danger{background:var(--bad);color:var(--surface)}
+.mini{border:1.5px solid currentColor;background:transparent;border-radius:9px;padding:5px 11px;min-block-size:34px;font-size:14px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:6px;align-self:flex-start;cursor:pointer}
+.mini.wa{color:var(--ok)}
+.lnk{border:0;background:none;padding:4px 0;text-decoration:underline;color:var(--f1);font-size:14px;cursor:pointer}
+.lnk.bad{color:var(--bad)}
+.xbtn{border:0;background:var(--sunk);inline-size:36px;block-size:36px;border-radius:50%;font-size:20px;line-height:1;flex:none}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--ink-2);min-inline-size:0}
+.fld label{font-weight:500}
+.fld input{font-size:16px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;inline-size:100%;min-inline-size:0;min-block-size:var(--tap)}
+.fld input[type="date"],.fld input[type="time"]{font-variant-numeric:tabular-nums}
+.fld.ch input{border-color:var(--accent);background:var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.hint{font-size:12.5px;color:var(--ink-2)}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;background:transparent;padding:4px 0;inline-size:100%;min-block-size:40px;text-align:start;font-size:15px}
+.sw i{inline-size:46px;block-size:28px;border-radius:14px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.sw i::after{content:"";position:absolute;inset-block-start:3px;inset-inline-start:3px;inline-size:22px;block-size:22px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px var(--shadow);transition:inset-inline-start .15s}
+.sw[aria-checked="true"] i{background:var(--ok)}
+.sw[aria-checked="true"] i::after{inset-inline-start:21px}
+.sw:disabled{opacity:.4;cursor:default}
+.av{inline-size:28px;block-size:28px;border-radius:50%;background:var(--fc);color:var(--surface);display:inline-grid;place-items:center;font-size:13px;font-weight:700;flex:none}
+.evh{display:flex;gap:12px;align-items:center}
+.evh .cov{border:1px solid var(--line);border-radius:9px;overflow:hidden;inline-size:54px;block-size:70px;flex:none;background:var(--inv-bg);color:var(--inv-ink);display:grid;place-items:center;font-size:24px;text-decoration:none}
+.cov-art{inline-size:100%;block-size:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:var(--ff-display);font-size:10px;line-height:1.1;text-align:center;background:repeating-linear-gradient(135deg,var(--inv-bg) 0 8px,var(--accent-soft) 8px 16px)}
+.cov-art span{font-size:20px}
+.evh-t{display:flex;flex-direction:column;min-inline-size:0}
+.evh-t b{font-size:17px}
+.evh-t small{color:var(--ink-2);font-size:13.5px}
+.evcard{display:flex;gap:12px;align-items:stretch;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;inline-size:100%;text-decoration:none;color:inherit}
+.evcard.dim{opacity:.7}
+.evcard.cx{opacity:.6;filter:grayscale(1)}
+.evcard.cx b.t{text-decoration:line-through}
+.evd{inline-size:50px;flex:none;border-radius:10px;background:var(--asphalt);color:var(--on-asphalt);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;padding-block:6px}
+.evd b{font-size:21px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.evm{display:flex;flex-direction:column;gap:3px;min-inline-size:0}
+.evm small{color:var(--ink-2);font-size:13px}
+.kst{display:inline-flex;align-self:flex-start;gap:4px;font-size:12.5px;border-radius:12px;padding:1px 9px;background:var(--sunk);color:var(--ink);border-inline-start:3px solid var(--fc)}
+.legtiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.leglink{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;text-decoration:none;color:inherit;text-align:start;inline-size:100%}
+.leglink:hover{border-color:var(--ink-3)}
+.leglink .lt{font-size:18px;font-weight:700}
+.leglink .lt time{display:block;font-size:24px;font-family:var(--ff-display);font-weight:400;line-height:1.1}
+.leglink .go{font-size:13px;color:var(--f1)}
+.gm{border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.gm.gap{background:var(--gap-soft);color:var(--gap)}
+.gm.mid{background:var(--sunk);color:var(--ink-2)}
+.gm.ok{background:var(--ok-soft);color:var(--ok)}
+.gm-t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.gm-t b{font-size:15px}
+.gm-t span{font-size:12.5px}
+.gm-bar{block-size:6px;border-radius:3px;background:var(--surface);overflow:hidden}
+.gm-bar i{display:block;block-size:100%;background:currentColor;border-radius:3px}
+.gms{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-block-start:4px}
+.gm.sm{padding:6px 8px;gap:4px}
+.gm.sm b{font-size:12.5px}
+.tabs{display:flex;background:var(--sunk);border-radius:12px;padding:3px}
+.tabs a,.tabs button{flex:1;text-align:center;padding:8px 4px;border-radius:10px;font-weight:500;font-size:14.5px;text-decoration:none;min-block-size:40px;border:0;background:transparent}
+.tabs [aria-current="page"],.tabs [aria-selected="true"]{background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-weight:700}
+.hdr .tabs{margin-block-start:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.kchip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--surface);border-radius:22px;padding-block:4px;padding-inline:4px 14px;font-size:15px;font-weight:500;min-block-size:40px}
+.car{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:12px}
+.car.me{border-color:var(--fc);border-width:2px}
+.car-h{display:flex;align-items:center;gap:10px}
+.car-h small{display:block;font-size:13px}
+.seatcount{color:var(--ink-2);font-size:14px;font-weight:500;align-self:flex-start}
+.cth{flex:none;inline-size:48px;block-size:34px;border-radius:8px;display:grid;place-items:center;color:var(--fc)}
+.seats{display:flex;gap:12px;flex-wrap:wrap;padding-block-start:6px}
+.seat-wrap{padding-block-end:16px;display:inline-block}
+.seat{inline-size:48px;block-size:54px;border-radius:14px 14px 8px 8px;border:2px dashed var(--ink-3);background:transparent;position:relative;display:grid;place-items:center;padding:0;color:var(--ink-3);font-size:20px}
+.seat::before{content:"";position:absolute;inset-block-start:-7px;inset-inline:13px;block-size:7px;border-radius:4px 4px 0 0;border:2px dashed var(--ink-3);border-block-end:0}
+.seat.full{border-style:solid;border-color:var(--fc);background:var(--surface)}
+.seat.full::before{border-style:solid;border-color:var(--fc)}
+.seat .nm{position:absolute;inset-block-end:-19px;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.compact .car{padding:10px;gap:8px}
+.compact .seats{gap:8px}
+.compact .seat{inline-size:38px;block-size:42px;font-size:16px;border-radius:11px 11px 6px 6px}
+.compact .seat::before{inset-inline:9px}
+.compact .av{inline-size:24px;block-size:24px;font-size:12px}
+.flag{display:flex;gap:6px;align-items:center;background:var(--gap-soft);color:var(--gap);border-radius:9px;padding:5px 9px;font-size:13px;font-weight:500}
+.tag{font-size:12px;font-weight:700;border-radius:6px;padding:0 7px;white-space:nowrap}
+.tag.me{background:var(--accent-soft);color:var(--ink)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.logl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--ink-2)}
+.logl li{display:flex;gap:8px;align-items:baseline}
+.logl .t{color:var(--ink-3);flex:none;font-variant-numeric:tabular-nums}
+.logl li.new{color:var(--ink);font-weight:500}
+.logl li.undone span:last-child{text-decoration:line-through}
+.frozen{filter:grayscale(1);opacity:.5;pointer-events:none;user-select:none}
+.pen{border:0;background:var(--sunk);inline-size:36px;block-size:36px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--ink)}
+.dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;font-size:14px;margin:0}
+.dl dt{color:var(--ink-2)}
+.dl dd{margin:0}
+.covpick{display:flex;gap:10px;align-items:center}
+.covpick .cov{border:1px solid var(--line);border-radius:9px;overflow:hidden;inline-size:54px;block-size:70px;flex:none;background:var(--inv-bg);color:var(--inv-ink);display:grid;place-items:center;font-size:24px}
+/* menu popover */
+.menu{position:absolute;inset-block-start:76px;inset-inline-end:14px;z-index:25;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 26px var(--shadow);padding:6px;display:flex;flex-direction:column;min-inline-size:190px}
+.menu button{border:0;background:transparent;text-align:start;padding:10px 12px;border-radius:9px;font-size:15px;min-block-size:var(--tap)}
+.menu button:hover{background:var(--sunk)}
+.menu button.bad{color:var(--bad)}
+/* sheets / overlays (absolute inside the phone) */
+.ov{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end}
+.scrim{position:absolute;inset:0;background:var(--scrim);border:0;padding:0;inline-size:100%}
+.sheet{position:relative;background:var(--surface);border-radius:22px 22px 0 0;padding-inline:14px;padding-block:8px 22px;display:flex;flex-direction:column;gap:14px;max-block-size:88%;overflow:auto;inline-size:100%;animation:up .18s ease-out}
+.sheet.full{max-block-size:100%;block-size:100%;border-radius:0;padding-block-start:30px;background:var(--app-bg)}
+.sheet-h{display:flex;align-items:center;gap:8px}
+.sheet-h h3{flex:1;font-size:18px}
+@keyframes up{from{transform:translateY(24px);opacity:.4}}
+.grab{inline-size:40px;block-size:4px;border-radius:2px;background:var(--line);align-self:center}
+.sheet-t{font-size:18px}
+.sent{font-size:17px;line-height:1.55}
+.sent b{background:linear-gradient(transparent 62%,var(--accent-soft) 62%)}
+.toast-live{position:absolute;inset-inline:12px;inset-block-end:14px;z-index:40;pointer-events:none}
+.toast{pointer-events:auto;position:relative;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:14.5px;box-shadow:0 8px 20px var(--shadow);overflow:hidden;animation:up .18s ease-out}
+.toast > span{flex:1;min-inline-size:0}
+.toast button{border:0;background:var(--accent);color:var(--on-accent);border-radius:9px;padding:7px 12px;font-weight:700;font-size:14px;min-block-size:38px;white-space:nowrap}
+.tbar{position:absolute;inset-block-end:0;inset-inline-start:0;block-size:3px;background:var(--accent);inline-size:100%;animation:tb 10s linear forwards}
+@keyframes tb{to{inline-size:0}}
+.past summary{cursor:pointer;font-size:14px;color:var(--ink-2);font-weight:500;padding-block:6px;min-block-size:36px;display:flex;align-items:center;gap:6px}
+.past[open] summary{margin-block-end:8px}
+
+@media (max-width: 860px){
+  .w-opt,.w-two{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width: 520px){
+  .w-pc{grid-template-columns:minmax(0,1fr)}
+  .w-intro h1{font-size:26px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+
+<div dir="rtl" lang="he">
+<nav class="w-ctl" aria-label="חלופות">
+  <div class="w-seg" id="seg">
+    <a href="#a" data-go="a"><b>A</b> כרטיס ופעולות</a>
+    <a href="#b" data-go="b"><b>B</b> דף אחד גלול</a>
+    <a href="#c" data-go="c"><b>C</b> לשוניות</a>
+    <a href="#compare" data-go="compare">השוואה</a>
+    <a href="#rules" data-go="rules">כללים</a>
+  </div>
+</nav>
+
+<main class="w-wrap">
+  <header class="w-intro">
+    <div class="w-lane" aria-hidden="true"></div>
+    <h1>דף אירוע קיים · סדנה</h1>
+    <p class="muted">היום: יש דף אירוע, אבל אין עריכה (ב-reducer יש <code>editEvent</code> למארח בלבד), אין ביטול/מחיקה, ורשימת האירועים בקבוצה בלי סימון ביטול וסטטוס הילדים שלי. שלוש חלופות לדף האירוע, ואחריהן כללים משותפים לכולן.</p>
+    <p class="small muted">בכל טלפון: עריכה ← שינוי שעה ← שמירה (טוסט עם ביטול + באנר "עודכן"), וביטול אירוע ← מצב אפור עם "שחזור". נתונים לדוגמה בלבד.</p>
+  </header>
+
+  <!-- ===== A ===== -->
+  <section class="w-sec" id="a" aria-labelledby="a-h">
+    <h2 id="a-h"><span class="w-k">A</span> כרטיס ופעולות</h2>
+    <p class="w-lead">קרוב למה שיש היום: כותרת עם הזמנה, "הילדים שלי", שני אריחי כיוון גדולים שפותחים את הלוחות, ותפריט ⋯ בכותרת.</p>
+    <div class="w-opt">
+      <div class="stack"><div class="dev"><div class="scr" data-phone="a"></div></div><div class="w-url" data-url="a"></div></div>
+      <div class="w-side">
+        <div class="w-try"><b>לנסות:</b><ol><li>⋯ ← עריכת פרטים ← לשנות שעה ← שמירה</li><li>לפתוח את "הלוך" ולראות את הסימון על הרכב</li><li>⋯ ← ביטול אירוע ← שחזור</li></ol></div>
+        <div class="w-pc">
+          <div class="pro"><h3>בעד</h3><ul><li>שינוי הכי קטן לקוד הקיים</li><li>הלוחות נשארים כמו שהם</li><li>הדף קצר: רואים את שני הכיוונים במבט</li><li>עריכה כ-<code>?sheet=edit</code>: חזרה סוגרת</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>עריכה וביטול "מוסתרים" בתפריט ⋯</li><li>עוד לחיצה כדי לראות רכבים</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== B ===== -->
+  <section class="w-sec" id="b" aria-labelledby="b-h">
+    <h2 id="b-h"><span class="w-k">B</span> דף אחד גלול</h2>
+    <p class="w-lead">הכל בדף אחד: פרטים עם עיפרון (עריכה במקום), הילדים שלי, שני הכיוונים כלוחות מוקטנים, היסטוריה בסוף. "הרחב" פותח לוח מלא.</p>
+    <div class="w-opt">
+      <div class="stack"><div class="dev"><div class="scr" data-phone="b"></div></div><div class="w-url" data-url="b"></div></div>
+      <div class="w-side">
+        <div class="w-try"><b>לנסות:</b><ol><li>✎ ליד הפרטים ← לשנות שעה ← שמירה</li><li>לגלול להיסטוריה: השינוי רשום</li><li>בתחתית: ביטול אירוע ← שחזור</li></ol></div>
+        <div class="w-pc">
+          <div class="pro"><h3>בעד</h3><ul><li>פחות מסכים, אין ניווט</li><li>העריכה גלויה ליד מה שנערך</li><li>רואים רכבים ומושבים בלי ללחוץ</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>דף ארוך, בעיקר עם הרבה רכבים</li><li>שיבוץ בלוח המוקטן צפוף; צריך שתי גרסאות לוח</li><li>עריכה במקום = מצב "עריכה" שלא ב-URL</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== C ===== -->
+  <section class="w-sec" id="c" aria-labelledby="c-h">
+    <h2 id="c-h"><span class="w-k">C</span> לשוניות</h2>
+    <p class="w-lead">שלוש לשוניות בראש הדף, כל אחת URL אמיתי: <code dir="ltr">/e/:event</code>, <code dir="ltr">/e/:event/out</code>, <code dir="ltr">/e/:event/back</code>. החלקה הצידה מחליפה לשונית.</p>
+    <div class="w-opt">
+      <div class="stack"><div class="dev"><div class="scr" data-phone="c"></div></div><div class="w-url" data-url="c"></div></div>
+      <div class="w-side">
+        <div class="w-try"><b>לנסות:</b><ol><li>פרטים ← עריכת פרטים ← לשנות שעה ← שמירה</li><li>להחליק או ללחוץ "הלוך"</li><li>פרטים ← ביטול אירוע ← שחזור</li></ol></div>
+        <div class="w-pc">
+          <div class="pro"><h3>בעד</h3><ul><li>מבנה ברור: פרטים / הלוך / חזור</li><li>הלוחות הקיימים הם הלשוניות</li><li>מעבר מהיר בין כיוונים</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>לא רואים את שני מדי הפער יחד</li><li>החלקה מתנגשת עם החלקת "חזרה" ב-iOS בקצה המסך</li><li>שינוי ניווט גדול יותר</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== compare ===== -->
+  <section class="w-sec" id="compare" aria-labelledby="cmp-h">
+    <h2 id="cmp-h">השוואה</h2>
+    <div class="w-cmp" tabindex="0" aria-label="שלושת הטלפונים זה ליד זה">
+      <div><h3>A · כרטיס ופעולות</h3><div class="dev"><div class="scr" data-phone="ca"></div></div></div>
+      <div><h3>B · דף אחד גלול</h3><div class="dev"><div class="scr" data-phone="cb"></div></div></div>
+      <div><h3>C · לשוניות</h3><div class="dev"><div class="scr" data-phone="cc"></div></div></div>
+    </div>
+    <div class="w-tblw" tabindex="0" aria-label="טבלת השוואה">
+      <table class="w-tbl">
+        <thead><tr><th scope="col"></th><th scope="col">A כרטיס ופעולות</th><th scope="col">B דף אחד</th><th scope="col">C לשוניות</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">מסכים</th><td class="rec">אירוע + 2 לוחות (כמו היום)</td><td>1 (+ לוח מלא ב"הרחב")</td><td>1 עם 3 לשוניות</td></tr>
+          <tr><th scope="row">עריכה</th><td class="rec">גיליון מסך מלא <code dir="ltr">?sheet=edit</code></td><td>במקום, עם עיפרון</td><td>כפתור בלשונית פרטים ← גיליון</td></tr>
+          <tr><th scope="row">ביטול אירוע</th><td class="rec">בתפריט ⋯</td><td>קישור בתחתית הדף</td><td>בלשונית פרטים</td></tr>
+          <tr><th scope="row">שני הכיוונים במבט</th><td class="rec">כן (מדים מוקטנים)</td><td>כן (לוחות מלאים)</td><td>לא</td></tr>
+          <tr><th scope="row">היקף שינוי בקוד</th><td class="rec">קטן</td><td>בינוני (לוח מוקטן)</td><td>בינוני-גדול (ניווט)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== shared: rules ===== -->
+  <section class="w-sec" id="rules" aria-labelledby="rules-h">
+    <h2 id="rules-h">משותף לכל החלופות</h2>
+    <div class="w-cards">
+      <article class="w-card">
+        <span class="lbl">1 · כללי עריכה</span>
+        <h3>מי עורך</h3>
+        <p><b>המלצה: כל משפחה בקבוצה.</b> כל שינוי נרשם בהיסטוריה ("משפחת לוי: שינו את השעה 10:00 → 10:30") ואפשר לבטל. זה מודל האמון של האפליקציה: מגינים מטעויות, לא מזדון.</p>
+        <p class="small muted">החלופה: מארח בלבד, כמו היום (<code>editEvent</code> בודק <code>hostFamilyId</code>). אם המארח לא זמין, אף אחד לא מתקן טעות.</p>
+        <h3>שדות</h3>
+        <ul class="w-ul"><li>שם, תאריך, שעת התחלה, שעת איסוף לחזור</li><li>מקום, כתובת</li><li>תמונת הזמנה: החלפה או הסרה</li></ul>
+        <p class="small muted">ה-slug של האירוע לא משתנה גם כשהתאריך משתנה: קישורים ששותפו ממשיכים לעבוד.</p>
+      </article>
+      <article class="w-card">
+        <span class="lbl">1 · כשהשעה או התאריך משתנים</span>
+        <ul class="w-ul">
+          <li>באנר על האירוע ועל הלוח: "השעה השתנתה מ-10:00 ל-10:30"</li>
+          <li>שעות יציאה של נהגים <b>לא</b> זזות לבד. כל רכב בכיוון שהשתנה מסומן "בדקו שעת יציאה" עד שהנהג מאשר או משנה.</li>
+          <li>כפתור "שתף עדכון לקבוצה" עם הודעה מוכנה:</li>
+        </ul>
+        <div class="w-wa">
+          <pre id="wa-upd">עדכון: יום הולדת לנועה (יום שישי, 16.10)
+השעה השתנתה מ-10:00 ל-10:30.
+נהגים, בדקו את שעת היציאה שלכם.
+https://trampush.app/g/gan-alon/e/noa-bday</pre>
+          <button type="button" class="btn sm wa" data-copy="wa-upd">העתקה</button>
+          <span class="cp-ok" role="status"></span>
+        </div>
+      </article>
+      <article class="w-card">
+        <span class="lbl">2 · ביטול / מחיקה</span>
+        <h3>"ביטול אירוע"</h3>
+        <ul class="w-ul"><li>מסמן כמבוטל: אפור ברשימות, תגית "בוטל"</li><li>ההסעות מוקפאות (אין שיבוץ, אין מצב נהג)</li><li>"שחזור" מחזיר הכל כמו שהיה</li><li>נרשם בהיסטוריה, עם הודעת וואטסאפ אופציונלית</li></ul>
+        <div class="w-wa">
+          <pre id="wa-cxl">יום הולדת לנועה (יום שישי, 16.10) בוטל.
+ההסעות מבוטלות.
+https://trampush.app/g/gan-alon/e/noa-bday</pre>
+          <button type="button" class="btn sm wa" data-copy="wa-cxl">העתקה</button>
+          <span class="cp-ok" role="status"></span>
+        </div>
+        <h3>מחיקה אמיתית</h3>
+        <p class="small">רק כשאין עדיין רכבים ואין תשובות (למשל, נוצר בטעות). אחרת מוצע רק ביטול.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== shared: group home ===== -->
+  <section class="w-sec" id="home" aria-labelledby="home-h">
+    <h2 id="home-h">3 · רשימת האירועים בבית הקבוצה</h2>
+    <div class="w-two">
+      <div class="dev"><div class="scr" data-phone="home"></div></div>
+      <div class="w-side">
+        <ul class="w-ul">
+          <li>קרובים ממוינים לפי תאריך: בלוק תאריך, שם, מד פער קטן לכל כיוון</li>
+          <li>תגית של הילדים שלי: "איתי: הלוך ✓ · חזור ?"</li>
+          <li>מבוטל: אפור עם תגית "בוטל", נשאר במקומו ברשימה</li>
+          <li>"אירועים שעברו" מקופל כברירת מחדל</li>
+        </ul>
+        <p class="small muted">היום הרשימה כבר מפוצלת לקרובים/עברו, אבל "עברו" פתוח ואין תגית ילדים או ביטול.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== shared: nav ===== -->
+  <section class="w-sec" id="nav" aria-labelledby="nav-h">
+    <h2 id="nav-h">4 · מודל ניווט</h2>
+    <ul class="w-ul">
+      <li>חץ החזרה באפליקציה = "למעלה" בהיררכיה: דף ילד / לוח / הזמנה ← אירוע ← בית הקבוצה ← הקבוצות שלי.</li>
+      <li>חזרה של הדפדפן / החלקה ב-iOS = ההיסטוריה האמיתית.</li>
+      <li>מסכי "מי אתם?" והרשמה לא נשארים בהיסטוריה (replace), אז חזרה מההזמנה לא מגיעה אליהם.</li>
+    </ul>
+    <div class="w-diag" tabindex="0" aria-label="תרשים היררכיית מסכים">
+      <svg viewBox="0 0 680 300" role="img" aria-labelledby="nav-t">
+        <title id="nav-t">היררכיית המסכים: הקבוצות שלי, בית הקבוצה, אירוע, ומתחתיו לוחות, הזמנה, דף ילד ומצב נהג. מי אתם והרשמה מחוץ להיסטוריה.</title>
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--ink-2)"/></marker>
+        </defs>
+        <style>
+          .nb{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+          .nb.hl{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+          .nb.out{fill:var(--sunk);stroke:var(--ink-3);stroke-dasharray:5 4}
+          .nt{fill:var(--ink);font:500 14px var(--ff-body);text-anchor:middle;dominant-baseline:central}
+          .ns{fill:var(--ink-2);font:400 11.5px var(--ff-mono);text-anchor:middle;dominant-baseline:central;direction:ltr}
+          .ed{stroke:var(--ink-2);stroke-width:1.5;fill:none}
+          .ed.d{stroke-dasharray:4 4;stroke:var(--ink-3)}
+          .cap{fill:var(--ink-2);font:400 12px var(--ff-body);text-anchor:middle}
+        </style>
+        <!-- level 0..2 (center column) -->
+        <rect class="nb" x="270" y="10" width="140" height="44" rx="10"/><text class="nt" x="340" y="26">הקבוצות שלי</text><text class="ns" x="340" y="43">/</text>
+        <rect class="nb" x="270" y="84" width="140" height="44" rx="10"/><text class="nt" x="340" y="100">בית הקבוצה</text><text class="ns" x="340" y="117">/g/:group</text>
+        <rect class="nb hl" x="270" y="158" width="140" height="44" rx="10"/><text class="nt" x="340" y="174">אירוע</text><text class="ns" x="340" y="191">/e/:event</text>
+        <path class="ed" d="M340 84V54" marker-end="url(#ar)"/>
+        <path class="ed" d="M340 158V128" marker-end="url(#ar)"/>
+        <!-- children -->
+        <rect class="nb" x="20" y="240" width="120" height="44" rx="10"/><text class="nt" x="80" y="256">דף ילד</text><text class="ns" x="80" y="273">/kid/:kid/e/…</text>
+        <rect class="nb" x="160" y="240" width="110" height="44" rx="10"/><text class="nt" x="215" y="256">מצב נהג</text><text class="ns" x="215" y="273">/drive/:leg</text>
+        <rect class="nb" x="290" y="240" width="100" height="44" rx="10"/><text class="nt" x="340" y="256">הזמנה</text><text class="ns" x="340" y="273">/invite</text>
+        <rect class="nb" x="410" y="240" width="110" height="44" rx="10"/><text class="nt" x="465" y="256">לוח הלוך</text><text class="ns" x="465" y="273">/out</text>
+        <rect class="nb" x="540" y="240" width="120" height="44" rx="10"/><text class="nt" x="600" y="256">לוח חזור</text><text class="ns" x="600" y="273">/back</text>
+        <path class="ed" d="M80 240V222H340V202" marker-end="url(#ar)"/>
+        <path class="ed" d="M215 240V222"/>
+        <path class="ed" d="M340 240V222"/>
+        <path class="ed" d="M465 240V222"/>
+        <path class="ed" d="M600 240V222H340"/>
+        <!-- outside history -->
+        <rect class="nb out" x="470" y="84" width="190" height="62" rx="10"/><text class="nt" x="565" y="104">מי אתם? / הרשמה</text><text class="cap" x="565" y="130">replace · לא בהיסטוריה</text>
+        <path class="ed d" d="M470 115H410"/>
+        <text class="cap" x="140" y="110">חץ ← = הורה בהיררכיה</text>
+        <text class="cap" x="140" y="128">חזרת דפדפן = היסטוריה</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ===== recommendation ===== -->
+  <section class="w-sec" id="rec" aria-labelledby="rec-h">
+    <div class="w-rec">
+      <h2 id="rec-h">5 · המלצת הארכיטקט</h2>
+      <p><b>A + עריכה לכל משפחה + ביטול במקום מחיקה.</b></p>
+      <p>השינוי הכי קטן, נשען על הלוחות הקיימים ועל <code>editEvent</code> (רק להסיר את בדיקת המארח ולהוסיף <code>cancelEvent</code>/<code>restoreEvent</code>), ומתאים לבקשה "פשוט". מחיקה רק לאירוע ריק.</p>
+    </div>
+  </section>
+
+  <!-- ===== questions ===== -->
+  <section class="w-sec" id="q" aria-labelledby="q-h">
+    <h2 id="q-h">6 · שאלות פתוחות</h2>
+    <ol class="w-q">
+      <li><div>כל משפחה עורכת, או רק המארח?<small>המלצה: כל משפחה, עם היסטוריה וביטול.</small></div></li>
+      <li><div>להזיז אוטומטית שעות יציאה של נהגים כשהשעה משתנה?<small>המלצה: לא, רק לסמן "בדקו שעת יציאה".</small></div></li>
+      <li><div>אירועים שעברו: לשמור לתמיד, או להסתיר אחרי 30 יום?</div></li>
+      <li><div>צריך מחיקה בכלל, או שביטול מספיק?</div></li>
+    </ol>
+  </section>
+</main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- sample data ---------- */
+  var FAM = {
+    cohen: { name: "משפחת כהן", c: "var(--f2)" },
+    levi: { name: "משפחת לוי", c: "var(--f1)" },
+    mizrahi: { name: "משפחת מזרחי", c: "var(--f4)" }
+  };
+  var KID = { noa: { name: "נועה", f: "cohen" }, itai: { name: "איתי", f: "levi" }, maya: { name: "מאיה", f: "mizrahi" } };
+  var ME = "levi";
+  var BASE = "/g/gan-alon/e/noa-bday";
+  var LEG = { out: "הלוך", back: "חזור" };
+  var WD = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fmtDate(ymd) {
+    var p = ymd.split("-").map(Number);
+    var d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+    if (isNaN(d)) return ymd;
+    return "יום " + WD[d.getUTCDay()] + ", " + p[2] + "." + p[1];
+  }
+  function clock() { var d = new Date(); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+
+  function freshState() {
+    return {
+      ev: { title: "יום הולדת לנועה", date: "2026-10-16", start: "10:30", ret: "13:00", place: "פארק הירקון", address: "רוקח 1, תל אביב", cover: true },
+      cancelled: false,
+      changes: null, // [{label, from, to, field}]
+      flag: { out: false, back: false },
+      kid: { rsvp: "yes", out: true, back: true },
+      view: "event", // event | out | back (board)
+      sheet: null, // edit | cancel | wa-upd | wa-cxl | wa-sum
+      menu: false,
+      inline: false,
+      cover: true,
+      toast: null,
+      log: [
+        { t: "09:12", f: "cohen", s: "יצרו את האירוע" },
+        { t: "09:40", f: "mizrahi", s: "הציעו רכב בהלוך · 3 מקומות" },
+        { t: "09:41", f: "mizrahi", s: "הושיבו את איתי ברכב של משפחת מזרחי" },
+        { t: "10:02", f: "levi", s: "הציעו רכב בחזור · 3 מקומות" }
+      ]
+    };
+  }
+
+  /* ---------- pieces ---------- */
+  var ICON_BACK = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ICON_GEAR = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zm7.4-3.2c0-.5 0-.9-.1-1.3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-2.2-1.3L14.3 3h-4l-.4 2.4a7.6 7.6 0 00-2.2 1.3l-2.4-1-2 3.4 2 1.6a7.9 7.9 0 000 2.6l-2 1.6 2 3.4 2.4-1c.7.6 1.4 1 2.2 1.3l.4 2.4h4l.4-2.4c.8-.3 1.5-.7 2.2-1.3l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.3z"/></svg>';
+  var ICON_PEN = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+  function carGlyph() {
+    return '<span class="cth"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M5 11l1.6-4.2A2 2 0 018.5 5.5h7a2 2 0 011.9 1.3L19 11a2 2 0 011.5 1.9V17a1 1 0 01-1 1H18a1.5 1.5 0 01-3 0H9a1.5 1.5 0 01-3 0H4.5a1 1 0 01-1-1v-4.1A2 2 0 015 11z" fill="currentColor"/><path d="M7.5 11l1-2.6h7l1 2.6z" style="fill:var(--car-glass)"/></svg></span>';
+  }
+
+  function header(st, title, opts) {
+    opts = opts || {};
+    var h = '<header class="hdr"><div class="hdr-row">';
+    h += '<button type="button" class="bk" data-act="up" aria-label="חזרה">' + ICON_BACK + "</button>";
+    h += '<h1 class="attl">' + esc(title) + "</h1>";
+    if (st.cancelled && opts.event) h += '<span class="tag bad">בוטל</span>';
+    if (opts.dots) h += '<button type="button" class="dots" data-act="menu" aria-haspopup="true" aria-expanded="' + st.menu + '" aria-label="פעולות לאירוע">⋯</button>';
+    h += '<span class="gear" aria-hidden="true">' + ICON_GEAR + "</span>";
+    h += "</div>";
+    h += '<span class="who" style="--fc:' + FAM[ME].c + '"><span class="fdot" aria-hidden="true"></span><span>פועל/ת בתור: <b>' + FAM[ME].name + "</b></span></span>";
+    if (opts.tabs) h += opts.tabs;
+    h += "</header>";
+    return h;
+  }
+
+  function cover(st) {
+    return st.ev.cover
+      ? '<span class="cov"><span class="cov-art"><span>🎂</span>נועה<br>בת 6</span></span>'
+      : '<span class="cov" aria-hidden="true">🎈</span>';
+  }
+  function evHead(st) {
+    var e = st.ev;
+    return '<div class="evh">' + cover(st) + '<div class="evh-t"><b>' + esc(e.title) + "</b><small>" + fmtDate(e.date) + ' · <time class="num">' + e.start + "</time> · " + esc(e.place) + '</small><small class="num">איסוף לחזור: ' + e.ret + "</small></div></div>";
+  }
+
+  function gapData(leg) {
+    return leg === "out" ? { cls: "ok", txt: "כולם מסודרים בהלוך ✓", short: "הלוך: מסודר ✓", seated: 2, need: 2 } : { cls: "mid", txt: "יש מקום לכולם · 1 ממתינים לשיבוץ", short: "1 ממתינים · חזור", seated: 1, need: 2 };
+  }
+  function gm(leg, small) {
+    var g = gapData(leg), pct = Math.round((g.seated / g.need) * 100);
+    if (small) return '<div class="gm sm ' + g.cls + '"><b>' + g.short + '</b><div class="gm-bar" aria-hidden="true"><i style="inline-size:' + pct + '%"></i></div></div>';
+    return '<div class="gm ' + g.cls + '"><div class="gm-t"><b>' + g.txt + '</b><span class="num">' + g.seated + "/" + g.need + ' שובצו</span></div><div class="gm-bar" aria-hidden="true"><i style="inline-size:' + pct + '%"></i></div></div>';
+  }
+
+  function cars(st, leg) {
+    var list = leg === "out"
+      ? [{ f: "mizrahi", label: "קיה פיקנטו", depart: "10:05", seats: 3, kids: ["maya", "itai"] }]
+      : [{ f: "levi", label: "מאזדה 3", depart: "12:45", seats: 3, kids: ["itai"] }];
+    return list.map(function (o) {
+      var mine = o.f === ME, h = "";
+      h += '<article class="car' + (mine ? " me" : "") + '" style="--fc:' + FAM[o.f].c + '">';
+      h += '<div class="car-h">' + carGlyph() + '<div class="grow1"><div class="row"><b>' + FAM[o.f].name + "</b>" + (mine ? '<span class="tag me">שלי</span>' : "") + '</div><small class="muted">' + o.label + ' · <time class="num">יציאה ' + o.depart + '</time></small></div><span class="seatcount num">' + o.kids.length + "/" + o.seats + "</span></div>";
+      if (st.flag[leg]) h += '<p class="flag">⚠ בדקו שעת יציאה · ' + (leg === "out" ? "ההתחלה" : "האיסוף") + " עכשיו " + (leg === "out" ? st.ev.start : st.ev.ret) + "</p>";
+      h += '<div class="seats">';
+      for (var i = 0; i < o.seats; i++) {
+        var k = o.kids[i];
+        if (k) h += '<span class="seat-wrap"><span class="seat full" style="--fc:' + FAM[KID[k].f].c + '"><span class="av">' + KID[k].name[0] + '</span><span class="nm">' + KID[k].name + "</span></span></span>";
+        else h += '<span class="seat-wrap"><span class="seat" aria-label="מושב פנוי">+</span></span>';
+      }
+      h += "</div></article>";
+      return h;
+    }).join("");
+  }
+
+  function waitingCard(leg) {
+    if (leg === "out") return '<section class="card"><h2 class="hs">ממתינים להסעה בהלוך</h2><p class="small muted">אין ממתינים ✓</p></section>';
+    return '<section class="card"><h2 class="hs">ממתינים להסעה בחזור</h2><div class="chips"><span class="kchip" style="--fc:' + FAM.mizrahi.c + '"><span class="av">מ</span>מאיה</span></div><p class="small muted">בחרו ילד/ה, ואז מושב פנוי</p></section>';
+  }
+
+  function banner(st) {
+    if (!st.changes || st.cancelled) return "";
+    var t = st.changes.map(function (c) { return c.label + " השתנ" + (c.fem ? "תה" : "ה") + " מ-" + c.from + " ל-" + c.to; }).join(" · ");
+    return '<div class="note upd" role="status"><span><b>עודכן</b> · ' + esc(t) + '</span><button type="button" class="mini wa" data-act="sheet" data-arg="wa-upd">שתף עדכון לקבוצה</button></div>';
+  }
+  function cancelNote(st) {
+    if (!st.cancelled) return "";
+    return '<div class="note cxl" role="status"><span><b>האירוע בוטל</b> · ההסעות מוקפאות</span><div class="row wrap"><button type="button" class="btn sm" data-act="restore">שחזור</button><button type="button" class="mini wa" data-act="sheet" data-arg="wa-cxl">הודעה לקבוצה</button></div></div>';
+  }
+
+  function sw(id, label, on, dis, act) {
+    return '<button type="button" class="sw" role="switch" id="' + id + '" aria-checked="' + on + '"' + (dis ? " disabled" : "") + ' data-act="' + act + '"><span>' + label + "</span><i></i></button>";
+  }
+  function myKids(st, P) {
+    var k = st.kid, coming = k.rsvp === "yes";
+    return '<section class="card"><h2 class="hs">הילדים שלי</h2><div class="row"><span class="av" style="--fc:' + FAM[ME].c + '">א</span><b>איתי</b><small class="muted">' + (coming ? "" : "· לא מגיע/ה") + "</small></div>" +
+      sw(P + "-rsvp", "מגיע/ה", coming, false, "rsvp") + sw(P + "-out", "הלוך", coming && k.out, !coming, "kout") + sw(P + "-back", "חזור", coming && k.back, !coming, "kback") + "</section>";
+  }
+
+  function logList(st) {
+    return '<ul class="logl">' + st.log.slice().reverse().slice(0, 8).map(function (l) {
+      return '<li class="' + (l.undone ? "undone" : l.isNew ? "new" : "") + '"><span class="t">' + l.t + "</span><span>" + FAM[l.f].name + ": " + esc(l.s) + (l.undone ? " (בוטל)" : "") + "</span></li>";
+    }).join("") + "</ul>";
+  }
+
+  function fields(st, P) {
+    var e = st.ev;
+    function f(id, label, type, val, extra) {
+      return '<div class="fld"><label for="' + P + "-" + id + '">' + label + '</label><input id="' + P + "-" + id + '" type="' + type + '" value="' + esc(val) + '"' + (extra || "") + "></div>";
+    }
+    return f("title", "שם האירוע", "text", e.title) +
+      '<div class="grid2">' + f("date", "תאריך", "date", e.date) + f("place", "מקום", "text", e.place) + "</div>" +
+      '<div class="grid2">' + f("start", "שעת התחלה", "time", e.start) + f("ret", "איסוף לחזור", "time", e.ret) + "</div>" +
+      f("addr", "כתובת", "text", e.address) +
+      '<div class="fld"><span>תמונת הזמנה</span><div class="covpick">' + (st.cover ? '<span class="cov"><span class="cov-art"><span>🎂</span>נועה<br>בת 6</span></span>' : '<span class="cov" aria-hidden="true">🎈</span>') +
+      '<div class="row wrap"><button type="button" class="mini" data-act="cov-rep">' + (st.cover ? "החלפה" : "הוספה") + "</button>" + (st.cover ? '<button type="button" class="mini" style="color:var(--bad)" data-act="cov-rm">הסרה</button>' : "") + "</div></div></div>";
+  }
+
+  function sheets(st, P) {
+    var h = "";
+    if (st.sheet === "edit") {
+      h += '<div class="ov"><div class="sheet full" role="dialog" aria-modal="true" aria-labelledby="' + P + '-edh">';
+      h += '<div class="sheet-h"><button type="button" class="xbtn" data-act="close" aria-label="סגירה">×</button><h3 id="' + P + '-edh">עריכת פרטים</h3><button type="button" class="btn sm" data-act="save">שמירה</button></div>';
+      h += fields(st, P);
+      h += '<p class="hint">כל משפחה בקבוצה יכולה לערוך. כל שינוי נרשם בהיסטוריה ואפשר לבטל אותו.</p>';
+      h += "</div></div>";
+    } else if (st.sheet === "cancel") {
+      h += '<div class="ov"><button type="button" class="scrim" data-act="close" aria-label="סגירה"></button><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="' + P + '-cxh"><span class="grab" aria-hidden="true"></span>';
+      h += '<h3 class="sheet-t" id="' + P + '-cxh">ביטול אירוע</h3><p class="sent">לבטל את <b>' + esc(st.ev.title) + "</b>, " + fmtDate(st.ev.date) + "? ההסעות יוקפאו. אפשר לשחזר.</p>";
+      h += '<button type="button" class="btn danger big" data-act="do-cancel">ביטול אירוע</button><button type="button" class="btn ghost big" data-act="close">חזרה</button>';
+      h += '<p class="hint">אין עדיין רכבים ותשובות? אז אפשר גם למחוק.</p></div></div>';
+    } else if (st.sheet && st.sheet.indexOf("wa-") === 0) {
+      var txt = waText(st, st.sheet);
+      h += '<div class="ov"><button type="button" class="scrim" data-act="close" aria-label="סגירה"></button><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="' + P + '-wah"><span class="grab" aria-hidden="true"></span>';
+      h += '<h3 class="sheet-t" id="' + P + '-wah">הודעה לקבוצה</h3><div class="w-wa"><pre id="' + P + '-watxt">' + esc(txt) + '</pre><button type="button" class="btn sm wa" data-copy="' + P + '-watxt">העתקה</button><span class="cp-ok" role="status"></span></div>';
+      h += '<p class="hint">באפליקציה: נפתח וואטסאפ עם ההודעה מוכנה.</p><button type="button" class="btn ghost big" data-act="close">סגירה</button></div></div>';
+    }
+    return h;
+  }
+  function waText(st, kind) {
+    var e = st.ev, url = "https://trampush.app" + BASE;
+    if (kind === "wa-cxl") return e.title + " (" + fmtDate(e.date) + ") בוטל.\nההסעות מבוטלות.\n" + url;
+    if (kind === "wa-upd" && st.changes) return "עדכון: " + e.title + " (" + fmtDate(e.date) + ")\n" + st.changes.map(function (c) { return c.label + " השתנ" + (c.fem ? "תה" : "ה") + " מ-" + c.from + " ל-" + c.to + "."; }).join("\n") + "\nנהגים, בדקו את שעת היציאה שלכם.\n" + url;
+    return "סיכום הסעות: " + e.title + "\n" + fmtDate(e.date) + " · " + e.start + " · " + e.place + "\nהלוך: מסודר ✓\nחזור: 1 ממתינים\n" + url;
+  }
+
+  function toastHtml(st) {
+    if (!st.toast) return "";
+    return '<div class="toast-live" aria-live="polite"><div class="toast"><span>' + esc(st.toast.text) + "</span>" + (st.toast.undo ? '<button type="button" data-act="undo">ביטול</button>' : "") + '<i class="tbar" aria-hidden="true"></i></div></div>';
+  }
+
+  function menuHtml(st) {
+    if (!st.menu) return "";
+    return '<div class="menu" role="menu" aria-label="פעולות לאירוע"><button type="button" role="menuitem" data-act="edit">עריכת פרטים</button><button type="button" role="menuitem" data-act="sheet" data-arg="wa-sum">שיתוף לקבוצה</button>' +
+      (st.cancelled ? '<button type="button" role="menuitem" data-act="restore">שחזור אירוע</button>' : '<button type="button" role="menuitem" class="bad" data-act="cancel">ביטול אירוע</button>') + "</div>";
+  }
+
+  function boardBody(st, P, withHead) {
+    var leg = st.view === "event" ? "out" : st.view;
+    var h = "";
+    if (withHead) h += evHead(st);
+    h += cancelNote(st) + banner(st);
+    var inner = "";
+    if (withHead) inner += '<nav class="tabs" aria-label="כיוון">' + ["out", "back"].map(function (l) {
+      return '<button type="button" data-act="view" data-arg="' + l + '"' + (l === leg ? ' aria-current="page"' : "") + ">" + LEG[l] + ' · <time class="num">' + (l === "out" ? st.ev.start : st.ev.ret) + "</time></button>";
+    }).join("") + "</nav>";
+    inner += gm(leg, false) + waitingCard(leg) + '<section class="stack"><h2 class="hs">רכבים</h2>' + cars(st, leg) + "</section>";
+    h += '<div class="stack' + (st.cancelled ? " frozen" : "") + '">' + inner + "</div>";
+    return h;
+  }
+
+  /* ---------- variants ---------- */
+  function renderA(st, P) {
+    if (st.view !== "event") {
+      return header(st, st.ev.title + " · " + LEG[st.view], {}) + '<div class="content">' + boardBody(st, P, true) + "</div>";
+    }
+    var h = header(st, st.ev.title, { dots: true, event: true }) + menuHtml(st) + '<div class="content">';
+    h += cancelNote(st) + banner(st);
+    h += '<div class="stack' + (st.cancelled ? " frozen" : "") + '">' + evHead(st) + myKids(st, P);
+    h += '<section class="stack"><h2 class="hs">הסעות</h2><div class="legtiles">' + ["out", "back"].map(function (l) {
+      return '<button type="button" class="leglink" data-act="view" data-arg="' + l + '"><span class="lt">' + LEG[l] + '<time class="num">' + (l === "out" ? st.ev.start : st.ev.ret) + "</time></span>" + gm(l, true) + '<span class="go">לשיבוץ ←</span></button>';
+    }).join("") + "</div></section>";
+    h += '<button type="button" class="btn dark big" data-act="sheet" data-arg="wa-sum">שתף סיכום לקבוצה</button></div></div>';
+    return h;
+  }
+
+  function renderB(st, P) {
+    if (st.view !== "event") {
+      return header(st, st.ev.title + " · " + LEG[st.view], {}) + '<div class="content">' + boardBody(st, P, true) + "</div>";
+    }
+    var e = st.ev;
+    var h = header(st, e.title, { event: true }) + '<div class="content">' + cancelNote(st) + banner(st);
+    h += '<div class="stack' + (st.cancelled ? " frozen" : "") + '">';
+    if (st.inline) {
+      h += '<section class="card" aria-labelledby="' + P + '-dh"><div class="row sp"><h2 class="hs" id="' + P + '-dh">עריכת פרטים</h2></div>' + fields(st, P) +
+        '<div class="row"><button type="button" class="btn sm" data-act="save">שמירה</button><button type="button" class="btn sm ghost" data-act="close">ביטול</button></div></section>';
+    } else {
+      h += '<section class="card" aria-label="פרטים"><div class="row sp" style="align-items:flex-start">' + evHead(st) + '<button type="button" class="pen" data-act="edit" aria-label="עריכת פרטים">' + ICON_PEN + "</button></div>" +
+        '<dl class="dl"><dt>כתובת</dt><dd>' + esc(e.address) + "</dd><dt>מארחים</dt><dd>" + FAM.cohen.name + "</dd></dl></section>";
+    }
+    h += myKids(st, P);
+    ["out", "back"].forEach(function (l) {
+      h += '<section class="stack compact"><div class="row sp"><h2 class="hs">' + LEG[l] + ' · <time class="num">' + (l === "out" ? e.start : e.ret) + '</time></h2><button type="button" class="lnk" data-act="view" data-arg="' + l + '">הרחב</button></div>' + gm(l, true) + cars(st, l) + "</section>";
+    });
+    h += '<button type="button" class="btn dark big" data-act="sheet" data-arg="wa-sum">שתף סיכום לקבוצה</button>';
+    h += '<section class="card"><h2 class="hs">היסטוריה</h2>' + logList(st) + "</section></div>";
+    if (!st.cancelled) h += '<button type="button" class="lnk bad" data-act="cancel" style="align-self:center">ביטול אירוע</button>';
+    h += "</div>";
+    return h;
+  }
+
+  function renderC(st, P) {
+    var tab = st.view === "event" ? "details" : st.view;
+    var tabs = '<nav class="tabs" role="tablist" aria-label="אירוע">' + [["details", "פרטים"], ["out", "הלוך"], ["back", "חזור"]].map(function (t) {
+      return '<button type="button" role="tab" id="' + P + "-tab-" + t[0] + '" aria-selected="' + (tab === t[0]) + '" data-act="view" data-arg="' + (t[0] === "details" ? "event" : t[0]) + '">' + t[1] + (t[0] !== "details" ? ' · <time class="num">' + (t[0] === "out" ? st.ev.start : st.ev.ret) + "</time>" : "") + "</button>";
+    }).join("") + "</nav>";
+    var h = header(st, st.ev.title, { tabs: tabs, event: true }) + '<div class="content" role="tabpanel" aria-labelledby="' + P + "-tab-" + tab + '">';
+    if (tab === "details") {
+      h += cancelNote(st) + banner(st) + '<div class="stack' + (st.cancelled ? " frozen" : "") + '">' + evHead(st) +
+        '<dl class="dl"><dt>כתובת</dt><dd>' + esc(st.ev.address) + "</dd><dt>מארחים</dt><dd>" + FAM.cohen.name + "</dd></dl>" +
+        '<div class="gms">' + gm("out", true) + gm("back", true) + "</div>" + myKids(st, P) +
+        '<button type="button" class="btn ghost big" data-act="edit">עריכת פרטים</button>' +
+        '<button type="button" class="btn dark big" data-act="sheet" data-arg="wa-sum">שתף סיכום לקבוצה</button></div>';
+      if (!st.cancelled) h += '<button type="button" class="lnk bad" data-act="cancel" style="align-self:center">ביטול אירוע</button>';
+    } else {
+      h += boardBody(st, P, false);
+    }
+    h += '<p class="hint" style="text-align:center">← החליקו להחלפת לשונית →</p></div>';
+    return h;
+  }
+
+  function renderHome() {
+    var ev = [
+      { d: "16", m: "אוק׳", t: "יום הולדת לנועה", s: "יום שישי, 16.10 · 10:30 · פארק הירקון", g: [["ok", "הלוך: מסודר ✓", 100], ["mid", "1 ממתינים · חזור", 50]], k: "איתי: הלוך ✓ · חזור ?" },
+      { d: "20", m: "אוק׳", t: "הצגה בתיאטרון", s: "יום שלישי, 20.10 · 17:00 · היכל התרבות", cx: true },
+      { d: "23", m: "אוק׳", t: "טיול לגן החיות", s: "יום שישי, 23.10 · 09:00 · הספארי", g: [["gap", "חסרים 2 · הלוך", 33], ["mid", "חזור: אין צורך", 0]], k: "איתי: עוד לא עניתם" }
+    ];
+    function card(e, dim) {
+      var h = '<a class="evcard' + (e.cx ? " cx" : dim ? " dim" : "") + '" href="#home" data-noop><span class="evd" aria-hidden="true"><b>' + e.d + "</b>" + e.m + '</span><span class="evm grow1"><span class="row"><b class="t">' + e.t + "</b>" + (e.cx ? '<span class="tag bad">בוטל</span>' : "") + "</span><small>" + e.s + "</small>";
+      if (e.g) h += '<span class="gms">' + e.g.map(function (g) { return '<span class="gm sm ' + g[0] + '"><b>' + g[1] + '</b><span class="gm-bar" aria-hidden="true"><i style="display:block;inline-size:' + g[2] + '%"></i></span></span>'; }).join("") + "</span>";
+      if (e.k) h += '<span class="kst" style="--fc:' + FAM[ME].c + '">' + e.k + "</span>";
+      return h + "</span></a>";
+    }
+    var h = '<header class="hdr"><div class="hdr-row"><span class="bk" aria-hidden="true">' + ICON_BACK + '</span><h1 class="attl">גן אלון</h1><span class="gear" aria-hidden="true">' + ICON_GEAR + "</span></div>" +
+      '<span class="who" style="--fc:' + FAM[ME].c + '"><span class="fdot" aria-hidden="true"></span><span>פועל/ת בתור: <b>' + FAM[ME].name + "</b></span></span></header>";
+    h += '<div class="content"><span class="btn big">+ אירוע חדש</span><h2 class="hs">אירועים קרובים</h2><ul class="list">' + ev.map(function (e) { return "<li>" + card(e) + "</li>"; }).join("") + "</ul>";
+    h += '<details class="past"><summary>אירועים שעברו (2)</summary><ul class="list">' +
+      [{ d: "1", m: "אוק׳", t: "פיקניק סוכות", s: "יום חמישי, 1.10 · 16:00 · פארק הירקון" }, { d: "12", m: "ספט׳", t: "בריכה עם הגן", s: "יום שבת, 12.9 · 10:00 · בריכת גורדון" }].map(function (e) { return "<li>" + card(e, true) + "</li>"; }).join("") + "</ul></details></div>";
+    return h;
+  }
+
+  /* ---------- phone controller ---------- */
+  function Phone(root, variant, P) {
+    var st = freshState();
+    var urlEl = document.querySelector('[data-url="' + P + '"]');
+    var timer = null, sx = null, sy = null;
+    root.innerHTML = '<div class="sbar" aria-hidden="true"><span>9:41</span><span>●●● 5G ▮</span></div><div class="scr-body"></div><div class="scr-ov"></div>';
+    var body = root.querySelector(".scr-body"), ovl = root.querySelector(".scr-ov");
+
+    function url() {
+      var u = BASE + (st.view !== "event" ? "/" + st.view : "");
+      if (st.sheet) u += "?sheet=" + st.sheet;
+      return u;
+    }
+    function render(keepScroll) {
+      var ae = document.activeElement, key = null;
+      if (ae && root.contains(ae)) key = ae.id || (ae.dataset.act ? ae.dataset.act + "|" + (ae.dataset.arg || "") : null);
+      var top = body.scrollTop;
+      body.innerHTML = variant === "a" ? renderA(st, P) : variant === "b" ? renderB(st, P) : renderC(st, P);
+      ovl.innerHTML = sheets(st, P) + toastHtml(st);
+      body.scrollTop = keepScroll ? top : 0;
+      if (urlEl) urlEl.innerHTML = "<b>" + esc(url()) + "</b>";
+      if (key) {
+        var el = root.querySelector("#" + CSS.escape(key)) || (key.indexOf("|") > 0 ? root.querySelector('[data-act="' + key.split("|")[0] + '"]' + (key.split("|")[1] ? '[data-arg="' + key.split("|")[1] + '"]' : "")) : null);
+        if (el) el.focus({ preventScroll: true });
+      }
+    }
+    function showToast(text, undo) {
+      st.toast = { text: text, undo: undo };
+      clearTimeout(timer);
+      timer = setTimeout(function () { st.toast = null; ovl.querySelector(".toast-live") && ovl.querySelector(".toast-live").remove(); }, 10000);
+    }
+    function addLog(s) {
+      st.log.forEach(function (l) { l.isNew = false; });
+      var e = { t: clock(), f: ME, s: s, isNew: true };
+      st.log.push(e);
+      return e;
+    }
+    function val(id) { var el = root.querySelector("#" + P + "-" + id); return el ? el.value : null; }
+
+    function save() {
+      var e = st.ev, before = JSON.parse(JSON.stringify(e)), beforeChanges = st.changes, beforeFlag = { out: st.flag.out, back: st.flag.back };
+      var next = { title: val("title") || e.title, date: val("date") || e.date, start: val("start") || e.start, ret: val("ret") || e.ret, place: val("place") || e.place, address: val("addr") || e.address, cover: st.cover };
+      var ch = [], other = [];
+      if (next.start !== e.start) ch.push({ label: "השעה", from: e.start, to: next.start, fem: true, leg: "out" });
+      if (next.ret !== e.ret) ch.push({ label: "שעת האיסוף", from: e.ret, to: next.ret, fem: true, leg: "back" });
+      if (next.date !== e.date) ch.push({ label: "התאריך", from: fmtDate(e.date), to: fmtDate(next.date), leg: "both" });
+      if (next.title !== e.title) other.push("השם");
+      if (next.place !== e.place) other.push("המקום");
+      if (next.address !== e.address) other.push("הכתובת");
+      if (next.cover !== e.cover) other.push("תמונת ההזמנה");
+      st.sheet = null; st.inline = false;
+      if (!ch.length && !other.length) { render(true); return; }
+      st.ev = next;
+      if (ch.length) {
+        st.changes = ch;
+        ch.forEach(function (c) { if (c.leg === "out" || c.leg === "both") st.flag.out = true; if (c.leg === "back" || c.leg === "both") st.flag.back = true; });
+      }
+      var parts = ch.map(function (c) { return "שינו את " + c.label + " " + c.from + " → " + c.to; });
+      if (other.length) parts.push("עדכנו את " + other.join(", "));
+      var entry = addLog(parts.join(" · "));
+      var first = ch[0];
+      var msg = first ? (first.label === "השעה" ? "השעה עודכנה" : first.label === "התאריך" ? "התאריך עודכן" : "שעת האיסוף עודכנה") : "הפרטים עודכנו";
+      showToast(msg, function () {
+        st.ev = before; st.cover = before.cover; st.changes = beforeChanges; st.flag = beforeFlag; entry.undone = true; entry.isNew = false;
+        addLog("ביטלו פעולה");
+        showToast("השינוי בוטל", null);
+      });
+      render(true);
+    }
+
+    function act(a, arg) {
+      switch (a) {
+        case "up":
+          if (st.view !== "event" && variant !== "c") st.view = "event";
+          else { st.menu = false; showToast("למעלה: בית הקבוצה (בסדנה נשארים כאן)", null); }
+          break;
+        case "menu": st.menu = !st.menu; render(true); if (st.menu) { var m = root.querySelector(".menu button"); m && m.focus(); } return;
+        case "view": st.view = arg; st.menu = false; break;
+        case "edit":
+          st.menu = false; st.cover = st.ev.cover;
+          if (variant === "b") { st.inline = true; render(true); var f = root.querySelector("#" + P + "-start"); f && f.focus(); return; }
+          st.sheet = "edit"; render(true); var s = root.querySelector("#" + P + "-start"); s && s.focus(); return;
+        case "close": st.sheet = null; st.inline = false; st.cover = st.ev.cover; render(true); return;
+        case "save": save(); return;
+        case "cov-rep": st.cover = true; render(true); return;
+        case "cov-rm": st.cover = false; render(true); return;
+        case "cancel": st.menu = false; st.sheet = "cancel"; render(true); var d = root.querySelector('[data-act="do-cancel"]'); d && d.focus(); return;
+        case "do-cancel":
+          st.sheet = null; st.cancelled = true; st.view = "event";
+          var ce = addLog("ביטלו את האירוע");
+          showToast("האירוע בוטל", function () { st.cancelled = false; ce.undone = true; addLog("ביטלו פעולה"); showToast("הביטול בוטל", null); });
+          render(true); return;
+        case "restore":
+          st.menu = false; st.cancelled = false;
+          addLog("שחזרו את האירוע");
+          showToast("האירוע שוחזר", null);
+          render(true); return;
+        case "sheet": st.menu = false; st.sheet = arg; render(true); var c = root.querySelector(".scr-ov [data-copy]"); c && c.focus(); return;
+        case "undo": var u = st.toast && st.toast.undo; if (u) u(); render(true); return;
+        case "rsvp": st.kid.rsvp = st.kid.rsvp === "yes" ? "no" : "yes"; if (st.kid.rsvp === "yes") { st.kid.out = st.kid.back = true; } showToast("עודכן: איתי", null); break;
+        case "kout": st.kid.out = !st.kid.out; showToast("עודכן: איתי", null); break;
+        case "kback": st.kid.back = !st.kid.back; showToast("עודכן: איתי", null); break;
+        default: return;
+      }
+      render(a === "rsvp" || a === "kout" || a === "kback" || a === "up");
+    }
+
+    root.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-act]");
+      if (!b || !root.contains(b)) {
+        if (st.menu && !ev.target.closest(".menu")) { st.menu = false; render(true); }
+        return;
+      }
+      act(b.dataset.act, b.dataset.arg);
+    });
+    root.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && (st.menu || st.sheet || st.inline)) { st.menu = false; act("close"); }
+    });
+    if (variant === "c") {
+      body.addEventListener("pointerdown", function (e) { sx = e.clientX; sy = e.clientY; });
+      body.addEventListener("pointerup", function (e) {
+        if (sx === null) return;
+        var dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+        if (Math.abs(dx) < 50 || Math.abs(dy) > 40 || st.sheet) return;
+        var order = ["event", "out", "back"], i = order.indexOf(st.view);
+        i = dx > 0 ? Math.min(2, i + 1) : Math.max(0, i - 1); // RTL: finger to the right = next tab
+        if (order[i] !== st.view) { st.view = order[i]; render(false); }
+      });
+    }
+    render(false);
+  }
+
+  document.querySelectorAll("[data-phone]").forEach(function (el) {
+    var p = el.dataset.phone;
+    if (p === "home") {
+      el.innerHTML = '<div class="sbar" aria-hidden="true"><span>9:41</span><span>●●● 5G ▮</span></div><div class="scr-body">' + renderHome() + "</div>";
+      el.addEventListener("click", function (e) { if (e.target.closest("[data-noop]")) e.preventDefault(); });
+      return;
+    }
+    Phone(el, p.slice(-1), p);
+  });
+
+  /* ---------- copy buttons (page + phones) ---------- */
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-copy]");
+    if (!b) return;
+    var pre = document.getElementById(b.dataset.copy);
+    var out = b.parentElement.querySelector(".cp-ok");
+    function sel() {
+      var r = document.createRange(); r.selectNodeContents(pre);
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      if (out) out.textContent = "הטקסט מסומן, העתיקו ידנית";
+    }
+    try {
+      navigator.clipboard.writeText(pre.textContent).then(function () { if (out) out.textContent = "הועתק ✓"; }).catch(sel);
+    } catch (e) { sel(); }
+  });
+
+  /* ---------- sticky segmented control ---------- */
+  var seg = document.getElementById("seg");
+  var links = Array.prototype.slice.call(seg.querySelectorAll("[data-go]"));
+  var KEYS = ["a", "b", "c", "compare"];
+  function light(id) {
+    links.forEach(function (l) {
+      var on = l.dataset.go === id;
+      if (on) l.setAttribute("aria-current", "true"); else l.removeAttribute("aria-current");
+      if (on) { var sr = seg.getBoundingClientRect(), lr = l.getBoundingClientRect(); if (lr.left < sr.left || lr.right > sr.right) seg.scrollLeft += lr.left < sr.left ? lr.left - sr.left - 16 : lr.right - sr.right + 16; }
+    });
+  }
+  function go(id, smooth) {
+    var t = document.getElementById(id);
+    if (!t) return;
+    t.scrollIntoView({ behavior: smooth && !reduced ? "smooth" : "auto", block: "start" });
+    light(id);
+  }
+  links.forEach(function (l) {
+    l.addEventListener("click", function (e) {
+      e.preventDefault();
+      var id = l.dataset.go;
+      try { history.replaceState(null, "", "#" + id); } catch (er) { location.hash = id; }
+      if (KEYS.indexOf(id) >= 0) { try { localStorage.setItem("events-ws-choice", id); } catch (er) {} }
+      go(id, true);
+    });
+  });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) { if (en.isIntersecting) light(en.target.id); });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    links.forEach(function (l) { var s = document.getElementById(l.dataset.go); s && io.observe(s); });
+  }
+  var start = (location.hash || "").slice(1);
+  if (KEYS.indexOf(start) < 0) { try { start = localStorage.getItem("events-ws-choice") || ""; } catch (er) { start = ""; } }
+  if (KEYS.indexOf(start) >= 0) {
+    light(start);
+    requestAnimationFrame(function () { go(start, false); });
+  }
+})();
+</script>
