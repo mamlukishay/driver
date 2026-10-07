@@ -78,7 +78,7 @@ export const he = {
     shareTitle: "קישור לקבוצה",
     shareHint: "כל מי שיש לו את הקישור יכול לצפות ולפעול בקבוצה. שלחו אותו רק בקבוצת ההורים.",
     share: "שליחת הקישור ב-WhatsApp",
-    linkLabel: "קישור לקבוצה",
+    linkLabel: "קישור ההזמנה לקבוצה",
   },
 
   errors: {
@@ -136,7 +136,9 @@ export const he = {
     dupTitle: "זו המשפחה שלכם?",
     dupText: (family: string, kids: string[]) =>
       `יש כבר ${family} בקבוצה${kids.length ? ` (${kids.join(", ")})` : ""}. זו המשפחה שלכם?`,
+    dupTextMany: (name: string, n: number) => `יש כבר ${n} משפחות בשם ${name} בקבוצה. אחת מהן שלכם?`,
     dupYes: "כן, זו אנחנו",
+    dupYesOf: (label: string) => `כן, אנחנו ${label}`,
     dupNo: "לא, משפחה אחרת",
     savedPhotosLater: "התמונות של הרכב יעלו מיד אחרי ההרשמה.",
   },

@@ -12,7 +12,8 @@ import { he } from "../i18n/he.ts";
 import { setBrowsing, setIdentity } from "../identity.ts";
 import { useSheet, withQuery } from "../nav.ts";
 import { useGroup } from "../store.ts";
-import { safeNext } from "./Who.tsx";
+import { famLabel } from "../util.ts";
+import { byCreation, safeNext } from "./Who.tsx";
 
 export function useConfig() {
   const [places, setPlaces] = useState(false);
@@ -46,7 +47,8 @@ export function Join({ group }: { group: string }) {
   }, [me, registering, group]);
 
   const families = grp.data?.families ?? [];
-  const dup: FamilyPublic | undefined = sheet.name === "dup" && pending ? families.find((f) => f.id === sheet.query.fam) : undefined;
+  // Same-name families already in the group (oldest first), while the "זו המשפחה שלכם?" sheet is open.
+  const dups: FamilyPublic[] = sheet.name === "dup" && pending ? sameNameFamilies(pending.name, byCreation(families)) : [];
 
   const register = async (d: FamilyDraft) => {
     try {
@@ -77,7 +79,7 @@ export function Join({ group }: { group: string }) {
     const same = sameNameFamilies(d.name, families);
     if (same.length > 0) {
       setPending(d);
-      sheet.open("dup", { fam: same[0]!.id, new: "1", next: query.next });
+      sheet.open("dup", { new: "1", next: query.next });
       return;
     }
     await register(d);
@@ -126,14 +128,20 @@ export function Join({ group }: { group: string }) {
           </>
         )}
       </main>
-      <Sheet open={!!dup} title={he.join.dupTitle} onClose={sheet.close}>
-        {dup && (
+      <Sheet open={dups.length > 0} title={he.join.dupTitle} onClose={sheet.close}>
+        {dups.length > 0 && (
           <>
-            <p class="sent">{he.join.dupText(he.family(dup.name.trim()), dup.kids.map((k) => k.name))}</p>
+            <p class="sent">
+              {dups.length === 1
+                ? he.join.dupText(he.family(dups[0]!.name.trim()), dups[0]!.kids.map((k) => k.name))
+                : he.join.dupTextMany(dups[0]!.name.trim(), dups.length)}
+            </p>
             <div class="stack">
-              <button type="button" class="btn big" data-autofocus onClick={() => pickExisting(dup)}>
-                {he.join.dupYes}
-              </button>
+              {dups.map((f, i) => (
+                <button type="button" class="btn big" data-autofocus={i === 0 ? true : undefined} onClick={() => pickExisting(f)}>
+                  {dups.length === 1 ? he.join.dupYes : he.join.dupYesOf(famLabel(f, families))}
+                </button>
+              ))}
               <button
                 type="button"
                 class="btn ghost big"

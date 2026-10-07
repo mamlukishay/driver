@@ -32,7 +32,7 @@ test("an invitation image uploaded on a new event renders", async () => {
   await page.getByRole("button", { name: he.newEvent.submit }).click();
 
   // The event header shows the uploaded image from the server (R2/DO), not the placeholder.
-  await expect(page).toHaveURL(/\/e\/[a-z0-9]+$/);
+  await expect(page).toHaveURL(/\/e\/[a-z0-9-]+$/);
   const cover = page.getByRole("link", { name: he.event.inviteFull }).locator("img");
   await expectImageLoaded(cover);
   expect(await cover.getAttribute("src")).toContain(`/api/g/${groupId}/images/`);

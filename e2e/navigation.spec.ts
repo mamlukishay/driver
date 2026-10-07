@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiGroup, he, keyOf, newUser, offerCar, soloScene, type Scene, type User } from "./helpers.ts";
+import { apiGroup, familyIdOf, he, newUser, offerCar, soloScene, type Scene, type User } from "./helpers.ts";
 
 const FAMILY = { name: "כהן", parent: "רונית", phone: "052-111-1111", kid: "נועה", car: { label: "מאזדה אדומה", seats: 4 } };
 const EVENT_TITLE = "טיול שנתי";
@@ -19,8 +19,8 @@ test.afterEach(async () => {
 test("every screen has its own URL", async () => {
   const { page } = user;
   const { groupId, eventUrl } = scene;
-  const group = await apiGroup(page, groupId, await keyOf(page, groupId));
-  const kidToken = group.me!.kids[0]!.kidToken;
+  const group = await apiGroup(page, groupId, await familyIdOf(page, groupId));
+  const kidId = group.me!.kids[0]!.id;
 
   // Each deep link renders its own screen (an h1 that identifies it), never the not-found page.
   const screens: [string, string | RegExp][] = [
@@ -36,8 +36,9 @@ test("every screen has its own URL", async () => {
     [`${eventUrl}/drive/out`, he.drive.title("out")],
     [`${eventUrl}/drive/back`, he.drive.title("back")],
     [`/g/${groupId}/me`, he.profile.title],
-    [`/g/${groupId}/devices`, he.devices.title],
-    [`/kid/${groupId}/${kidToken}`, he.kid.hi(FAMILY.kid)],
+    [`/g/${groupId}/settings`, he.settings.title],
+    [`/g/${groupId}/who`, "קבוצת ניווט"],
+    [`/g/${groupId}/kid/${kidId}`, he.kid.hi(FAMILY.kid)],
   ];
   for (const [path, heading] of screens) {
     await page.goto(path);
@@ -175,6 +176,10 @@ test("a deep link reload on the back leg works (SPA fallback)", async () => {
   try {
     const p = await other.newPage();
     await p.goto(backUrl);
+    // No family on that phone: "מי אתם?" first, then "רק להסתכל" returns to the same link, view-only.
+    await expect(p.getByRole("heading", { name: he.who.title })).toBeVisible();
+    await p.getByRole("button", { name: he.who.justLook }).click();
+    await expect(p).toHaveURL(new RegExp(`${backUrl}$`));
     await expect(p.getByRole("heading", { level: 1, name: `${EVENT_TITLE} · ${he.legName.back}` })).toBeVisible();
     await expect(p.getByText(he.identity.viewOnly)).toBeVisible();
   } finally {

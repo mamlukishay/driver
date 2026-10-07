@@ -1,4 +1,5 @@
 // Usage: bun scripts/api-smoke.ts http://localhost:5180
+// Identity is just `X-Family-Id` (no secret): the server only checks the family exists in the group.
 import type { EventView, FamilyPrivate, GroupResponse, KidView, ConfigResponse } from "../shared/types.ts";
 
 const base = (process.argv[2] ?? "http://localhost:5180").replace(/\/$/, "");
@@ -17,7 +18,7 @@ function check(name: string, ok: boolean, extra?: unknown) {
 
 async function call<T = any>(method: string, path: string, opts: { key?: string; body?: unknown; raw?: BodyInit; type?: string } = {}) {
   const headers: Record<string, string> = {};
-  if (opts.key) headers["X-Family-Key"] = opts.key;
+  if (opts.key) headers["X-Family-Id"] = opts.key;
   let body: BodyInit | undefined;
   if (opts.raw !== undefined) {
     body = opts.raw;
@@ -43,10 +44,10 @@ const familyInput = (surname: string, phone: string, kid?: string, seats = 4) =>
 });
 
 async function register(g: string, surname: string, phone: string, kid?: string) {
-  const r = await call<{ familyId: string; key: string }>("POST", `/api/g/${g}/families`, { body: familyInput(surname, phone, kid) });
-  check(`register ${surname}`, r.status === 200 && !!r.data.key, r);
-  const me = await call<GroupResponse>("GET", `/api/g/${g}`, { key: r.data.key });
-  return { id: r.data.familyId, key: r.data.key, me: me.data.me as FamilyPrivate };
+  const r = await call<{ familyId: string }>("POST", `/api/g/${g}/families`, { body: familyInput(surname, phone, kid) });
+  check(`register ${surname}`, r.status === 200 && !!r.data.familyId && Object.keys(r.data).join() === "familyId", r.data);
+  const me = await call<GroupResponse>("GET", `/api/g/${g}`, { key: r.data.familyId });
+  return { id: r.data.familyId, key: r.data.familyId, me: me.data.me as FamilyPrivate };
 }
 
 async function main() {
@@ -57,9 +58,17 @@ async function main() {
 
   const bad = await call("POST", "/api/groups", { body: {} });
   check("create group invalid name -> 400", bad.status === 400 && (bad.data as any).error === "invalid", bad.data);
-  const gr = await call<{ groupId: string }>("POST", "/api/groups", { body: { name: "כיתה ג׳2" } });
-  check("create group", gr.status === 200 && gr.data.groupId.length === 10, gr.data);
+  const slug = `smoke-${Math.random().toString(36).slice(2, 8)}`;
+  check("create group bad slug -> 400", (await call("POST", "/api/groups", { body: { name: "x", slug: "Bad Slug" } })).status === 400);
+  check("create group short slug -> 400", (await call("POST", "/api/groups", { body: { name: "x", slug: "ab" } })).status === 400);
+  const gr = await call<{ groupId: string }>("POST", "/api/groups", { body: { name: "כיתה ג׳2", slug } });
+  check("create group with slug", gr.status === 200 && gr.data.groupId === slug, gr.data);
   const g = gr.data.groupId;
+  const dupe = await call("POST", "/api/groups", { body: { name: "עוד", slug } });
+  check("duplicate slug -> 409 slug_taken + suggestion", dupe.status === 409 && (dupe.data as any).error === "slug_taken" && (dupe.data as any).suggestion === `${slug}-2`, dupe.data);
+  const legacy = await call<{ groupId: string }>("POST", "/api/groups", { body: { name: "בלי כתובת" } });
+  check("create group without slug -> random 10-char slug", legacy.status === 200 && legacy.data.groupId.length === 10 && (await call("GET", `/api/g/${legacy.data.groupId}`)).status === 200, legacy.data);
+  check("internal paths are not reachable", (await call("POST", `/api/g/${g}/__init`, { body: { name: "x" } })).status === 404);
 
   check("unknown group -> 404", (await call("GET", "/api/g/zzzzzzzzzz")).status === 404);
   check("malformed group id -> 404", (await call("GET", "/api/g/NOPE!")).status === 404);
@@ -75,31 +84,40 @@ async function main() {
   check("me has no keyHash", !("keyHash" in A.me));
 
   const grp = await call<GroupResponse>("GET", `/api/g/${g}`);
-  check("group GET anonymous: 4 families, no me, no phones", grp.data.families.length === 4 && !grp.data.me && !JSON.stringify(grp.data).includes("+972"), grp.data.families.length);
+  check("group GET anonymous: 4 families with phones + addresses, no me", grp.data.families.length === 4 && !grp.data.me && grp.data.families.every((f) => f.parents[0]!.phone.startsWith("+972") && !!f.address), grp.data.families.length);
 
   // 403s
-  check("bad key -> 403", (await call("POST", `/api/g/${g}/events`, { key: `${A.id}.${"x".repeat(24)}`, body: {} })).status === 403);
-  check("garbage key -> 403", (await call("GET", `/api/g/${g}`, { key: "garbage" })).status === 403);
-  check("no key on write -> 403", (await call("POST", `/api/g/${g}/events`, { body: {} })).status === 403);
+  check("unknown family id -> 403", (await call("POST", `/api/g/${g}/events`, { key: "zzzzzzzz", body: {} })).status === 403);
+  check("garbage family id -> 403", (await call("GET", `/api/g/${g}`, { key: "garbage!" })).status === 403);
+  check("no family on write -> 403", (await call("POST", `/api/g/${g}/events`, { body: {} })).status === 403);
 
-  // profile update keeps kid id + token
+  // profile update keeps kid id
   const upd = await call<{ me: FamilyPrivate }>("PUT", `/api/g/${g}/families/me`, {
     key: A.key,
     body: { ...familyInput("אברהם", "050-1111111"), kids: [{ id: kidA.id, name: "נועה א׳", phone: "052-3330000" }], cars: [{ id: A.me.cars[0]!.id, label: "רכב חדש", seats: 4 }] },
   });
-  check("PUT families/me keeps kid id and token", upd.status === 200 && upd.data.me.kids[0]!.id === kidA.id && upd.data.me.kids[0]!.kidToken === kidA.kidToken && upd.data.me.cars[0]!.label === "רכב חדש", upd.data);
+  check("PUT families/me keeps kid id", upd.status === 200 && upd.data.me.kids[0]!.id === kidA.id && upd.data.me.cars[0]!.label === "רכב חדש", upd.data);
 
   // event (hosted by D)
   const evInput = { title: "יום הולדת", date: day, start: "16:00", returnTime: "18:30", place: "פארק", address: "הירקון 1" };
   check("event invalid -> 400", (await call("POST", `/api/g/${g}/events`, { key: D.key, body: { title: "x" } })).status === 400);
-  const ev = await call<{ eventId: string }>("POST", `/api/g/${g}/events`, { key: D.key, body: evInput });
-  check("create event", ev.status === 200 && !!ev.data.eventId, ev.data);
+  const ev = await call<{ eventId: string }>("POST", `/api/g/${g}/events`, { key: D.key, body: { ...evInput, slugWord: "Birthday" } });
+  const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const dayBase = `${months[Number(day.slice(5, 7)) - 1]}-${Number(day.slice(8, 10))}`;
+  check("create event -> slug <mon>-<day>-word", ev.status === 200 && ev.data.eventId === `${dayBase}-birthday`, ev.data);
   const e = ev.data.eventId;
+  const ev2 = await call<{ eventId: string }>("POST", `/api/g/${g}/events`, { key: D.key, body: { ...evInput, slugWord: "birthday" } });
+  check("clashing event slug -> -2", ev2.status === 200 && ev2.data.eventId === `${dayBase}-birthday-2`, ev2.data);
+  const ev3 = await call<{ eventId: string }>("POST", `/api/g/${g}/events`, { key: D.key, body: evInput });
+  check("event without word -> <mon>-<day>", ev3.status === 200 && ev3.data.eventId === dayBase, ev3.data);
+  check("event with non-English word -> 400", (await call("POST", `/api/g/${g}/events`, { key: D.key, body: { ...evInput, slugWord: "יומולדת" } })).status === 400);
+  const edited = await call<{ event: EventView }>("POST", `/api/g/${g}/events/${ev3.data.eventId}/actions`, { key: D.key, body: { type: "editEvent", patch: { date: "2027-01-01" } } });
+  check("editing the date keeps the slug", edited.status === 200 && edited.data.event.id === dayBase && edited.data.event.date === "2027-01-01", edited.data);
   const actions = `/api/g/${g}/events/${e}/actions`;
   const act = (key: string, body: object) => call<{ event: EventView; logId: string }>("POST", actions, { key, body });
 
   const list = await call<GroupResponse>("GET", `/api/g/${g}`);
-  check("group lists the event", list.data.events.length === 1 && list.data.events[0]!.id === e);
+  check("group lists the events", list.data.events.length === 3 && list.data.events.some((x) => x.id === e));
 
   // plans
   let r = await act(A.key, { type: "setKidPlan", kidId: kidA.id, rsvp: "yes", out: true, back: true });
@@ -118,7 +136,7 @@ async function main() {
 
   const evBefore = await call<EventView>("GET", `/api/g/${g}/events/${e}`, { key: B.key });
   const phoneOf = (v: EventView, fam: string) => v.families.find((f) => f.id === fam)!.parents[0]!.phone;
-  check("before seating B can't see A's phone", phoneOf(evBefore.data, A.id) === undefined);
+  check("everyone sees everyone's phone (even before seating)", phoneOf(evBefore.data, A.id) === "+972501111111");
 
   // WebSocket
   const wsUrl = base.replace(/^http/, "ws") + `/api/g/${g}/ws`;
@@ -162,17 +180,16 @@ async function main() {
   r = await act(B.key, { type: "updateOffer", offerId, seats: 1 });
   check("seats below seated -> 400", r.status === 400, r.data);
 
-  // phone visibility
+  // visibility: everyone in the group sees everything
   const view = async (key?: string) => (await call<EventView>("GET", `/api/g/${g}/events/${e}`, { key })).data;
   const vB = await view(B.key);
   const vA = await view(A.key);
   const vC = await view(C.key);
   const vAnon = await view();
-  check("B (driver) sees A's phone after seating", phoneOf(vB, A.id) === "+972501111111", phoneOf(vB, A.id));
-  check("B sees A's kid phone and address", vB.families.find((f) => f.id === A.id)!.kids[0]!.phone === "+972523330000" && !!vB.families.find((f) => f.id === A.id)!.address);
+  check("B sees A's phone, kid phone and address", phoneOf(vB, A.id) === "+972501111111" && vB.families.find((f) => f.id === A.id)!.kids[0]!.phone === "+972523330000" && !!vB.families.find((f) => f.id === A.id)!.address);
   check("A sees B's phone", phoneOf(vA, B.id) === "+972522222222", phoneOf(vA, B.id));
-  check("unrelated C sees no phones of A or B", phoneOf(vC, A.id) === undefined && phoneOf(vC, B.id) === undefined && !vC.families.find((f) => f.id === A.id)!.address);
-  check("anonymous sees no phones", !JSON.stringify(vAnon).includes("+972"));
+  check("unrelated C sees A's and B's phones and address", phoneOf(vC, A.id) === "+972501111111" && phoneOf(vC, B.id) === "+972522222222" && !!vC.families.find((f) => f.id === A.id)!.address);
+  check("anonymous gets the same families", JSON.stringify(vAnon.families) === JSON.stringify(vC.families));
   check("view.me reflects requester", vA.me === A.id && vAnon.me === null);
   check("log tail present without inverse", vA.log.length > 0 && !("inverse" in vA.log[0]!));
 
@@ -200,19 +217,19 @@ async function main() {
   }
 
   // kid view + ready
-  const kv = await call<KidView>("GET", `/api/kid/${g}/${kidA.kidToken}`);
+  const kv = await call<KidView>("GET", `/api/g/${g}/kid/${kidA.id}`);
   const ride = kv.data.events?.[0]?.legs.out.ride;
   check("kid view shows ride in B's car", kv.status === 200 && kv.data.kid.name === "נועה א׳" && ride?.driver.familyId === B.id && ride.ready === false, kv.data);
   messages.length = 0;
-  const rd = await call("POST", `/api/kid/${g}/${kidA.kidToken}/ready`);
+  const rd = await call("POST", `/api/g/${g}/kid/${kidA.id}/ready`);
   check("kid ready -> ok", rd.status === 200 && (rd.data as any).ok === true, rd.data);
-  const kv2 = await call<KidView>("GET", `/api/kid/${g}/${kidA.kidToken}`);
+  const kv2 = await call<KidView>("GET", `/api/g/${g}/kid/${kidA.id}`);
   check("kid view ready=true", kv2.data.events[0]!.legs.out.ride?.ready === true);
   await Bun.sleep(300);
   check("ws receives broadcast for kid ready", messages.some((m) => m.t === "event" && m.eventId === e), messages);
-  check("bad kid token -> 404", (await call("GET", `/api/kid/${g}/aaaaaaaaaaaa`)).status === 404);
+  check("unknown kid id -> 404", (await call("GET", `/api/g/${g}/kid/aaaaaaaa`)).status === 404);
   const kidC = C.me.kids[0]!;
-  check("kid not seated -> ready 404", (await call("POST", `/api/kid/${g}/${kidC.kidToken}/ready`)).status === 404);
+  check("kid not seated -> ready 404", (await call("POST", `/api/g/${g}/kid/${kidC.id}/ready`)).status === 404);
 
   ws.close();
   console.log(`\n${passed} passed, ${failed} failed`);
