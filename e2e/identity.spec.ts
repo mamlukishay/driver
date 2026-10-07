@@ -80,13 +80,13 @@ test("fresh phone: a group link asks 'מי אתם?', returns to the link; settin
   // Settings (gear) → "החלפת משפחה" → pick B → the chip updates.
   await c.page.getByRole("link", { name: he.identity.settings }).click();
   await expect(c.page).toHaveURL(new RegExp(`/g/${groupId}/settings$`));
-  await expect(c.page.getByText(he.settings.actingAs(he.family(A.name)))).toBeVisible();
+  await expect(c.page.getByRole("region", { name: he.settings.meTitle })).toContainText(he.family(A.name));
   await expect(c.page.getByLabel(he.settings.linkLabel)).toHaveValue(new RegExp(`/join/${groupId}$`));
   await c.page.getByRole("link", { name: he.settings.switchFamily }).click();
   await pickFamily(c.page, he.family(B.name));
   await expect(c.page).toHaveURL(new RegExp(`/g/${groupId}/settings$`));
   await expect(c.page.locator(".who")).toContainText(he.family(B.name));
-  await expect(c.page.getByText(he.settings.actingAs(he.family(B.name)))).toBeVisible();
+  await expect(c.page.getByRole("region", { name: he.settings.meTitle })).toContainText(he.family(B.name));
   expect(await identityOf(c.page, groupId)).toBe(await identityOf(b.page, groupId));
 
   // The chip leads to settings too; logging out sends the phone back to "מי אתם?".

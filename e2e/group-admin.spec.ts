@@ -42,7 +42,7 @@ test("a linked WhatsApp group: set on create, opened from home and settings, edi
   // Settings: the button, then edit the link.
   await page.goto(`/g/${slug}/settings`);
   await expect(page.getByRole("link", { name: he.waGroup.open })).toHaveAttribute("href", WA1);
-  const field = page.getByLabel(he.waGroup.label);
+  const field = page.getByLabel(he.settings.waLinkLabel);
   await expect(field).toHaveValue(WA1);
   await field.fill("not a link");
   await page.getByRole("button", { name: he.settings.waSave }).click();
