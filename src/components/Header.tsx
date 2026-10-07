@@ -2,7 +2,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect } from "preact/hooks";
 import { he } from "../i18n/he.ts";
 import type { FamilyPublic, GroupResponse } from "../../shared/types.ts";
-import { getIdentity, onIdentityChange } from "../identity.ts";
+import { getIdentity, onIdentityChange, touchGroup } from "../identity.ts";
 import { useBack } from "../nav.ts";
 import { api } from "../api.ts";
 import { keys, useResource } from "../store.ts";
@@ -24,6 +24,8 @@ export interface Me {
   family: FamilyPublic | undefined;
   /** "משפחת X", disambiguated; "…" while loading. */
   label: string;
+  /** The group's display name; undefined while loading. */
+  groupName: string | undefined;
 }
 
 /** The family this device acts as, with its display label (loads the group, cached). */
@@ -34,7 +36,13 @@ export function useMe(group: string | undefined): Me | null {
   if (!group || !familyId) return null;
   const families = res.data?.families ?? [];
   const family = families.find((f) => f.id === familyId);
-  return { familyId, family, label: family ? famLabel(family, families) : "…" };
+  return { familyId, family, label: family ? famLabel(family, families) : "…", groupName: res.data?.group.name };
+}
+
+/** The group's display name from the shared cache (loads it if needed; never blocks rendering). */
+export function useGroupName(group: string | undefined): string | undefined {
+  const res = useResource<GroupResponse>(group ? keys.group(group) : null, () => api.getGroup(group!));
+  return res.data?.group.name;
 }
 
 interface Props {
@@ -44,11 +52,16 @@ interface Props {
   group?: string;
   /** Hide the identity chip (home, kid page). */
   noChip?: boolean;
+  /** A small muted group-name line above the title (event tabs, boards, driver mode). */
+  groupLine?: boolean;
   children?: ComponentChildren;
 }
 
-export function Header({ title, up, group, noChip, children }: Props) {
+export function Header({ title, up, group, noChip, groupLine, children }: Props) {
   const back = useBack(up ?? "/");
+  useEffect(() => {
+    if (group) touchGroup(group);
+  }, [group]);
   return (
     <header class="hdr">
       <div class="hdr-row">
@@ -61,7 +74,14 @@ export function Header({ title, up, group, noChip, children }: Props) {
         ) : (
           <span class="brand-dot" aria-hidden="true" />
         )}
-        <h1 class="attl">{title}</h1>
+        {groupLine && group ? (
+          <div class="attl-w">
+            <GroupLine group={group} />
+            <h1 class="attl">{title}</h1>
+          </div>
+        ) : (
+          <h1 class="attl">{title}</h1>
+        )}
         {children}
         {group && (
           <a class="gear" href={`/g/${group}/settings`} aria-label={he.identity.settings} title={he.identity.settings}>
@@ -82,6 +102,11 @@ export function Header({ title, up, group, noChip, children }: Props) {
   );
 }
 
+function GroupLine({ group }: { group: string }) {
+  const name = useGroupName(group);
+  return name ? <span class="hdr-grp">{name}</span> : null;
+}
+
 function IdentityChip({ group }: { group: string }) {
   const me = useMe(group);
   if (!me)
@@ -98,6 +123,7 @@ function IdentityChip({ group }: { group: string }) {
       <span class="fdot" aria-hidden="true" />
       <span>
         {he.identity.actingAs} <b>{me.label}</b>
+        {me.groupName && <span class="who-grp"> · {me.groupName}</span>}
       </span>
     </a>
   );

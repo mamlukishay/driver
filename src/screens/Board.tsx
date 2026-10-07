@@ -22,7 +22,7 @@ export function Board({ group, event, leg }: { group: string; event: string; leg
   const ev = res.data;
   return (
     <>
-      <Header title={ev ? `${ev.title} · ${he.legName[leg]}` : he.common.loading} up={`/g/${group}/e/${event}`} group={group} />
+      <Header title={ev ? `${ev.title} · ${he.legName[leg]}` : he.common.loading} up={`/g/${group}/e/${event}`} group={group} groupLine />
       <main id="main" class="content">
         {res.error && !ev ? (
           <ErrorState code={res.error} onRetry={res.reload} />

@@ -92,6 +92,7 @@ export const he = {
     title: "הקבוצות שלי",
     emptyHint: "קיבלתם קישור מהורה אחר? פתחו אותו.",
     create: "צור קבוצה חדשה",
+    nextEvent: (date: string) => `האירוע הבא: ${date}`,
   },
 
   newGroup: {
@@ -125,6 +126,8 @@ export const he = {
     dupYes: "כן, זו אנחנו",
     dupYesOf: (label: string) => `כן, אנחנו ${label}`,
     dupNo: "לא, משפחה אחרת",
+    copyFrom: "העתקה מ:",
+    copyNone: "בלי העתקה",
   },
 
   form: {
@@ -145,6 +148,8 @@ export const he = {
     kidName: "שם הילד/ה",
     kidPhone: "הטלפון של הילד/ה",
     addKid: "+ ילד/ה",
+    kidsPick: "מי מהילדים בקבוצה הזו?",
+    kidsPickRequired: "סמנו או הוסיפו לפחות ילד/ה אחד/ת",
     removeKid: "הסרת הילד/ה",
     cars: "רכבים",
     carsHint: "רשות",

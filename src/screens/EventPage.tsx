@@ -19,7 +19,7 @@ export function EventPage({ group, event }: { group: string; event: string }) {
   const ev = res.data;
   return (
     <>
-      <Header title={ev?.title ?? he.common.loading} up={`/g/${group}`} group={group} />
+      <Header title={ev?.title ?? he.common.loading} up={`/g/${group}`} group={group} groupLine />
       <main id="main" class="content">
         {res.error && !ev ? <ErrorState code={res.error} onRetry={res.reload} /> : !ev ? <Loading /> : <EventBody group={group} ev={ev} />}
       </main>

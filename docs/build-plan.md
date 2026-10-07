@@ -22,6 +22,7 @@ shared/                 pure TS, no DOM / no Workers APIs — imported by both s
   actions.ts            action union + reducer applyAction() + permission checks
   view.ts               viewFor(state, requester) → the event view (everyone sees everything; `me`)
   familyLabel.ts        "משפחת X" disambiguation parts for same-named families
+  myGroups.ts           my-groups order (last used), next event date, join prefill from another group
   slug.ts               group/event slug rules, suggestions, `-2`/`-3` clash handling
   gaps.ts               gap meter math per leg
   ids.ts                short random ids (crypto.getRandomValues)
@@ -36,7 +37,7 @@ src/
   main.tsx, app.tsx     LocationProvider + Router + routes table
   i18n/he.ts            ALL user-facing strings (Hebrew). Code/keys English.
   api.ts                typed client for §3, attaches X-Family-Id, error → i18n code
-  identity.ts           localStorage `trempush.identities` = {groupSlug → familyId}; safe try/catch
+  identity.ts           localStorage `trempush.identities` = {groupSlug → familyId}; `trempush.lastUsed` = {groupSlug → epoch ms} (separate key, so the identities format is unchanged); safe try/catch
   live.ts               WebSocket subscribe per group/event + refetch fallback
   styles/tokens.css     palette/fonts from workshop.html (light + dark), logical CSS props only
   components/           Header (identity chip), Sheet (?sheet= aware), Toast (undo), SeatCar, KidChip, GapMeter, WaPreview…
@@ -48,9 +49,9 @@ e2e/                    Playwright smoke (mobile viewport, Hebrew)
 
 | Route | Screen |
 |---|---|
-| `/` | My groups on this device. "צור קבוצה חדשה" (name → invite link to share). |
+| `/` | My groups on this device, most recently used first (`trempush.lastUsed`, set when a group screen with a header opens and on choosing/registering a family). Each row: group name, my kids in that group, "האירוע הבא: <date>" when there is an upcoming non-cancelled event. "צור קבוצה חדשה" (name → invite link to share). |
 | `/new-group` | Create group form. |
-| `/join/:group` | Invite link. No family on this device → "מי אתם?". `?new=1` → registration form (warns when the family name already exists: "זו המשפחה שלכם?"). |
+| `/join/:group` | Invite link. No family on this device → "מי אתם?". `?new=1` → registration form (warns when the family name already exists: "זו המשפחה שלכם?"). When this device has a family in other groups, the form is prefilled from one of them (`GET /api/g/:other` with that group's `X-Family-Id`, `me`): a select "העתקה מ:" (default the most recently used group; "בלי העתקה" clears it) copies family name, parents, address and cars (label, seats, color, plate; no photos, since images are per group). Kids become a checkbox list "מי מהילדים בקבוצה הזו?", all unchecked, plus "+ ילד/ה"; only checked or added kids are registered, at least one is required. An independent copy: no cross-group sync. |
 | `/g/:group/who?next=` | "מי אתם?": the group's families as big buttons (color dot, label, kids' names) → confirm sheet → back to `next`. Also "משפחה חדשה — הרשמה" and "רק להסתכל" (view-only for this tab). |
 | `/g/:group/settings` | Acting as family X · "החלפת משפחה" · "עריכת פרטי המשפחה" · "התנתקות מהטלפון הזה" · group link + WhatsApp. From the header gear and the identity chip. |
 | `/g/:group` | Group home: upcoming events sorted by date (date block, title, mini gap meters per leg, a chip per kid of mine: "נועה: הלוך ✓ · חזור ?" with ✓ seated, ? needs a ride, – not needed / not coming), "+ אירוע חדש". Past events sit under a collapsed `<details>` "אירועים שעברו" for 30 days after their date, then drop off the list (the server omits them; data and direct links stay; `shownOnGroupHome` in `shared/dates.ts`, Israel dates). Cancelled events stay in place, greyed, with a "בוטל" tag. |
@@ -66,6 +67,8 @@ e2e/                    Playwright smoke (mobile viewport, Hebrew)
 **Kid live status** (`kidLegStatus` in `shared/view.ts`, per leg the kid needs): `waiting` (no car) → `assigned` (driver, time, car photo) → `onTheWay` (run started) → `next` (run started and every earlier stop in the pickup order is picked; `KidRide.ahead === 0`) → `arrived` (driver tapped "הגעתי" at this kid's stop) → `picked` → `done`. `done` once the leg is over (`legOver`: 30 min after the start for out, 90 min after the return time for back, on the client's local clock), except while a started run hasn't picked the kid yet. Pickup order (`pickupStops`, also used by driver mode): out = one stop per family in seating order; back = one stop (everyone boards at the venue). Both kid pages subscribe to the group WebSocket and refetch on event updates.
 
 **Event tabs** (`src/screens/EventFrame.tsx`, shared by the three tab routes): the event header (cover, title, date, times, place) with a **⋯** button (SVG icon) → `?sheet=menu`: "עריכת פרטים" (→ `?sheet=edit`, a full-screen form: title, date, start, return time, place, address, cover replace/remove; save sends `editEvent` + undo toast; back closes without saving), "שיתוף לקבוצה" (the group summary WhatsApp; the cancellation text when cancelled), "ביטול אירוע" (→ `?sheet=cancel` confirm → `cancelEvent`) or "שחזור" (`restoreEvent`). The menu swaps to the next sheet with a replace, so back closes it. Below the header: a cancelled note ("האירוע בוטל", ride controls disabled, everything greyed) or the **"עודכן" banner** (the newest not-undone `editEvent` log entry from the last 48 h that changed date/start/return time: "השעה השתנתה מ-X ל-Y" etc., a "שתף עדכון לקבוצה" WhatsApp, dismissible per device in localStorage `trempush.dismissedUpdates`), then the tab bar "פרטים | הלוך | חזור". Each leg tab shows a dot for its gap state (missing / unassigned / ok / none). Switching tabs (tap or horizontal swipe, RTL: finger right = next tab; swipes starting within 24 px of a screen edge are ignored) is a route **replace** that keeps the entry's history state, so tabs don't pile up history and back leaves the event. The in-app back arrow goes up when there is no in-app history: tab/board/invite → event פרטים → group home → my groups.
+
+**Group name visible**: the group home title is the group name; the identity chip reads "פועל/ת בתור: משפחת X · <group name>" on every group screen with a chip; event tabs, boards, driver mode and the invite screen show the group name as a small muted line above the title; the kid page shows it under the greeting. All from the cached group (`useGroup`), never blocking render.
 
 Every `/g/:group/…` route except `who` and `kid`, and `/join/:group`, sends a device with no family for that group (and not in "רק להסתכל" mode) to `/g/:group/who?next=<original URL>` (a replace, so back doesn't bounce).
 

@@ -177,6 +177,19 @@ mark {
   white-space: nowrap;
   flex: 1;
 }
+.attl-w {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hdr-grp {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .bk {
   border: 0;
   background: transparent;
@@ -500,6 +513,14 @@ a.who:hover {
   min-inline-size: 0;
   min-block-size: var(--tap);
 }
+.fld select {
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
 .fld input[dir="ltr"] {
   text-align: end;
 }
@@ -534,6 +555,27 @@ a.who:hover {
 .fld.err .hint,
 .hint.bad {
   color: var(--bad);
+}
+.kidpick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.kidpick-i {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.kidpick-i input {
+  inline-size: 22px;
+  block-size: 22px;
+  accent-color: var(--accent);
+}
+.kidpick-i small {
+  color: var(--ink-2);
 }
 .fld.okv .hint {
   color: var(--ok);
@@ -1398,6 +1440,10 @@ a.who:hover {
 }
 .kidpage .muted {
   font-size: 17px;
+}
+.kidpage .kid-grp {
+  font-size: 14px;
+  margin: 0;
 }
 .legc {
   background: var(--surface);

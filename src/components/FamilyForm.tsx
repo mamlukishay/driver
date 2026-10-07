@@ -80,7 +80,18 @@ export function draftToInput(d: FamilyDraft): FamilyInput {
   };
 }
 
-function validate(d: FamilyDraft): Record<string, string> {
+/** A kid from this family's registration in another group, offered as a checkbox (unchecked). */
+export interface KidChoice {
+  name: string;
+  phone: string;
+}
+
+/** The kids to register: the checked choices first, then the named rows. */
+export function kidsWithChoices(d: FamilyDraft, choices: readonly KidChoice[], picked: readonly boolean[]): FamilyDraft {
+  return { ...d, kids: [...choices.filter((_, i) => picked[i]).map((k) => ({ ...k })), ...d.kids] };
+}
+
+function validate(d: FamilyDraft, pickedCount: number | null = null): Record<string, string> {
   const e: Record<string, string> = {};
   if (!d.name.trim()) e["fam-name"] = he.form.requiredField;
   d.parents.forEach((p, i) => {
@@ -89,10 +100,13 @@ function validate(d: FamilyDraft): Record<string, string> {
     if (pe) e[`parent-${i}-phone`] = pe;
   });
   d.kids.forEach((k, i) => {
-    if (!k.name.trim() && (k.phone.trim() || d.kids.length === 1)) e[`kid-${i}-name`] = he.form.requiredField;
+    const alone = pickedCount === null && d.kids.length === 1;
+    if (!k.name.trim() && (k.phone.trim() || alone)) e[`kid-${i}-name`] = he.form.requiredField;
     const ke = phoneError(k.phone, false);
     if (ke) e[`kid-${i}-phone`] = ke;
   });
+  // With kid choices (copied from another group): at least one checked or added kid.
+  if (pickedCount !== null && pickedCount + d.kids.filter((k) => k.name.trim()).length === 0) e["kid-pick-0"] = he.form.kidsPickRequired;
   d.cars.forEach((c, i) => {
     if (!c.label.trim()) e[`car-${i}-label`] = he.form.requiredField;
     if (c.plate && !/^\d{1,3}$/.test(c.plate.trim())) e[`car-${i}-plate`] = he.form.plateInvalid;
@@ -105,11 +119,16 @@ interface Props {
   initial: FamilyDraft;
   submitLabel: string;
   places: boolean;
+  /** Kids from another group, shown as unchecked checkboxes; only checked or added kids are submitted. */
+  kidChoices?: readonly KidChoice[];
   onSubmit: (d: FamilyDraft) => Promise<void>;
 }
 
-export function FamilyForm({ group, initial, submitLabel, places, onSubmit }: Props) {
+export function FamilyForm({ group, initial, submitLabel, places, kidChoices, onSubmit }: Props) {
   const [d, setD] = useState<FamilyDraft>(initial);
+  const choices = kidChoices?.length ? kidChoices : null;
+  const [picked, setPicked] = useState<boolean[]>(() => (choices ? choices.map(() => false) : []));
+  const pickedCount = choices ? picked.filter(Boolean).length : null;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -117,7 +136,7 @@ export function FamilyForm({ group, initial, submitLabel, places, onSubmit }: Pr
 
   const submit = async (ev: Event) => {
     ev.preventDefault();
-    const e = validate(d);
+    const e = validate(d, pickedCount);
     setErrors(e);
     setTried(true);
     const first = Object.keys(e)[0];
@@ -127,15 +146,15 @@ export function FamilyForm({ group, initial, submitLabel, places, onSubmit }: Pr
     }
     setBusy(true);
     try {
-      await onSubmit(d);
+      await onSubmit(choices ? kidsWithChoices(d, choices, picked) : d);
     } finally {
       setBusy(false);
     }
   };
   const err = (id: string) => (tried ? (errors[id] ?? null) : null);
   useEffect(() => {
-    if (tried) setErrors(validate(d));
-  }, [d]);
+    if (tried) setErrors(validate(d, pickedCount));
+  }, [d, picked]);
 
   return (
     <form class="stack-form" onSubmit={submit} noValidate>
@@ -169,20 +188,47 @@ export function FamilyForm({ group, initial, submitLabel, places, onSubmit }: Pr
 
       <section class="card" aria-labelledby="kids-h">
         <h2 class="hs" id="kids-h">
-          {he.form.kids}
+          {choices ? he.form.kidsPick : he.form.kids}
         </h2>
+        {choices && (
+          <div class="kidpick" role="group" aria-labelledby="kids-h">
+            {choices.map((k, i) => (
+              <label class="kidpick-i">
+                <input
+                  type="checkbox"
+                  id={`kid-pick-${i}`}
+                  checked={!!picked[i]}
+                  aria-invalid={err("kid-pick-0") ? true : undefined}
+                  onChange={(ev) => {
+                    const on = (ev.currentTarget as HTMLInputElement).checked;
+                    setPicked((p) => p.map((x, j) => (j === i ? on : x)));
+                  }}
+                />
+                <span>
+                  <b>{k.name}</b>
+                  {k.phone && <small class="num"> · {k.phone}</small>}
+                </span>
+              </label>
+            ))}
+            {err("kid-pick-0") && (
+              <span class="hint bad" role="alert">
+                {err("kid-pick-0")}
+              </span>
+            )}
+          </div>
+        )}
         {d.kids.map((k, i) => (
           <div class="sub">
             <Field id={`kid-${i}-name`} label={he.form.kidName} value={k.name} error={err(`kid-${i}-name`)} onInput={(v) => up((x) => (x.kids[i]!.name = v, x))} />
             <PhoneInput id={`kid-${i}-phone`} label={he.form.kidPhone} value={k.phone} showErrors={tried} onInput={(v) => up((x) => (x.kids[i]!.phone = v, x))} />
-            {d.kids.length > 1 && (
+            {(choices || d.kids.length > 1) && (
               <button type="button" class="lnk bad" onClick={() => up((x) => (x.kids.splice(i, 1), x))}>
                 {he.form.removeKid}
               </button>
             )}
           </div>
         ))}
-        {d.kids.length < 12 && (
+        {d.kids.length + picked.filter(Boolean).length < 12 && (
           <button type="button" class="mini" onClick={() => up((x) => (x.kids.push({ name: "", phone: "" }), x))}>
             {he.form.addKid}
           </button>

@@ -1,15 +1,25 @@
 import { useLocation } from "preact-iso";
-import { useEffect, useLayoutEffect, useState } from "preact/hooks";
-import type { FamilyPublic } from "../../shared/types.ts";
+import { useEffect, useLayoutEffect, useMemo, useState } from "preact/hooks";
+import type { FamilyPrivate, FamilyPublic } from "../../shared/types.ts";
 import { sameNameFamilies } from "../../shared/familyLabel.ts";
-import { draftToInput, emptyDraft, FamilyForm, uploadCarPhotos, type FamilyDraft } from "../components/FamilyForm.tsx";
+import { prefillFrom } from "../../shared/myGroups.ts";
+import { formatPhoneLocal } from "../../shared/phone.ts";
+import {
+  draftFrom,
+  draftToInput,
+  emptyDraft,
+  FamilyForm,
+  uploadCarPhotos,
+  type FamilyDraft,
+  type KidChoice,
+} from "../components/FamilyForm.tsx";
 import { Header, useMe, whoUrl } from "../components/Header.tsx";
 import { Sheet } from "../components/Sheet.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
-import { setBrowsing, setIdentity } from "../identity.ts";
+import { myGroupsByLastUsed, setBrowsing, setIdentity } from "../identity.ts";
 import { useLeave, useReplaceLink, useSheet, withQuery } from "../nav.ts";
 import { useGroup } from "../store.ts";
 import { famLabel } from "../util.ts";
@@ -25,6 +35,46 @@ export function useConfig() {
     });
   }, []);
   return { places, inviteParse };
+}
+
+/** This device's family in another group, to copy into the registration form. */
+interface Source {
+  slug: string;
+  name: string;
+  me: FamilyPrivate;
+}
+
+/** The families this device has in other groups (most recently used first); null while loading. */
+function useSources(group: string, active: boolean): Source[] | null {
+  const others = useMemo(() => myGroupsByLastUsed().filter((s) => s !== group), [group]);
+  const [sources, setSources] = useState<Source[] | null>(others.length ? null : []);
+  useEffect(() => {
+    if (!active || others.length === 0) return;
+    let live = true;
+    void Promise.all(
+      others.map((slug) =>
+        api
+          .getGroup(slug)
+          .then((r): Source | null => (r.me ? { slug, name: r.group.name, me: r.me } : null))
+          .catch(() => null),
+      ),
+    ).then((rs) => {
+      if (live) setSources(rs.filter((x): x is Source => !!x));
+    });
+    return () => {
+      live = false;
+    };
+  }, [active, others]);
+  return active ? sources : [];
+}
+
+/** The registration draft and kid checkboxes copied from another group (an independent copy). */
+function prefillDraft(src: Source): { draft: FamilyDraft; kids: KidChoice[] } {
+  const p = prefillFrom(src.me);
+  const kids = p.kids.map((k) => ({ name: k.name, phone: k.phone ? (formatPhoneLocal(k.phone) ?? k.phone) : "" }));
+  const draft = draftFrom(p.family);
+  if (kids.length === 0) draft.kids = [{ name: "", phone: "" }];
+  return { draft, kids };
 }
 
 /**
@@ -43,6 +93,11 @@ export function Join({ group }: { group: string }) {
   const [pending, setPending] = useState<FamilyDraft | null>(null);
   const next = safeNext(group, query.next);
   const registering = query.new === "1";
+  const sources = useSources(group, registering && !me);
+  // undefined = the default (most recently used group); "" = no copy.
+  const [copySlug, setCopySlug] = useState<string | undefined>(undefined);
+  const source = sources && (copySlug === undefined ? sources[0] : sources.find((x) => x.slug === copySlug));
+  const pre = useMemo(() => (source ? prefillDraft(source) : null), [source]);
 
   useLayoutEffect(() => {
     if (!me && !registering) route(whoUrl(group, `/g/${group}`), true);
@@ -108,7 +163,7 @@ export function Join({ group }: { group: string }) {
               {he.join.toGroup}
             </a>
           </section>
-        ) : !registering ? (
+        ) : !registering || !sources ? (
           <Loading />
         ) : (
           <>
@@ -119,7 +174,26 @@ export function Join({ group }: { group: string }) {
                 </a>
               </p>
             )}
-            <FamilyForm group={group} initial={initial} submitLabel={he.join.submit} places={places} onSubmit={submit} />
+            {sources.length > 0 && (
+              <div class="fld copyfrom">
+                <label for="copy-from">{he.join.copyFrom}</label>
+                <select id="copy-from" value={source?.slug ?? ""} onChange={(e) => setCopySlug((e.currentTarget as HTMLSelectElement).value)}>
+                  {sources.map((x) => (
+                    <option value={x.slug}>{x.name}</option>
+                  ))}
+                  <option value="">{he.join.copyNone}</option>
+                </select>
+              </div>
+            )}
+            <FamilyForm
+              key={source?.slug ?? ""}
+              group={group}
+              initial={pre?.draft ?? initial}
+              kidChoices={pre?.kids}
+              submitLabel={he.join.submit}
+              places={places}
+              onSubmit={submit}
+            />
           </>
         )}
       </main>

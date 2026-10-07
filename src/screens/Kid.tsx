@@ -57,6 +57,7 @@ function KidBody({ group, token, event, v }: { group: string; token: string; eve
     <>
       <header class="kid-hdr" style={{ "--fc": famColor(v.kid.color) }}>
         <h1 class="display">{he.kid.hi(v.kid.name)}</h1>
+        <p class="muted kid-grp">{v.group.name}</p>
       </header>
       {events.length === 0 && (
         <div class="legc wait">

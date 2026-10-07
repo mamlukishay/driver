@@ -1,10 +1,14 @@
 /**
  * Which family this browser acts as, per group: `{ [groupSlug]: familyId }` in localStorage under
  * `trempush.identities`. No secrets: anyone with the group link may pick any family. Always try/catch.
+ * When each group was last opened lives separately in `trempush.lastUsed` (`{ [groupSlug]: epochMs }`),
+ * so the identities format stays unchanged.
  */
+import { byLastUsed } from "../shared/myGroups.ts";
 
 const IDS_KEY = "trempush.identities";
 const BROWSE_KEY = "trempush.browse";
+const LAST_KEY = "trempush.lastUsed";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -49,6 +53,7 @@ export function getIdentity(group: string): string | null {
 }
 
 export function setIdentity(group: string, familyId: string): void {
+  touchGroup(group);
   save({ ...allIdentities(), [group]: familyId });
 }
 
@@ -58,6 +63,38 @@ export function removeIdentity(group: string): void {
   if (!(group in all)) return;
   delete all[group];
   save(all);
+}
+
+/* ---------- last used, per group (for "הקבוצות שלי" order and the join prefill) ---------- */
+
+let lastUsed: Record<string, number> | null = null;
+
+export function lastUsedMap(): Record<string, number> {
+  if (!lastUsed) {
+    lastUsed = {};
+    try {
+      const raw = JSON.parse(localStorage.getItem(LAST_KEY) ?? "{}") as Record<string, unknown>;
+      for (const [g, t] of Object.entries(raw ?? {})) if (typeof t === "number") lastUsed[g] = t;
+    } catch {
+      /* blocked or corrupt storage */
+    }
+  }
+  return lastUsed;
+}
+
+/** Marks a group as just opened on this device. */
+export function touchGroup(group: string): void {
+  lastUsed = { ...lastUsedMap(), [group]: Date.now() };
+  try {
+    localStorage.setItem(LAST_KEY, JSON.stringify(lastUsed));
+  } catch {
+    /* private mode: order kept for this page view */
+  }
+}
+
+/** Groups this device has a family in, most recently used first. */
+export function myGroupsByLastUsed(): string[] {
+  return byLastUsed(Object.keys(allIdentities()), lastUsedMap());
 }
 
 export function onIdentityChange(l: Listener): () => void {
