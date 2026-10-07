@@ -102,7 +102,7 @@ export function NewGroup() {
       <Header title={he.newGroup.title} up="/" />
       <main id="main" class="content">
         <form class="card" onSubmit={submit} noValidate>
-          <Field id="group-name" label={he.newGroup.nameLabel} placeholder={he.newGroup.namePlaceholder} hint={he.newGroup.nameHint} value={name} error={err} onInput={onName} />
+          <Field id="group-name" label={he.newGroup.nameLabel} placeholder={he.newGroup.namePlaceholder} value={name} error={err} onInput={onName} />
           <Field
             id="group-slug"
             label={he.newGroup.slugLabel}

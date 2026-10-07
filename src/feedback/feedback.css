@@ -1,10 +1,11 @@
 /* ---------- feedback: floating button + sheet ---------- */
 
-/* A small tab on the start edge (right in RTL), above sticky CTAs and over sheets (.ov is z 30). */
+/* A small tab at the bottom of the start edge (right in RTL), over sheets (.ov is z 30). Low by default so
+   it stays out of mid-screen form fields; lifted just above a sticky primary button when the screen has one. */
 .fb-fab {
   position: fixed;
   inset-inline-start: 0;
-  inset-block-end: calc(92px + env(safe-area-inset-bottom, 0px));
+  inset-block-end: calc(12px + env(safe-area-inset-bottom, 0px));
   z-index: 35;
   display: inline-flex;
   align-items: center;
@@ -33,11 +34,20 @@
 .fb-fab[aria-busy="true"] {
   opacity: 0.5;
 }
+body:has(.sticky-cta) .fb-fab {
+  inset-block-end: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+/* Kid page: a small pill at the end of the page, in flow, so it never covers the status cards. */
 .fb-fab.kid {
+  position: static;
+  display: flex;
+  inline-size: fit-content;
+  margin: 0 auto calc(16px + env(safe-area-inset-bottom, 0px));
   min-block-size: 28px;
-  padding: 4px 8px 4px 7px;
+  padding: 4px 10px;
+  border-inline-start: 1px solid var(--line);
+  border-radius: 999px;
   font-size: 12px;
-  inset-block-end: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .fb-form {

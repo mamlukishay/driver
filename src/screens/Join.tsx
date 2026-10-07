@@ -10,7 +10,7 @@ import { toast } from "../components/Toast.tsx";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { setBrowsing, setIdentity } from "../identity.ts";
-import { useSheet, withQuery } from "../nav.ts";
+import { useLeave, useReplaceLink, useSheet, withQuery } from "../nav.ts";
 import { useGroup } from "../store.ts";
 import { famLabel } from "../util.ts";
 import { byCreation, safeNext } from "./Who.tsx";
@@ -37,6 +37,8 @@ export function Join({ group }: { group: string }) {
   const grp = useGroup(group);
   const { places } = useConfig();
   const sheet = useSheet();
+  const leave = useLeave();
+  const replaceLink = useReplaceLink();
   const [initial] = useState<FamilyDraft>(emptyDraft);
   const [pending, setPending] = useState<FamilyDraft | null>(null);
   const next = safeNext(group, query.next);
@@ -69,7 +71,7 @@ export function Join({ group }: { group: string }) {
           toast.error(e);
         }
       }
-      route(next, true);
+      leave(next);
     } catch (e) {
       toast.error(e);
     }
@@ -79,7 +81,7 @@ export function Join({ group }: { group: string }) {
     const same = sameNameFamilies(d.name, families);
     if (same.length > 0) {
       setPending(d);
-      sheet.open("dup", { new: "1", next: query.next });
+      sheet.open("dup");
       return;
     }
     await register(d);
@@ -88,13 +90,12 @@ export function Join({ group }: { group: string }) {
   const pickExisting = (f: FamilyPublic) => {
     setIdentity(group, f.id);
     setBrowsing(group, false);
-    route(next, true);
+    leave(next);
   };
 
-  const groupName = grp.data?.group.name;
   return (
     <>
-      <Header title={he.join.invited} up="/" group={me ? group : undefined} />
+      <Header title={grp.data?.group.name ?? he.join.title} up="/" group={me ? group : undefined} />
       <main id="main" class="content">
         {grp.error && !grp.data ? (
           <ErrorState code={grp.error} onRetry={grp.reload} />
@@ -111,19 +112,13 @@ export function Join({ group }: { group: string }) {
           <Loading />
         ) : (
           <>
-            <section class="card invite-card">
-              <span class="muted small">{he.join.invited}</span>
-              <h2 class="display sm">
-                {he.join.title("")}
-                <mark>{groupName}</mark>
-              </h2>
-              <p class="small muted">{he.join.lead}</p>
-              {families.length > 0 && (
-                <a class="lnk" href={withQuery(`/g/${group}/who`, { next: query.next })}>
+            {families.length > 0 && (
+              <p>
+                <a class="lnk" href={withQuery(`/g/${group}/who`, { next: query.next })} onClick={replaceLink}>
                   {he.join.pickExisting}
                 </a>
-              )}
-            </section>
+              </p>
+            )}
             <FamilyForm group={group} initial={initial} submitLabel={he.join.submit} places={places} onSubmit={submit} />
           </>
         )}

@@ -17,6 +17,8 @@ interface FieldProps {
   required?: boolean;
   inputMode?: "text" | "tel" | "numeric" | "email";
   maxLength?: number;
+  /** For date/time inputs. */
+  min?: string;
   autoComplete?: string;
   dir?: "ltr" | "rtl";
   onBlur?: () => void;
@@ -39,6 +41,7 @@ export function Field(p: FieldProps) {
         required={p.required}
         inputMode={p.inputMode}
         maxLength={p.maxLength}
+        min={p.min}
         autoComplete={p.autoComplete}
         dir={p.dir}
         aria-invalid={p.error ? true : undefined}

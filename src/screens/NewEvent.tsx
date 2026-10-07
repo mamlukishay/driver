@@ -24,9 +24,9 @@ export function NewEvent({ group }: { group: string }) {
   const [cover, setCover] = useState<string | undefined>();
   const [f, setF] = useState<Omit<EventInput, "coverImageId">>({
     title: "",
-    date: todayYmd(),
-    start: "10:00",
-    returnTime: "12:00",
+    date: "",
+    start: "",
+    returnTime: "",
     place: "",
     address: "",
   });
@@ -36,6 +36,8 @@ export function NewEvent({ group }: { group: string }) {
   const [errs, setErrs] = useState<Partial<Record<Key, string>>>({});
   const [saving, setSaving] = useState(false);
   const [slugWord, setSlugWord] = useState("");
+  /** Start/return were filled by us (10:00/12:00 for a future date), not typed or parsed. */
+  const [autoTimes, setAutoTimes] = useState(false);
 
   if (!me) {
     return (
@@ -54,6 +56,20 @@ export function NewEvent({ group }: { group: string }) {
   const set = (k: Key, v: string) => {
     setF((x) => ({ ...x, [k]: v }));
     setErrs((e) => ({ ...e, [k]: undefined }));
+    if (k === "start" || k === "returnTime") setAutoTimes(false);
+  };
+
+  /** A future date with no times yet gets 10:00–12:00; today or a past date leaves them empty. */
+  const setDate = (v: string) => {
+    const future = /^\d{4}-\d{2}-\d{2}$/.test(v) && v > todayYmd();
+    if (future && !f.start && !f.returnTime) {
+      setAutoTimes(true);
+      setF((x) => ({ ...x, date: v, start: "10:00", returnTime: "12:00" }));
+    } else if (!future && autoTimes) {
+      setAutoTimes(false);
+      setF((x) => ({ ...x, date: v, start: "", returnTime: "" }));
+    } else setF((x) => ({ ...x, date: v }));
+    setErrs((e) => ({ ...e, date: undefined }));
   };
 
   const applyParse = (p: InviteParseResponse) => {
@@ -71,6 +87,7 @@ export function NewEvent({ group }: { group: string }) {
     if (p.place) (next.place = p.place), got.add("place");
     if (p.address) (next.address = p.address), got.add("address");
     setF(next);
+    if (got.has("start")) setAutoTimes(false);
     setHl(got);
     setParsedOk(got.size > 0);
     if (times.length > 1) setNote(he.newEvent.multiTimes(times));
@@ -104,6 +121,7 @@ export function NewEvent({ group }: { group: string }) {
     e.preventDefault();
     const er: Partial<Record<Key, string>> = {};
     for (const k of ["title", "date", "start", "returnTime", "place"] as Key[]) if (!f[k].trim()) er[k] = he.form.requiredField;
+    if (!er.date && f.date < todayYmd()) er.date = he.newEvent.datePast;
     setErrs(er);
     const first = Object.keys(er)[0];
     if (first) {
@@ -128,7 +146,6 @@ export function NewEvent({ group }: { group: string }) {
       <main id="main" class="content">
         {step === "pick" && (
           <>
-            <p>{inviteParse ? he.newEvent.leadParse : he.newEvent.lead}</p>
             <ImagePicker
               id="invite-file"
               variant="drop"
@@ -191,7 +208,7 @@ export function NewEvent({ group }: { group: string }) {
             )}
             <section class="card">
               <Field id="ev-title" label={he.newEvent.fTitle} placeholder={he.newEvent.fTitlePlaceholder} value={f.title} highlight={hl.has("title")} error={errs.title} onInput={(v) => set("title", v)} />
-              <Field id="ev-date" type="date" label={he.newEvent.fDate} value={f.date} highlight={hl.has("date")} error={errs.date} onInput={(v) => set("date", v)} />
+              <Field id="ev-date" type="date" label={he.newEvent.fDate} value={f.date} highlight={hl.has("date")} required min={todayYmd()} error={errs.date} onInput={setDate} />
               <div class="grid2">
                 <Field id="ev-start" type="time" label={he.newEvent.fStart} value={f.start} highlight={hl.has("start")} error={errs.start} onInput={(v) => set("start", v)} />
                 <Field id="ev-returnTime" type="time" label={he.newEvent.fReturn} hint={he.newEvent.fReturnHint} value={f.returnTime} highlight={hl.has("returnTime")} error={errs.returnTime} onInput={(v) => set("returnTime", v)} />

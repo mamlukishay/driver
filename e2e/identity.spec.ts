@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   createEventManually,
+  isoInDays,
   createGroup,
   he,
   identityOf,
@@ -44,6 +45,15 @@ test("fresh phone: a group link asks 'מי אתם?', returns to the link; settin
   await a.page.getByRole("button", { name: he.newEvent.manual }).click();
   await a.page.getByLabel(he.newEvent.fTitle, { exact: true }).fill("יום הולדת");
   await a.page.getByLabel(he.newEvent.fPlace, { exact: true }).fill("פארק");
+  // The date starts empty (no default that may already be in the past) and must not be in the past.
+  await expect(a.page.getByLabel(he.newEvent.fDate, { exact: true })).toHaveValue("");
+  await expect(a.page.getByLabel(he.newEvent.fStart, { exact: true })).toHaveValue("");
+  await a.page.getByLabel(he.newEvent.fDate, { exact: true }).fill(isoInDays(-1));
+  await expect(a.page.getByLabel(he.newEvent.fStart, { exact: true })).toHaveValue("");
+  await a.page.getByLabel(he.newEvent.fStart, { exact: true }).fill("09:00");
+  await a.page.getByLabel(he.newEvent.fReturn, { exact: true }).fill("11:00");
+  await a.page.getByRole("button", { name: he.newEvent.submit }).click();
+  await expect(a.page.getByText(he.newEvent.datePast)).toBeVisible();
   await a.page.getByLabel(he.newEvent.fDate, { exact: true }).fill("2027-10-16");
   await a.page.getByLabel(he.newEvent.fSlugWord).fill("birthday");
   await expect(a.page.getByText(he.newEvent.fSlugWordHint("oct-16-birthday"))).toBeVisible();

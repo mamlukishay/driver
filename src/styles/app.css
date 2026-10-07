@@ -795,10 +795,6 @@ a.who:hover {
   color: var(--ink-2);
   font-size: 13.5px;
 }
-.invite-card {
-  gap: 8px;
-}
-
 /* ---------- event cards ---------- */
 .evcard {
   display: flex;
@@ -1388,7 +1384,7 @@ a.who:hover {
 /* ---------- kid page ---------- */
 .kidpage {
   gap: 18px;
-  padding-block-start: calc(env(safe-area-inset-top, 0px) + 22px);
+  padding-block: calc(env(safe-area-inset-top, 0px) + 22px) 24px;
 }
 .kid-hdr {
   display: flex;

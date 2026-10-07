@@ -232,7 +232,6 @@ function SeatSheet({ group, ev, leg, onDone }: { group: string; ev: EventView; l
               ? he.seatSheet.partsMine(kid.name, leg, offer.departAt)
               : he.seatSheet.parts(kid.name, famName, leg, offer.departAt)
           }
-          note={mine ? undefined : he.seatSheet.notice}
           confirm={mine ? he.seatSheet.confirmTake : he.seatSheet.confirm}
           onConfirm={confirm}
           onCancel={sheet.close}

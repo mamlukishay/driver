@@ -55,8 +55,8 @@ export const he = {
 
   who: {
     title: "מי אתם?",
-    lead: "בחרו את המשפחה שלכם. הבחירה נשמרת בטלפון הזה.",
-    empty: "עוד אין משפחות בקבוצה. הירשמו ראשונים.",
+    lead: "בחרו את המשפחה שלכם.",
+    empty: "עוד אין משפחות בקבוצה.",
     newFamily: "משפחה חדשה — הרשמה",
     justLook: "רק להסתכל",
     confirmTitle: "אישור משפחה",
@@ -76,7 +76,7 @@ export const he = {
     logout: "התנתקות מהטלפון הזה",
     logoutDone: "הטלפון הזה כבר לא פועל בתור אף משפחה",
     shareTitle: "קישור לקבוצה",
-    shareHint: "כל מי שיש לו את הקישור יכול לצפות ולפעול בקבוצה. שלחו אותו רק בקבוצת ההורים.",
+    shareHint: "שלחו רק בקבוצת ההורים.",
     share: "שליחת הקישור ב-WhatsApp",
     linkLabel: "קישור ההזמנה לקבוצה",
   },
@@ -98,10 +98,7 @@ export const he = {
 
   home: {
     title: "הקבוצות שלי",
-    emptyTitle: "הסעות משותפות בלי בלגן",
-    emptyBody:
-      "טרמפוש מסדר מי מסיע את מי לאירועים של הילדים. פותחים קבוצה לכיתה או לחוג, שולחים קישור בקבוצת ההורים, וכל משפחה נרשמת פעם אחת.",
-    emptyHint: "קיבלתם קישור מהורה אחר? פשוט פתחו אותו.",
+    emptyHint: "קיבלתם קישור מהורה אחר? פתחו אותו.",
     create: "צור קבוצה חדשה",
     open: "פתיחה",
   },
@@ -110,7 +107,6 @@ export const he = {
     title: "קבוצה חדשה",
     nameLabel: "שם הקבוצה",
     namePlaceholder: "לדוגמה: כיתה ד׳ 2",
-    nameHint: "השם שההורים יראו בהזמנה.",
     slugLabel: "שם באנגלית לכתובת",
     slugHint: (url: string) => `הקישור יהיה ${url}`,
     slugInvalid: "רק אותיות אנגליות קטנות, ספרות ומקף, 3–40 תווים, בלי מקף בהתחלה או בסוף.",
@@ -119,16 +115,14 @@ export const he = {
     useSuggestion: (s: string) => `להשתמש ב-${s}`,
     submit: "יצירת הקבוצה",
     createdTitle: "הקבוצה מוכנה!",
-    createdBody: "שלחו את הקישור בקבוצת ההורים. כל משפחה נרשמת פעם אחת.",
+    createdBody: "שלחו את הקישור בקבוצת ההורים.",
     share: "שליחה בקבוצת ההורים",
     continue: "המשך להרשמה של המשפחה שלי",
     linkLabel: "קישור ההזמנה",
   },
 
   join: {
-    invited: "קיבלתם קישור בקבוצת ההורים",
-    title: (group: string) => `הוזמנתם לקבוצה ${group}`,
-    lead: "פעם אחת: שם המשפחה, הורים וטלפונים, כתובת, ילדים ורכב. בלי סיסמה ובלי אפליקציה להתקין.",
+    title: "הצטרפות לקבוצה",
     submit: "שמירה והצטרפות",
     pickExisting: "המשפחה שלכם כבר רשומה? בחרו אותה",
     already: (family: string) => `הטלפון הזה כבר פועל בקבוצה בתור ${family}.`,
@@ -140,12 +134,11 @@ export const he = {
     dupYes: "כן, זו אנחנו",
     dupYesOf: (label: string) => `כן, אנחנו ${label}`,
     dupNo: "לא, משפחה אחרת",
-    savedPhotosLater: "התמונות של הרכב יעלו מיד אחרי ההרשמה.",
   },
 
   form: {
     familyName: "שם משפחה",
-    familyNameHint: "יופיע כ\"משפחת …\"",
+    familyNameHint: (name: string) => `יופיע כ"משפחת ${name}"`,
     parents: "הורים",
     parentName: "שם הורה",
     parentPhone: "טלפון נייד",
@@ -155,16 +148,15 @@ export const he = {
     addParent: "+ הורה נוסף",
     removeParent: "הסרת ההורה",
     address: "כתובת הבית",
-    addressHint: "לאיסוף. כל המשפחות בקבוצה רואות אותה.",
+    addressHint: "גלויה לכל המשפחות בקבוצה",
     addressSuggestions: "הצעות כתובת",
     kids: "ילדים",
-    kidsHint: "טלפון לילד/ה הוא רשות",
     kidName: "שם הילד/ה",
     kidPhone: "הטלפון של הילד/ה",
     addKid: "+ ילד/ה",
     removeKid: "הסרת הילד/ה",
     cars: "רכבים",
-    carsHint: "רשות. בלי רכב אפשר עדיין להושיב את הילדים אצל אחרים.",
+    carsHint: "רשות",
     carLabel: "איזה רכב?",
     carLabelPlaceholder: "לדוגמה: מאזדה אדומה",
     carSeats: "מקומות לילדים",
@@ -186,10 +178,10 @@ export const he = {
   group: {
     upcoming: "אירועים קרובים",
     past: "אירועים שעברו",
-    empty: "עוד אין אירועים. הוסיפו את הראשון, מתחילים מתמונת ההזמנה.",
+    empty: "עוד אין אירועים.",
     newEvent: "+ אירוע חדש",
     joinCta: "בחירת משפחה או הרשמה",
-    viewOnlyNote: "אתם צופים בקבוצה בלי לבחור משפחה. כדי להושיב ילדים או להציע רכב, בחרו את המשפחה שלכם או הירשמו.",
+    viewOnlyNote: "כדי להושיב ילדים או להציע רכב, בחרו את המשפחה שלכם או הירשמו.",
     myFamily: "המשפחה שלי",
     settings: "הגדרות",
     invite: "הזמנת משפחות לקבוצה",
@@ -198,8 +190,6 @@ export const he = {
 
   newEvent: {
     title: "אירוע חדש",
-    lead: "מתחילים מתמונת ההזמנה שקיבלתם.",
-    leadParse: "מתחילים מתמונת ההזמנה שקיבלתם. נזהה את הפרטים ונמלא את הטופס בשבילכם.",
     drop: "גררו לכאן את ההזמנה",
     or: "או",
     pick: "בחר/י הזמנה מהגלריה",
@@ -207,14 +197,15 @@ export const he = {
     uploading: "מעלים את התמונה…",
     parsing: "מזהה פרטים…",
     parsed: "זיהינו מההזמנה. בדקו",
-    parsedHint: "השדות הצהובים מולאו אוטומטית. אפשר לשנות הכל, וכלום לא נשמר עד \"צור אירוע\".",
-    parseFailed: "לא הצלחנו לקרוא את ההזמנה. מלאו את הפרטים ידנית, התמונה תישאר כעטיפה.",
+    parsedHint: "השדות הצהובים מולאו מההזמנה.",
+    parseFailed: "לא הצלחנו לקרוא את ההזמנה. מלאו את הפרטים ידנית.",
     multiTimes: (times: string[]) =>
       `בהזמנה כמה זמנים: ${times.join(", ")}. שמנו את הראשון כהתחלה ואת האחרון כאיסוף לחזור. בדקו.`,
     detected: "זוהה",
     fTitle: "שם האירוע",
     fTitlePlaceholder: "לדוגמה: יום הולדת 12 לתמר",
     fDate: "תאריך",
+    datePast: "התאריך כבר עבר. בחרו תאריך מהיום והלאה.",
     fStart: "שעת התחלה",
     fReturn: "איסוף לחזור",
     fReturnHint: "מתי אוספים את הילדים בסוף",
@@ -296,7 +287,6 @@ export const he = {
       ["להושיב את ", { b: kid }, " ברכב של ", { b: family }, `, ${legName[leg]}, `, { b: time }, "?"],
     partsMine: (kid: string, leg: Leg, time: string): (string | { b: string })[] =>
       ["לקחת את ", { b: kid }, ` ברכב שלך, ${legName[leg]}, `, { b: time }, "?"],
-    notice: "הם יראו את זה מיד, עם השם שלך.",
     confirm: "כן, להושיב",
     confirmTake: "כן, אני לוקח/ת",
   },
@@ -388,7 +378,6 @@ export const he = {
   profile: {
     title: "המשפחה שלי",
     kidLinks: "קישור אישי לכל ילד/ה",
-    kidLinksHint: "הקישור לקריאה בלבד, אפשר לשלוח לטלפון של הילד/ה.",
     sendKidLink: (kid: string) => `שליחת הקישור ל${kid} ב-WhatsApp`,
     saved: "הפרופיל נשמר",
     notRegistered: "עוד לא בחרתם משפחה בטלפון הזה.",
@@ -396,14 +385,11 @@ export const he = {
 
   kid: {
     hi: (name: string) => `היי ${name}!`,
-    lead: "זה הקישור שלך. כאן רואים מי אוסף אותך ומתי.",
-    noEvents: "עוד אין הסעות. כשההורים ירשמו אותך לאירוע, הוא יופיע כאן.",
-    tip: "טיפ: שמרו את הדף במסך הבית של הטלפון.",
+    noEvents: "עוד אין הסעות.",
     pickup: (leg: Leg) => (leg === "out" ? "הלוך · אוספים אותך מהבית" : "חזור · איסוף הביתה"),
     notNeeded: "לא צריך הסעה בכיוון הזה",
     searching: "עוד מחפשים לך הסעה",
     noRide: "עוד אין לך הסעה",
-    searchingHint: "ההורים שלך יקבלו עדכון",
     driver: (family: string) => `משפחת ${family} אוספת אותך`,
     at: (t: string) => `יציאה ב-${t}`,
     findCar: "חפשי/חפש את הרכב הזה",
@@ -435,7 +421,7 @@ export const he = {
   /* ---------- WhatsApp templates ---------- */
   wa: {
     groupInvite: (group: string, url: string) =>
-      `היי לכולם 👋\nפתחתי קבוצה בטרמפוש לתיאום הסעות של ${group}.\nכל משפחה נרשמת פעם אחת (דקה):\n${url}`,
+      `היי לכולם 👋\nפתחתי קבוצה בטרמפוש לתיאום הסעות של ${group}.\nלהרשמה:\n${url}`,
     ask: (title: string, date: string, missing: number, leg: Leg, url: string) =>
       `היי לכולם 👋\nל${title} (${date}) ${missing > 0 ? missingText(missing, leg) : `חסר נהג ל${legName[leg]}`}.\nמי יכול/ה להסיע? נרשמים כאן:\n${url}`,
     summary: (p: {
@@ -458,7 +444,7 @@ export const he = {
     downstairs: (kid: string) => `היי ${kid}, אני למטה 🚗`,
     downstairsParent: (kid: string) => `היי, אני למטה עם הרכב, מחכה ל${kid} 🚗`,
     kidLink: (kid: string, url: string) =>
-      `היי ${kid} 💛 זה הקישור שלך לטרמפוש. שם רואים מי אוסף אותך ומתי:\n${url}`,
+      `היי ${kid} 💛 כאן רואים מי אוסף אותך ומתי:\n${url}`,
   },
 
   feedback: {

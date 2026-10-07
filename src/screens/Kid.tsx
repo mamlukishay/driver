@@ -44,15 +44,11 @@ function KidBody({ group, token, v }: { group: string; token: string; v: KidView
     <>
       <header class="kid-hdr" style={{ "--fc": famColor(v.kid.color) }}>
         <h1 class="display">{he.kid.hi(v.kid.name)}</h1>
-        <p class="muted">{he.kid.lead}</p>
       </header>
       {events.length === 0 && (
-        <>
-          <div class="legc wait">
-            <b>{he.kid.noEvents}</b>
-          </div>
-          <p class="note">{he.kid.tip}</p>
-        </>
+        <div class="legc wait">
+          <b>{he.kid.noEvents}</b>
+        </div>
       )}
       {events.map((e) => (
         <KidEvent group={group} token={token} e={e} next={next} />
@@ -100,7 +96,6 @@ function KidLeg({ group, token, e, leg, canReady }: { group: string; token: stri
       <div class="legc wait">
         <span class="k">{he.kid.pickup(leg)}</span>
         <b class="gapc">{he.kid.searching}</b>
-        <span class="small muted">{he.kid.searchingHint}</span>
       </div>
     );
   const driver = r.driver.parents.find((p) => p.phone);

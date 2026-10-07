@@ -29,8 +29,6 @@ export function Home() {
         {groups.length === 0 ? (
           <section class="hero-empty">
             <div class="lane" aria-hidden="true" />
-            <h2 class="display">{he.home.emptyTitle}</h2>
-            <p class="muted">{he.home.emptyBody}</p>
             <a class="btn big" href="/new-group">
               {he.home.create}
             </a>
