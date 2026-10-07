@@ -1,0 +1,1301 @@
+<title>סדנת טרמפוש</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Secular+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one calm reading column on an asphalt-tinted ground; a dark "road" control bar sticks on top; the phone prototype is the hero object; school-bus yellow is the only accent. */
+:root{
+  --bg:#F3F3EE; --surface:#FFFFFF; --sunk:#E8E9E3; --line:#D4D6CF;
+  --ink:#1C1F23; --ink-2:#555B62; --ink-3:#80868C;
+  --asphalt:#2B2F34; --asphalt-2:#3B4047; --on-asphalt:#EEF0EA; --on-asphalt-2:#AEB4B9;
+  --accent:#F2B705; --accent-soft:#FBEDB8; --on-accent:#1C1F23;
+  --ok:#22804E; --ok-soft:#DCF0E3; --gap:#C0570A; --gap-soft:#FCE6D2; --bad:#B8382A; --bad-soft:#F8DEDA;
+  --wa-bg:#EAE4DA; --wa-bubble:#D9FDD3; --wa-ink:#13261A;
+  --device:#17191C; --app-bg:#F7F7F3; --inv-bg:#FFF6DC; --inv-ink:#3A2A10;
+  --f1:#2F6FD6; --f2:#C2417F; --f3:#7A5AC8; --f4:#138A8A; --f5:#B5651D;
+  --shadow:rgba(20,22,25,.14); --scrim:rgba(15,17,20,.45); --focus:#2F6FD6;
+  --ff-display:"Secular One","Rubik",system-ui,sans-serif;
+  --ff-body:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --ff-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--ff-body);font-size:16px;line-height:1.6}
+.page{padding-inline:16px;padding-block:0 64px;background:var(--bg);color:var(--ink);overflow-x:clip}
+.wrap{max-width:1120px;margin-inline:auto}
+h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0}
+h2{font-family:var(--ff-display);font-weight:400;font-size:clamp(26px,4.4vw,36px)}
+h3{font-size:18px;font-weight:700}
+p{margin:0}
+.num,time{font-variant-numeric:tabular-nums}
+.mono,code{font-family:var(--ff-mono);font-size:.88em}
+code{background:var(--sunk);padding:1px 5px;border-radius:5px}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* hero */
+.hero{padding-block:40px 28px}
+.hero .wrap{display:grid;gap:24px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:end}
+.brand{font-family:var(--ff-display);font-size:clamp(52px,11vw,104px);line-height:.95;letter-spacing:-.01em}
+.lane{height:12px;background:var(--asphalt);border-radius:3px;margin-block:14px 18px;position:relative;max-width:420px}
+.lane::after{content:"";position:absolute;inset-inline:8px;top:5px;height:2px;background:repeating-linear-gradient(to left,var(--accent) 0 22px,transparent 22px 38px)}
+.thesis{font-size:clamp(18px,2.4vw,22px);max-width:34ch;color:var(--ink)}
+.meta{margin-top:12px;color:var(--ink-2);font-size:14px}
+.verdict{border:2px solid var(--ink);border-radius:var(--r);padding:16px 18px;background:var(--surface);min-width:0}
+.verdict .k{font-size:13px;color:var(--ink-2)}
+.verdict b{display:block;font-size:19px;margin-block:4px 6px}
+.verdict p{font-size:14.5px;color:var(--ink-2)}
+@media (max-width:760px){.hero .wrap{grid-template-columns:1fr}}
+
+/* sticky bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-16px;padding-inline:16px;padding-block:8px;background:var(--asphalt);color:var(--on-asphalt);box-shadow:0 2px 10px var(--shadow)}
+.bar .wrap{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.bgrp{display:flex;align-items:center;gap:8px;min-width:0}
+.bgrp.grow{flex:1 1 300px}
+.blbl{font-size:12px;color:var(--on-asphalt-2);white-space:nowrap}
+.seg{display:flex;gap:2px;background:var(--asphalt-2);border-radius:10px;padding:3px;overflow-x:auto;scrollbar-width:none;min-width:0;max-width:100%}
+.seg::-webkit-scrollbar{display:none}
+.seg button{border:0;background:transparent;color:var(--on-asphalt-2);padding:6px 11px;border-radius:8px;font-size:14px;white-space:nowrap;font-weight:500}
+.seg button:hover{color:var(--on-asphalt)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.seg button .L{font-family:var(--ff-mono);font-weight:500;margin-inline-end:4px}
+.row2{display:flex;gap:10px;flex:1 1 100%;min-width:0}
+@media (min-width:900px){.row2{flex:1 1 auto}}
+@media (max-width:520px){.blbl{display:none}.seg button{padding:6px 9px;font-size:13.5px}.seg button .xl{display:none}}
+
+/* sections */
+section{padding-block:44px 8px}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2);font-weight:500;margin-bottom:8px}
+.eyebrow::before{content:"";width:18px;height:4px;background:var(--accent);border-radius:2px}
+.lede{color:var(--ink-2);max-width:62ch;margin-top:8px}
+.shead{margin-bottom:20px}
+
+/* lessons */
+.lessons{border-top:1px solid var(--line)}
+.lesson{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);gap:12px;padding-block:13px;border-bottom:1px solid var(--line);align-items:start}
+.lesson .pat{color:var(--ink-2);font-size:15px}
+.lesson .pat::before{content:"בצ'אט";display:inline-block;font-size:11.5px;background:var(--sunk);color:var(--ink-2);padding:0 7px;border-radius:9px;margin-inline-end:8px;vertical-align:2px}
+.lesson .arr{color:var(--ink-3);text-align:center}
+.lesson .req{font-size:15.5px}
+.lesson .req b{background:linear-gradient(transparent 60%,var(--accent-soft) 60%)}
+.lhead{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);gap:12px;font-size:13px;color:var(--ink-3);padding-block:4px}
+.personas{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;font-size:14.5px;color:var(--ink-2)}
+.personas span{border:1px solid var(--line);border-radius:20px;padding:4px 12px;background:var(--surface)}
+@media (max-width:640px){
+  .lhead{display:none}.lessons{border:0;display:grid;gap:10px}
+  .lesson{grid-template-columns:1fr;gap:4px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+  .lesson .arr{display:none}
+}
+
+/* prototype */
+.proto{display:grid;grid-template-columns:minmax(0,370px) minmax(0,1fr);gap:28px;align-items:start}
+.proto.cmp{grid-template-columns:minmax(0,1fr)}
+@media (max-width:860px){.proto{grid-template-columns:minmax(0,1fr)}}
+.phones{display:flex;gap:20px;min-width:0;justify-content:center}
+.proto.cmp .phones{overflow-x:auto;justify-content:flex-start;padding-bottom:10px}
+.pcol{display:flex;flex-direction:column;gap:8px;align-items:center;min-width:0;width:100%;max-width:360px}
+.proto.cmp .pcol{flex:none;width:300px}
+.pcap{font-size:14px;font-weight:700}
+.pcap .L{font-family:var(--ff-mono);color:var(--ink-3);margin-inline-end:4px}
+.side{min-width:0;display:grid;gap:18px}
+.tip{border-inline-start:4px solid var(--accent);padding-inline-start:14px}
+.tip h3{margin-bottom:4px}
+.tip p{color:var(--ink-2);font-size:15px}
+.stack{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:14px 16px;min-width:0}
+.stack h3{font-size:15px;margin-bottom:8px}
+.stack ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column-reverse;gap:4px}
+.stack li{font-family:var(--ff-mono);font-size:12.5px;direction:ltr;text-align:left;padding:4px 8px;border-radius:6px;background:var(--sunk);color:var(--ink-2);overflow-wrap:anywhere}
+.stack li.cur{background:var(--accent-soft);color:var(--ink);font-weight:500}
+.stack p{font-size:13.5px;color:var(--ink-2);margin-top:10px}
+.btn-plain{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:14px}
+
+/* phone */
+.phone{width:100%;max-width:360px;aspect-ratio:360/740;background:var(--device);border-radius:46px;padding:10px;box-shadow:0 18px 40px var(--shadow),inset 0 0 0 2px var(--asphalt-2)}
+.screen{height:100%;border-radius:36px;overflow:hidden;background:var(--app-bg);display:flex;flex-direction:column;position:relative;font-size:13.5px;line-height:1.45;color:var(--ink)}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:9px 24px 2px;font-size:12px;font-weight:700;direction:ltr}
+.batt{display:inline-flex;gap:5px;align-items:center;font-weight:500}
+.batt i{width:20px;height:10px;border:1.5px solid var(--ink);border-radius:3px;position:relative}
+.batt i::after{content:"";position:absolute;inset:1.5px;width:60%;background:var(--ink);border-radius:1px}
+.url{margin:4px 10px 2px;background:var(--sunk);border-radius:9px;padding:5px 9px;display:flex;align-items:center;gap:5px;direction:ltr;font-family:var(--ff-mono);font-size:10.5px;min-width:0}
+.url svg{flex:none}
+.url .dom{color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;min-width:24px}
+.url .pth{color:var(--ink);white-space:nowrap;flex:none;max-width:78%;overflow:hidden;text-overflow:ellipsis}
+.ahdr{display:flex;align-items:center;gap:6px;padding:6px 10px 4px}
+.bk{border:0;background:transparent;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none}
+.bk:not(:disabled):hover{background:var(--sunk)}
+.bk:disabled{opacity:.3;cursor:default}
+.attl{font-weight:700;font-size:15.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who{margin:0 12px 6px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:3px 10px;background:var(--surface);align-self:flex-start}
+.who b{color:var(--ink)}
+.who.anon{border-style:dashed}
+.content{flex:1;overflow-y:auto;padding:4px 12px 18px;display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}
+.fdot{width:10px;height:10px;border-radius:50%;background:var(--fc);display:inline-block;flex:none}
+.av{width:26px;height:26px;border-radius:50%;background:var(--fc);color:var(--surface);display:inline-grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.hs{font-size:12.5px;color:var(--ink-2);font-weight:500;margin-bottom:-4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.btn{border:0;background:var(--accent);color:var(--on-accent);border-radius:11px;padding:9px 14px;font-weight:700;font-size:14px}
+.btn.big{padding:12px 16px;font-size:15px;width:100%}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.dark{background:var(--ink);color:var(--bg)}
+.btn.wa{background:var(--ok);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:default}
+.mini{border:1px solid currentColor;background:transparent;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:500}
+.lnk{border:0;background:none;padding:0;text-decoration:underline;color:var(--f1);font-size:12.5px}
+.row{display:flex;align-items:center;gap:8px;min-width:0}
+.row.sp{justify-content:space-between}
+.grow1{flex:1;min-width:0}
+.muted{color:var(--ink-2)}
+.small{font-size:12px}
+.evh{display:flex;gap:10px;align-items:center}
+.evh .cov{border:1px solid var(--line);padding:0;border-radius:8px;overflow:hidden;width:46px;height:60px;flex:none;background:var(--inv-bg)}
+.evh .cov svg,.evh .cov img{width:100%;height:100%;object-fit:cover;display:block}
+.evh-t{display:flex;flex-direction:column;min-width:0}
+.evh-t b{font-size:15px}
+.evh-t small{color:var(--ink-2);font-size:12px}
+.tabs{display:flex;background:var(--sunk);border-radius:11px;padding:3px}
+.tabs button{flex:1;border:0;background:transparent;padding:7px;border-radius:9px;font-weight:500;font-size:13.5px}
+.tabs button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-weight:700}
+.gm{border-radius:12px;padding:9px 11px;display:flex;flex-direction:column;gap:6px}
+.gm.gap{background:var(--gap-soft);color:var(--gap)}
+.gm.mid{background:var(--sunk);color:var(--ink-2)}
+.gm.ok{background:var(--ok-soft);color:var(--ok)}
+.gm-t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.gm-t b{font-size:14px}
+.gm-t span{font-size:11.5px}
+.gm-bar{height:6px;border-radius:3px;background:var(--surface);overflow:hidden}
+.gm-bar i{display:block;height:100%;background:currentColor;border-radius:3px}
+.gm .mini{align-self:flex-start}
+.gms{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.gms .gm{padding:7px 9px}.gms .gm-t b{font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.kchip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:3px 10px 3px 4px;font-size:13px;font-weight:500}
+.kchip.sel{border-color:var(--ink);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
+.kchip.ro{cursor:default}
+.car{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:9px}
+.car.me{border-color:var(--fc);border-width:2px}
+.car-h{display:flex;align-items:center;gap:7px;font-size:13px}
+.car-h b{font-size:13.5px}
+.car-h .num{margin-inline-start:auto;color:var(--ink-2);font-size:12px}
+.seats{display:flex;gap:8px;flex-wrap:wrap}
+.seat{width:42px;height:48px;border-radius:13px 13px 7px 7px;border:2px dashed var(--ink-3);background:transparent;position:relative;display:grid;place-items:center;padding:0;color:var(--ink-3);font-size:18px}
+.seat::before{content:"";position:absolute;top:-6px;inset-inline:12px;height:6px;border-radius:4px 4px 0 0;border:2px dashed var(--ink-3);border-bottom:0}
+.seat.full{border-style:solid;border-color:var(--fc);background:var(--surface)}
+.seat.full::before{border-style:solid;border-color:var(--fc)}
+.seat.arm{border-color:var(--ink);color:var(--ink);background:var(--accent-soft)}
+.seat.arm::before{border-color:var(--ink)}
+.seat .nm{position:absolute;bottom:-15px;font-size:10px;color:var(--ink-2);white-space:nowrap}
+.seat-wrap{padding-bottom:12px}
+.logl{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-2)}
+.logl div{display:flex;gap:6px;align-items:baseline}
+.logl .t{font-variant-numeric:tabular-nums;color:var(--ink-3);flex:none}
+.logl code{font-size:10px;direction:ltr;display:block;margin-top:1px;background:transparent;padding:0;color:var(--ink-3)}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;background:transparent;padding:4px 0;width:100%;text-align:start;font-size:13.5px}
+.sw i{width:38px;height:22px;border-radius:12px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.sw i::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:inset-inline-start .15s}
+.sw[aria-checked="true"] i{background:var(--ok)}
+.sw[aria-checked="true"] i::after{inset-inline-start:19px}
+.sw:disabled{opacity:.4}
+.note{border-radius:11px;padding:9px 11px;background:var(--sunk);font-size:12.5px;color:var(--ink-2)}
+.note.ok{background:var(--ok-soft);color:var(--ok)}
+.note.gap{background:var(--gap-soft);color:var(--gap)}
+.note b{color:inherit}
+.fld{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2);border-radius:9px;padding:4px 6px;margin-inline:-6px}
+.fld input{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:9px;padding:7px 9px;width:100%;min-width:0}
+.fld.hl{background:var(--accent-soft)}
+.fld.hl input{border-color:var(--accent)}
+.auto{font-style:normal;font-size:10.5px;background:var(--accent);color:var(--on-accent);border-radius:6px;padding:0 5px;margin-inline-start:6px}
+.fld .hint{color:var(--ink-2);font-size:11.5px}
+.fld.err input{border-color:var(--bad)}.fld.err .hint{color:var(--bad)}.fld.okv .hint{color:var(--ok)}
+.fld input[dir="ltr"]{text-align:right}
+.btn.sm{padding:5px 9px;font-size:12px;border-radius:9px}
+.ctc{display:flex;flex-direction:column;gap:5px;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px}
+.step{display:flex;align-items:center;gap:8px}
+.step button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-weight:700}
+.step b{min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:500}
+.pill[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.evcard{display:flex;gap:10px;align-items:stretch;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;width:100%}
+.evcard.dim{opacity:.7}
+.evd{width:44px;flex:none;border-radius:9px;background:var(--asphalt);color:var(--on-asphalt);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px}
+.evd b{font-size:18px;line-height:1;color:var(--accent)}
+.evm{display:flex;flex-direction:column;gap:2px;min-width:0}
+.evm small{color:var(--ink-2);font-size:12px}
+.qstack{position:relative;padding-top:14px}
+.qstack::before,.qstack::after{content:"";position:absolute;inset-inline:14px;top:0;height:30px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.qstack::after{inset-inline:7px;top:7px}
+.qcard{position:relative;z-index:1;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 6px 16px var(--shadow)}
+.qcard h4{margin:0;font-size:19px;line-height:1.3}
+.qn{font-size:11.5px;color:var(--ink-3)}
+.dots{display:flex;gap:5px}.dots i{width:22px;height:4px;border-radius:2px;background:var(--line)}.dots i.on{background:var(--ink)}
+.yn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.yn button{padding:16px;border-radius:14px;border:1.5px solid var(--line);background:var(--app-bg);font-size:16px;font-weight:700}
+.why{font-size:11px;color:var(--ink-2)}
+.fair{font-size:11px;background:var(--sunk);border-radius:8px;padding:1px 7px;color:var(--ink-2)}
+.route{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.route li{display:grid;grid-template-columns:44px 14px 1fr;gap:8px;align-items:start;padding-block:5px}
+.route .t{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}
+.route .pin{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--ink);margin-top:3px;background:var(--surface)}
+.route li:first-child .pin,.route li:last-child .pin{background:var(--ink)}
+.chk{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 10px;width:100%;text-align:start}
+.chk .bx{width:22px;height:22px;border-radius:7px;border:2px solid var(--ink-3);display:grid;place-items:center;flex:none;font-size:13px;color:var(--surface)}
+.chk[aria-checked="true"] .bx{background:var(--ok);border-color:var(--ok)}
+.chk small{display:block;color:var(--ink-2);font-size:11.5px}
+.fc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.fc.mine{border-color:var(--f1);border-width:2px}
+.fc-h{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.fc-h .t{margin-inline-start:auto;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;font-weight:700;border-radius:6px;padding:0 6px}
+.tag.req{background:var(--gap-soft);color:var(--gap)}
+.tag.off{background:var(--ok-soft);color:var(--ok)}
+.tag.me{background:var(--accent-soft);color:var(--ink)}
+.fc-b b{font-size:15px;display:block}
+.fc-b small{color:var(--ink-2);font-size:12px}
+.fc.closed{flex-direction:row;align-items:center;gap:8px;padding:7px 12px;background:var(--ok-soft);border-color:transparent;color:var(--ok);font-size:12.5px}
+.ck{width:20px;height:20px;border-radius:50%;background:var(--ok);color:var(--surface);display:grid;place-items:center;font-size:11px;flex:none}
+.conf{background:var(--accent-soft);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.conf .row{gap:6px}
+.stop{border:2px solid var(--ink);border-radius:16px;padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:10px}
+.stop .k{font-size:12px;color:var(--ink-2)}
+.stop b.big{font-size:22px}
+.live{display:inline-flex;align-items:center;gap:6px;background:var(--ok-soft);color:var(--ok);font-weight:700;border-radius:20px;padding:4px 12px;font-size:13px;align-self:flex-start}
+.live::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.legc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;text-align:start;width:100%}
+.legc .k{font-size:12px;color:var(--ink-2)}
+.legc b{font-size:16px}
+.legc.wait{border-style:dashed}
+.readybtn{padding:18px;border-radius:18px;border:0;background:var(--accent);color:var(--on-accent);font-size:19px;font-weight:700;font-family:var(--ff-display)}
+/* invite */
+.drop{border:2px dashed var(--ink-3);border-radius:16px;padding:18px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:var(--surface);cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop:focus-within{outline:3px solid var(--focus);outline-offset:2px}
+.drop .btn{pointer-events:none}
+.invs{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px;display:flex;gap:12px;align-items:center;text-align:start;width:100%}
+.invs svg{width:78px;height:104px;flex:none;border-radius:6px}
+.scan{position:relative;border-radius:12px;overflow:hidden;width:150px;height:200px;align-self:center;border:1px solid var(--line);background:var(--inv-bg)}
+.scan svg,.scan img{width:100%;height:100%;object-fit:cover;display:block}
+.scan::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,var(--accent-soft) 45%,var(--accent) 50%,var(--accent-soft) 55%,transparent 100%);opacity:.7;background-size:100% 300%;animation:scan 1.3s linear infinite}
+@keyframes scan{from{background-position:0 100%}to{background-position:0 0}}
+.skel{display:flex;flex-direction:column;gap:7px}
+.skel i{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--sunk) 0%,var(--line) 50%,var(--sunk) 100%);background-size:200% 100%;animation:shim 1.1s linear infinite}
+@keyframes shim{from{background-position:200% 0}to{background-position:0 0}}
+.inv-full{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--inv-bg)}
+.inv-full svg,.inv-full img{display:block;width:100%;height:auto}
+.inv-t1{fill:var(--inv-ink);font:400 22px var(--ff-display)}
+.inv-t2{fill:var(--inv-ink);font:500 12px var(--ff-body)}
+.inv-t3{fill:var(--inv-ink);font:700 14px var(--ff-body)}
+/* overlays */
+.ov{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:flex-end}
+.scrim{position:absolute;inset:0;background:var(--scrim);border:0;padding:0;width:100%}
+.sheet{position:relative;background:var(--surface);border-radius:22px 22px 0 0;padding:8px 14px 22px;display:flex;flex-direction:column;gap:12px;max-height:85%;overflow:auto}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);align-self:center}
+.sheet h4{margin:0;font-size:16px}
+.sent{font-size:16px;line-height:1.5}
+.sent b{background:linear-gradient(transparent 62%,var(--accent-soft) 62%)}
+.wa{position:relative;background:var(--surface);border-radius:20px 20px 0 0;display:flex;flex-direction:column;max-height:88%;overflow:auto}
+.wa-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
+.xbtn{border:0;background:var(--sunk);width:28px;height:28px;border-radius:50%;font-size:16px;line-height:1}
+.wa-to{padding:6px 14px;font-size:12px;color:var(--ink-2)}
+.wa-chat{background:var(--wa-bg);padding:14px 12px}
+.wa-b{background:var(--wa-bubble);color:var(--wa-ink);border-radius:12px 2px 12px 12px;padding:8px 10px 4px;max-width:92%;margin-inline-start:auto;font-size:13.5px;box-shadow:0 1px 1px var(--shadow)}
+.wa-text{white-space:pre-wrap;display:block;user-select:text}
+.wa-b small{display:block;text-align:left;font-size:10.5px;opacity:.7}
+.wa-link{padding:6px 14px;font-family:var(--ff-mono);font-size:10.5px;color:var(--ink-3);overflow-wrap:anywhere;direction:ltr;text-align:left}
+.wa-act{display:flex;gap:8px;padding:6px 14px}
+.wa-act .btn{flex:1}
+.wa-note{padding:4px 14px 16px;font-size:11.5px;color:var(--ink-2)}
+.lnkbox{margin:12px 14px 0;padding:10px;border-radius:10px;background:var(--sunk);font-family:var(--ff-mono);font-size:11px;direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
+.toast{position:absolute;inset-inline:10px;bottom:14px;z-index:7;background:var(--ink);color:var(--bg);border-radius:13px;padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 8px 20px var(--shadow);overflow:hidden}
+.toast span{flex:1;min-width:0}
+.toast button{border:0;background:var(--accent);color:var(--on-accent);border-radius:8px;padding:5px 11px;font-weight:700;font-size:13px}
+.toast.warn{background:var(--bad-soft);color:var(--bad);border:1.5px solid var(--bad)}
+.tbar{position:absolute;bottom:0;inset-inline-start:0;height:3px;background:var(--accent);width:100%;animation:tb 10s linear forwards}
+@keyframes tb{to{width:0}}
+.pushb{position:absolute;top:36px;inset-inline:8px;z-index:8;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:9px 10px;display:flex;gap:9px;align-items:center;box-shadow:0 10px 24px var(--shadow);animation:drop .35s ease-out}
+@keyframes drop{from{transform:translateY(-20px);opacity:.3}}
+.pushb .ic{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-family:var(--ff-display);flex:none}
+.pushb div{flex:1;min-width:0;display:flex;flex-direction:column;font-size:12.5px}
+.pushb small{color:var(--ink-3);font-size:10.5px}
+
+/* alternatives */
+.alts{display:grid;gap:18px}
+.alts.cmp{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:980px){.alts.cmp{grid-template-columns:minmax(0,1fr)}}
+.alt{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.alt-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.alt-h .L{font-family:var(--ff-mono);font-size:15px;background:var(--asphalt);color:var(--accent);border-radius:6px;padding:0 8px}
+.alt-h h3{font-family:var(--ff-display);font-weight:400;font-size:26px}
+.eff{margin-inline-start:auto;font-size:13px;color:var(--ink-2)}
+.eff b{font-family:var(--ff-mono);color:var(--ink)}
+.alt .idea{font-size:16px;max-width:70ch}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 26px;margin-top:16px}
+.alts.cmp .facts{grid-template-columns:minmax(0,1fr)}
+@media (max-width:640px){.facts{grid-template-columns:minmax(0,1fr)}}
+.facts dt{font-size:13px;font-weight:700;color:var(--ink-2)}
+.facts dd{margin:2px 0 0;font-size:15px}
+.alts.cmp .long{display:none}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.alts.cmp .pc{grid-template-columns:1fr}
+.pc ul{margin:4px 0 0;padding-inline-start:18px;font-size:14.5px}
+.pc h4{margin:0;font-size:13px}
+.pc .p h4{color:var(--ok)}.pc .c h4{color:var(--gap)}
+
+/* foundation */
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:30px 36px}
+@media (max-width:820px){.fgrid{grid-template-columns:minmax(0,1fr)}}
+.fblk{min-width:0}
+.fblk h3{margin-bottom:8px}
+.fblk>p{color:var(--ink-2);font-size:15px}
+.fblk ul{margin:8px 0 0;padding-inline-start:18px;font-size:15px}
+.fblk li{margin-bottom:4px}
+.full{grid-column:1/-1}
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 12px;text-align:start;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+thead th{font-size:13px;color:var(--ink-2);font-weight:500;background:var(--sunk)}
+.perm{min-width:560px}
+.perm td.y{color:var(--ok)}.perm td.n{color:var(--bad)}
+.perm td small{display:block;color:var(--ink-2);font-size:12px}
+.routes{list-style:none;margin:10px 0 0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.routes li{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:10px;padding:7px 12px;border-bottom:1px solid var(--line);font-size:14px;align-items:baseline}
+.routes li:last-child{border-bottom:0}
+.routes code{direction:ltr;text-align:left;background:transparent;padding:0;overflow-wrap:anywhere;font-size:12.5px}
+.routes li.newr{background:var(--accent-soft)}
+@media (max-width:520px){.routes li{grid-template-columns:1fr;gap:0}}
+.ladder{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.ladder li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.ladder .st{grid-row:span 2;align-self:start;font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px;white-space:nowrap}
+.st.v1{background:var(--ok-soft);color:var(--ok)}.st.opt{background:var(--accent-soft);color:var(--ink)}.st.v2{background:var(--sunk);color:var(--ink-2)}.st.no{background:var(--bad-soft);color:var(--bad)}
+.ladder b{font-size:15px}
+.ladder span{font-size:13.5px;color:var(--ink-2)}
+.ladder li.nope{border-style:dashed}
+pre.code{direction:ltr;text-align:left;font-family:var(--ff-mono);font-size:12.5px;line-height:1.55;background:var(--asphalt);color:var(--on-asphalt);padding:14px;border-radius:12px;overflow-x:auto;margin:10px 0 0}
+pre.code .c{color:var(--accent)}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+@media (max-width:820px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opt{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface);min-width:0;display:flex;flex-direction:column;gap:4px}
+.opt.rec{border:2px solid var(--ink)}
+.opt b{font-size:15px}
+.opt span{font-size:14px;color:var(--ink-2)}
+.opt .tg{align-self:flex-start;font-size:12px;font-weight:700;border-radius:8px;padding:1px 8px;background:var(--sunk);color:var(--ink-2)}
+.opt.rec .tg{background:var(--accent);color:var(--on-accent)}
+details{border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:700}
+details ul{font-size:14.5px;color:var(--ink-2)}
+
+/* diagram */
+.dgbox{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:10px}
+.dgbox+.dgbox{margin-top:14px}
+.dgbox h3{font-size:15px;margin:4px 6px 0}
+.dg{display:block;width:100%;min-width:640px;height:auto}
+.dg-n{fill:var(--sunk);stroke:var(--line);stroke-width:1.5}
+.dg-n.acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.dg-n.ext{fill:var(--surface);stroke:var(--ink-3);stroke-dasharray:6 4}
+.dg-n.new{stroke:var(--ink);stroke-width:2.2}
+.dg-p{fill:var(--surface);stroke:var(--line)}
+.dg-t{fill:var(--ink);font:700 14px var(--ff-body)}
+.dg-s{fill:var(--ink-2);font:400 11.5px var(--ff-body)}
+.dg-m{fill:var(--ink);font:500 11.5px var(--ff-mono)}
+.dg-e{stroke:var(--ink-2);stroke-width:1.6;fill:none}
+.dg-e.d{stroke-dasharray:5 4}
+.dg-arh{fill:var(--ink-2)}
+.dg-l{fill:var(--ink-2);font:500 11px var(--ff-body);paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-2);margin-top:10px}
+.legend i{display:inline-block;width:22px;height:13px;border-radius:4px;vertical-align:-2px;margin-inline-end:6px}
+.lg-acc{background:var(--accent-soft);border:2px solid var(--accent)}
+.lg-ext{background:var(--surface);border:1.5px dashed var(--ink-3)}
+.lg-new{background:var(--sunk);border:2px solid var(--ink)}
+
+/* comparison */
+.cmpt{min-width:620px}
+.cmpt th:first-child,.cmpt td:first-child{color:var(--ink-2);font-size:13px;width:22%}
+.cmpt thead th[data-col]{font-size:14px;color:var(--ink);font-weight:700}
+.cmpt[data-hl="a"] [data-col="a"],.cmpt[data-hl="b"] [data-col="b"],.cmpt[data-hl="c"] [data-col="c"]{background:var(--accent-soft)}
+.cmpt [data-col] .L{font-family:var(--ff-mono);margin-inline-end:4px}
+
+/* reco + roadmap */
+.reco{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+@media (max-width:820px){.reco{grid-template-columns:minmax(0,1fr)}}
+.reco-main{font-size:19px;line-height:1.55}
+.reco-main b{background:linear-gradient(transparent 62%,var(--accent-soft) 62%)}
+.reco-main p+p{margin-top:12px;font-size:16px;color:var(--ink-2)}
+.road{list-style:none;margin:0;padding:0;position:relative;padding-inline-start:34px}
+.road::before{content:"";position:absolute;inset-block:6px;inset-inline-start:8px;width:14px;border-radius:7px;background:var(--asphalt)}
+.road::after{content:"";position:absolute;inset-block:14px;inset-inline-start:14px;width:2px;background:repeating-linear-gradient(to bottom,var(--accent) 0 12px,transparent 12px 22px)}
+.road li{position:relative;padding-block:4px 16px}
+.road li::before{content:"";position:absolute;inset-inline-start:-31px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:3px solid var(--accent);z-index:1}
+.road .v{font-family:var(--ff-mono);font-weight:500;font-size:14px;background:var(--ink);color:var(--bg);border-radius:6px;padding:0 7px}
+.road .vt{font-weight:700;margin-inline-start:6px}
+.road p{font-size:14.5px;color:var(--ink-2);margin-top:4px}
+/* questions */
+.qs{margin:0;padding:0;list-style:none;counter-reset:q;display:grid;gap:10px}
+.qs li{counter-increment:q;display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.qs li::before{content:counter(q);font-family:var(--ff-display);font-size:22px;color:var(--ink);background:var(--accent);border-radius:8px;height:34px;display:grid;place-items:center}
+.qs b{font-size:16px}
+.qs span{display:block;color:var(--ink-2);font-size:14px;margin-top:2px}
+footer{padding-block:40px 0;color:var(--ink-3);font-size:13px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+<div class="page" dir="rtl" lang="he">
+<header class="hero"><div class="wrap">
+  <div>
+    <h1 class="brand">טרמפוש</h1>
+    <div class="lane" aria-hidden="true"></div>
+    <p class="thesis">מי מסיע, מי נוסע וכמה מקומות עוד חסרים, בהלוך ובחזור. בלי לגלול אחורה בקבוצת ההורים.</p>
+    <p class="meta">סדנת ארכיטקטורה ו-UX · שלוש חלופות · אוקטובר 2026</p>
+  </div>
+  <aside class="verdict" aria-label="השורה התחתונה">
+    <span class="k">השורה התחתונה</span>
+    <b>לבנות את A "הלוח" כגרסה 1</b>
+    <p>עם יומן פעולות append-only וכפתור "אני לוקח/ת" מ-C. התראות בגרסה 1: WhatsApp בלחיצה ומצב נהג. Push ותזכורות אוטומטיות מ-B בגרסה 2.</p>
+  </aside>
+</div></header>
+
+<nav class="bar" aria-label="בחירת תצוגה"><div class="wrap">
+  <div class="bgrp grow"><span class="blbl" id="lbl-alt">חלופה</span>
+    <div class="seg" role="group" aria-labelledby="lbl-alt" id="seg-alt">
+      <button type="button" id="alt-a" data-alt="a"><span class="L">A</span>הלוח</button>
+      <button type="button" id="alt-b" data-alt="b"><span class="L">B</span>הסדרן</button>
+      <button type="button" id="alt-c" data-alt="c"><span class="L">C</span>בקשות<span class="xl"> והצעות</span></button>
+      <button type="button" id="alt-compare" data-alt="compare">השוואה</button>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="bgrp"><span class="blbl" id="lbl-per">בתור</span>
+      <div class="seg" role="group" aria-labelledby="lbl-per" id="seg-per">
+        <button type="button" id="per-parent" data-per="parent">הורה</button>
+        <button type="button" id="per-kid" data-per="kid">ילד</button>
+      </div>
+    </div>
+    <div class="bgrp" style="min-width:0;flex:1"><span class="blbl" id="lbl-mom">רגע</span>
+      <div class="seg" role="group" aria-labelledby="lbl-mom" id="seg-mom">
+        <button type="button" id="mom-reg" data-mom="reg">הרשמה חד-פעמית</button>
+        <button type="button" id="mom-create" data-mom="create">יצירת אירוע</button>
+        <button type="button" id="mom-signup" data-mom="signup">הרשמה לאירוע</button>
+        <button type="button" id="mom-driver" data-mom="driver">נהג/ת</button>
+        <button type="button" id="mom-day" data-mom="day">יום ההסעה</button>
+      </div>
+    </div>
+  </div>
+</div></nav>
+
+<main>
+<section id="learned"><div class="wrap">
+  <div class="shead"><span class="eyebrow">מה למדנו מהצ'אט</span>
+  <h2>כל הודעה בקבוצה היא דרישה שמחכה למסך</h2>
+  <p class="lede">עברנו על שרשור אמיתי של הורים (הפרטים הוסרו). כל דפוס שחזר שם הפך לדרישה.</p></div>
+  <div class="lhead" aria-hidden="true"><span>מה קרה בקבוצה</span><span></span><span>מה האפליקציה צריכה לעשות</span></div>
+  <div class="lessons">
+    <div class="lesson"><p class="pat">המארח/ת שולח/ת הזמנה וסקר "מגיעים / לא מגיעים"</p><span class="arr" aria-hidden="true">←</span><p class="req"><b>RSVP לכל ילד/ה</b>, בנפרד מההסעות</p></div>
+    <div class="lesson"><p class="pat">"הילד שלי יכול להצטרף למישהו בבוקר, ואני אחזיר?"</p><span class="arr" aria-hidden="true">←</span><p class="req"><b>הלוך וחזור עצמאיים</b>: אפשר לצטרך רק הלוך, רק חזור או את שניהם</p></div>
+    <div class="lesson"><p class="pat">"נראה לי צריך שני נהגים, אני מעדיף/ה להחזיר"</p><span class="arr" aria-hidden="true">←</span><p class="req">נהג/ת מציע/ה כיוון אחד או שניים, והאפליקציה מראה <b>כמה מקומות חסרים בכל כיוון</b></p></div>
+    <div class="lesson"><p class="pat">"אני לוקח/ת צד אחד" ואחריו רשימה של ארבעה ילדים</p><span class="arr" aria-hidden="true">←</span><p class="req"><b>הצעת נסיעה = רכב + מקומות + כיוון</b>, ומושיבים בה ילדים</p></div>
+    <div class="lesson"><p class="pat">"אנחנו בחו״ל, תודה"</p><span class="arr" aria-hidden="true">←</span><p class="req">סטטוס <b>"לא מגיע/ה"</b> מוציא את הילד/ה מהחישוב</p></div>
+    <div class="lesson"><p class="pat">"עוד מישהו יכול להסיע?" · "עדיין צריך הסעות?"</p><span class="arr" aria-hidden="true">←</span><p class="req"><b>מד חוסרים</b>: "חסרים 3 מקומות בהלוך" וכפתור אחד לבקש בקבוצה</p></div>
+    <div class="lesson"><p class="pat">"גם אנחנו יכולים להסיע" (שכנים, משפחה מחוץ לכיתה)</p><span class="arr" aria-hidden="true">←</span><p class="req"><b>כל מי שבקבוצה</b> יכול/ה להציע רכב</p></div>
+    <div class="lesson"><p class="pat">"תרשמי את הילד שלי אצלך"</p><span class="arr" aria-hidden="true">←</span><p class="req">הורה א׳ <b>מושיב/ה את הילד שלו ברכב של הורה ב׳</b>, בבטחה ובגלוי לב׳</p></div>
+    <div class="lesson"><p class="pat">באירוע שני חלקים: טקס ב-10:30, ארוחה ב-12:30, אותה כתובת</p><span class="arr" aria-hidden="true">←</span><p class="req">לאירוע יש מקום, שעת התחלה ו<b>שעת איסוף לחזור</b> (ברירת מחדל: שעת הסיום)</p></div>
+    <div class="lesson"><p class="pat">ההזמנה מגיעה כתמונה מעוצבת עם תאריך, שעות וכתובת</p><span class="arr" aria-hidden="true">←</span><p class="req"><b>יוצרים אירוע מתמונת ההזמנה</b>: זיהוי פרטים, טופס מלא מראש לבדיקה</p></div>
+  </div>
+  <div class="personas"><span><b>הורה</b>: נרשם/ת פעם אחת, עונה RSVP, מציע/ה רכב, נוהג/ת</span><span><b>ילד/ה</b>: רואה מי אוסף, מתי ובאיזה רכב, ולוחץ/ת "אני מוכן/ה"</span></div>
+</div></section>
+
+<section id="proto"><div class="wrap">
+  <div class="shead"><span class="eyebrow">אב-טיפוס חי</span>
+  <h2>לגעת בזה לפני שבונים</h2>
+  <p class="lede">הטלפון מציג את החלופה, הפרסונה והרגע שבחרתם בסרגל למעלה. הכל לחיץ, הנתונים לדוגמה בלבד. שורת הכתובת מראה את הנתיב האמיתי מתוך מפת הכתובות, וחץ החזרה עובד כמו Back בדפדפן.</p></div>
+  <div class="proto" id="proto-grid">
+    <div class="phones" id="phones">
+      <div class="pcol" data-alt="a"><div class="pcap" hidden><span class="L">A</span>הלוח</div><div class="phone" id="ph-a"></div></div>
+      <div class="pcol" data-alt="b"><div class="pcap" hidden><span class="L">B</span>הסדרן</div><div class="phone" id="ph-b"></div></div>
+      <div class="pcol" data-alt="c"><div class="pcap" hidden><span class="L">C</span>בקשות והצעות</div><div class="phone" id="ph-c"></div></div>
+    </div>
+    <div class="side" id="side">
+      <div class="tip"><h3 id="tip-h">מה לנסות</h3><p id="tip-p"></p></div>
+      <div class="stack">
+        <h3>מחסנית ההיסטוריה (בזיכרון)</h3>
+        <ol id="hist"></ol>
+        <p>כל מסך הוא כתובת. גיליון חשוב (כמו בחירת מושב) מוסיף <code>?sheet=</code>, כך שהחלקה אחורה ב-iOS סוגרת אותו ולא יוצאת מהדף. מיקום הגלילה נשמר לכל מסך.</p>
+      </div>
+      <div><button type="button" class="btn-plain" id="reset">התחלה מחדש של ההדגמה</button></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="detail"><div class="wrap">
+  <div class="shead"><span class="eyebrow">החלופה במלואה</span>
+  <h2 id="detail-h">איך זה עובד מקצה לקצה</h2></div>
+  <div class="alts" id="alts">
+    <article class="alt" data-alt="a">
+      <div class="alt-h"><span class="L">A</span><h3>הלוח</h3><span class="eff">מאמץ בנייה <b>S</b></span></div>
+      <p class="idea">דף האירוע הוא לוח הושבה. שתי לשוניות, הלוך וחזור. למעלה "ממתינים להסעה", צ'יפים של ילדים שצריכים את הנסיעה. מתחת רכבים עם מושבים: מלא מציג אווטאר, פנוי מצויר כמושב מקווקו. נוגעים בילד/ה ואז במושב.</p>
+      <dl class="facts">
+        <div><dt>הרשמה לאירוע</dt><dd>פותחים מהקישור ב-WhatsApp. לכל ילד/ה שלושה מתגים: מגיע/ה · צריך/ה הלוך · צריך/ה חזור. מסך אחד.</dd></div>
+        <div><dt>נהג/ת</dt><dd>"+ אני נוהג/ת בהלוך", בוחרים רכב (המקומות מהפרופיל) ושעת יציאה. אחר כך מושיבים ילדים, או שההורים ממלאים.</dd></div>
+        <div class="long"><dt>מד חוסרים</dt><dd>לכל כיוון: "חסרים 3 מקומות" בכתום, או "כולם מסודרים ✓" בירוק.</dd></div>
+        <div class="long"><dt>ביום עצמו</dt><dd>"יצאתי" פותח רשימת הורים ברכב, לכל אחד כפתור WhatsApp עם "יצאתי, אגיע בעוד ~10 דק׳". בדף של הילד: "בדרך אליך".</dd></div>
+        <div><dt>התראות</dt><dd>WhatsApp בלחיצה בלבד. הסטטוס באפליקציה מתעדכן ברענון.</dd></div>
+        <div><dt>אירועים חוזרים</dt><dd>"שכפל אירוע" לתאריך אחר. חזרתיות אמיתית בהמשך.</dd></div>
+        <div class="long"><dt>חלקים טכניים</dt><dd>SPA + שלוש פונקציות (<code>group</code>, <code>event</code>, <code>action</code>) + Blobs. מאגר אחד, בלי cron.</dd></div>
+      </dl>
+      <div class="pc"><div class="p"><h4>בעד</h4><ul><li>המודל הכי פשוט</li><li>דומה לצ'אט, הכל גלוי</li><li>חינם לגמרי</li></ul></div><div class="c"><h4>נגד</h4><ul><li>מישהו צריך לעשות את ההושבה</li><li>התראות דורשות לחיצה</li></ul></div></div>
+    </article>
+    <article class="alt" data-alt="b">
+      <div class="alt-h"><span class="L">B</span><h3>הסדרן</h3><span class="eff">מאמץ בנייה <b>M–L</b></span></div>
+      <p class="idea">ההורים רק עונים על שאלות, והאפליקציה מציעה את ההושבה. כשיש מספיק תשובות היא בונה "הצעת שיבוץ": מקבצת ילדים לפי קרבה לבית, ממלאת מקומות, מכבדת מי רוצה איזה כיוון ושומרת על הוגנות. המארח/ת או כל נהג/ת לוחצים "אשר ושלח".</p>
+      <dl class="facts">
+        <div><dt>הרשמה לאירוע</dt><dd>ערימת כרטיסים: "נועה מגיעה?" ← "צריכה הלוך? חזור?" ← "את/ה יכול/ה להסיע? כמה מקומות". 20 שניות.</dd></div>
+        <div><dt>נהג/ת</dt><dd>אומר/ת רק "אני יכול/ה להחזיר, 4 מקומות" ומקבל/ת ילדים ומסלול איסוף מסודר עם זמנים משוערים.</dd></div>
+        <div class="long"><dt>מד חוסרים</dt><dd>"חסר נהג אחד להלוך" + "בקש מהקבוצה": שיתוף ב-WhatsApp עם קישור שנפתח ישר בשאלה "אני יכול/ה להסיע".</dd></div>
+        <div class="long"><dt>הוגנות</dt><dd>מונה לכל משפחה, "הסעת 3 פעמים החודש". האפליקציה מעדיפה מי שהסיע פחות.</dd></div>
+        <div><dt>התראות</dt><dd>Web Push (PWA מותקן; ב-iOS 16.4+ רק אחרי הוספה למסך הבית) + Scheduled Function: ערב לפני, 30 דק׳ לפני. "יצאתי" שולח Push לכל הורה של נוסע. WhatsApp כגיבוי.</dd></div>
+        <div><dt>אירועים חוזרים</dt><dd>תבניות שבועיות (חוג כל יום ג׳) עם רוטציה. מתאים כי הסדרן כבר מאזן תורות.</dd></div>
+        <div class="long"><dt>חלקים טכניים</dt><dd>פונקציות + Blobs + Scheduled Function + מפתחות VAPID + <code>web-push</code> + מנויי Push לכל משפחה. geocoding של כתובות פעם אחת בהרשמה (Nominatim).</dd></div>
+      </dl>
+      <div class="pc"><div class="p"><h4>בעד</h4><ul><li>הכי מעט עבודה להורים</li><li>הוגן</li><li>תזכורות אוטומטיות</li></ul></div><div class="c"><h4>נגד</h4><ul><li>"למה הילד שלי שם?"</li><li>חיכוך בהתקנת PWA באייפון</li><li>הרבה חלקים זזים</li><li>איכות geocoding לכתובות בעברית</li></ul></div></div>
+    </article>
+    <article class="alt" data-alt="c">
+      <div class="alt-h"><span class="L">C</span><h3>בקשות והצעות</h3><span class="eff">מאמץ בנייה <b>M</b></span></div>
+      <p class="idea">דף האירוע הוא פיד שנראה כמו הצ'אט, רק מסודר. שני סוגי כרטיסים: <b>בקשה</b> ("נועה צריכה הלוך") ו<b>הצעה</b> ("יש לי 3 מקומות בחזור, יציאה 13:30"). לכל כרטיס פעולה גדולה אחת, וכרטיס שנסגר מתקפל ל"סגור ✓". מד החוסרים לשני הכיוונים דבוק למעלה.</p>
+      <dl class="facts">
+        <div><dt>הרשמה לאירוע</dt><dd>נוגעים בילד/ה ← "צריך/ה הלוך / חזור / שניהם / מסתדרים" ← נוצר כרטיס בקשה.</dd></div>
+        <div><dt>נהג/ת</dt><dd>"אני יכול/ה להסיע" ← כיוון + מקומות ← כרטיס הצעה. או "אני לוקח/ת" על בקשה של מישהו.</dd></div>
+        <div class="long"><dt>יומן append-only</dt><dd>כל פעולה היא blob משלה (<code>event/{id}/log/{timestamp}-{rand}</code>), והמצב = הרצה מחדש של היומן. אין התנגשויות כתיבה, יש היסטוריה מלאה, וביטול = פעולה מפצה.</dd></div>
+        <div><dt>התראות</dt><dd>WhatsApp בלחיצה, ואופציה אוטומטית: בוט Telegram או נושא ntfy לכל משפחה, למי שרוצה. במצב נהג "הגעתי לנועה" שולח להורה "אני למטה 🚗" בלחיצה אחת.</dd></div>
+        <div><dt>אירועים חוזרים</dt><dd>"חזור על הבקשה כל שבוע" על כרטיס בקשה. בהמשך.</dd></div>
+      </dl>
+      <div class="pc"><div class="p"><h4>בעד</h4><ul><li>אפס למידה: זה הצ'אט, מסודר</li><li>אין התנגשויות</li><li>יומן מלא</li></ul></div><div class="c"><h4>נגד</h4><ul><li>הפיד מתארך באירוע גדול</li><li>פחות תמונה מרחבית של ההושבה מאשר ב-A</li><li>Telegram/ntfy זו עוד אפליקציה</li></ul></div></div>
+    </article>
+  </div>
+</div></section>
+
+<section id="foundation"><div class="wrap">
+  <div class="shead"><span class="eyebrow">בסיס משותף לשלוש החלופות</span>
+  <h2>זהות, כתובות, התראות ונתונים</h2>
+  <p class="lede">SPA סטטי ב-Vite + Preact, ניתוב History API עם כתובות אמיתיות (<code>/* /index.html 200</code> ב-<code>_redirects</code>), Netlify Functions + Netlify Blobs, polling כל ~15 שניות כשדף אירוע פתוח. בלי מסד נתונים חיצוני ובלי חשבון נוסף.</p></div>
+  <div class="fgrid">
+    <div class="fblk">
+      <h3>זהות בלי סיסמה: מעקות, לא מנעולים</h3>
+      <ul>
+        <li>ההרשמה יוצרת משפחה ו<b>מפתח משפחה</b> אקראי ב-localStorage. השרת שומר רק hash, וכל כתיבה נבדקת מולו.</li>
+        <li>שבב <b>"פועל/ת בתור: משפחת כהן"</b> קבוע בכותרת, וצבע המשפחה מופיע בכל מקום שהיא מופיעה.</li>
+        <li>כל כתיבה היא <b>משפט אישור</b> ("להושיב את נועה ברכב של משפחת לוי, הלוך, 10:00?"), טוסט <b>ביטול ל-10 שניות</b> ו<b>היסטוריה</b> של האירוע.</li>
+        <li>מכשיר שני: "שלחו לי את הקישור שלי" פותח WhatsApp אליכם עם <code>/me/devices#…</code>. המפתח ב-fragment, כך שלא מגיע ללוגים.</li>
+        <li><b>קישור ילד/ה</b>: כתובת עם token לקריאה בלבד, בטוחה לטלפון של ילד.</li>
+      </ul>
+    </div>
+    <div class="fblk">
+      <h3>מי יכול/ה לעשות מה</h3>
+      <div class="tscroll"><table class="perm">
+        <thead><tr><th scope="col">פעולה</th><th scope="col">הילד שלי</th><th scope="col">ילד של משפחה אחרת</th><th scope="col">הרכב שלי</th><th scope="col">רכב של משפחה אחרת</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">לערוך פרטים ו-RSVP</th><td class="y">✓</td><td class="n">✗</td><td class="y">✓</td><td class="n">✗</td></tr>
+          <tr><th scope="row">להושיב</th><td class="y">✓<small>בכל מושב פנוי</small></td><td class="y">✓<small>רק ברכב שלי</small></td><td class="y">✓<small>כל ילד/ה</small></td><td class="y">✓<small>רק את הילד שלי; הנהג/ת רואה מיד</small></td></tr>
+          <tr><th scope="row">להוציא מרכב</th><td class="y">✓<small>ביטול / שינוי RSVP</small></td><td class="y">✓<small>רק מהרכב שלי</small></td><td class="y">✓</td><td class="n">✗<small>רק הנהג/ת</small></td></tr>
+          <tr><th scope="row">לסגור רכב / לשנות מקומות</th><td>–</td><td>–</td><td class="y">✓</td><td class="n">✗</td></tr>
+        </tbody>
+      </table></div>
+      <h3 style="margin-top:20px">מי רואה איזה מספר</h3>
+      <ul>
+        <li>חברי הקבוצה רואים <b>שמות בלבד</b>.</li>
+        <li>מספר מופיע רק למי שחולקים רכב באותו כיוון: הנהג/ת רואה את המספרים של הנוסעים ושל ההורים שלהם, והורי הנוסעים רואים את המספר של הנהג/ת.</li>
+        <li>המארח/ת רואה את מספרי ההורים.</li>
+        <li>טלפון להורה הוא חובה (לכל הורה), לילד/ה רשות. נשמר מנורמל כ-<code>+97250…</code> בשביל <code>wa.me</code> ו-<code>tel:</code>. בדפדפן אין בחירה מאנשי הקשר, לכן מקלדת מספרים ודוגמה 050-1234567.</li>
+        <li>במצב נהג, לכל עצירה: התקשרות ו-WhatsApp לילד/ה ולהורה. ברירת המחדל היא הילד/ה אם יש לו/ה טלפון. "אני מוכן/ה" של הילד/ה מופיע ליד שמו ברשימת האיסוף.</li>
+        <li>את קישור הילד/ה אפשר לשלוח מהפרופיל ישר לטלפון של הילד/ה ב-WhatsApp.</li>
+      </ul>
+    </div>
+    <div class="fblk">
+      <h3>מפת כתובות</h3>
+      <p>כל מסך הוא כתובת. Back, Forward והחלקה ב-iOS עובדים, טפסים לא לוכדים ניווט, ואין שימוש לרעה ב-<code>replaceState</code>.</p>
+      <ul class="routes">
+        <li><code>/</code><span>הקבוצות שלי</span></li>
+        <li><code>/join/:groupCode</code><span>קישור הזמנה מ-WhatsApp, הרשמה במכשיר חדש</span></li>
+        <li><code>/g/:group</code><span>דף הקבוצה: אירועים קרובים</span></li>
+        <li><code>/g/:group/new</code><span>יצירת אירוע (מתמונת ההזמנה)</span></li>
+        <li><code>/g/:group/e/:event</code><span>דף האירוע: סיכום ושני הכיוונים</span></li>
+        <li class="newr"><code>/g/:group/e/:event/invite</code><span>ההזמנה במסך מלא</span></li>
+        <li><code>/g/:group/e/:event/out</code><span>הלוך</span></li>
+        <li><code>/g/:group/e/:event/back</code><span>חזור</span></li>
+        <li><code>/g/:group/e/:event/drive/:leg</code><span>מצב נהג: רשימת איסוף</span></li>
+        <li><code>/kid/:kidToken</code><span>"ההסעות שלי" לילד/ה, קריאה בלבד</span></li>
+        <li><code>/me</code><span>פרופיל משפחה: ילדים, רכבים, טלפון, כתובת</span></li>
+        <li><code>/me/devices</code><span>"עוברים לטלפון אחר"</span></li>
+      </ul>
+    </div>
+    <div class="fblk">
+      <h3>סולם ההתראות</h3>
+      <p>מתחילים מהשלב שעולה אפס ועובד לכולם, ומטפסים רק כשיש סיבה.</p>
+      <ol class="ladder">
+        <li><span class="st v1">גרסה 1</span><b>WhatsApp בלחיצה</b><span>האפליקציה מנסחת טקסט ופותחת <code>wa.me/&lt;phone&gt;?text=</code> להורה, או <code>wa.me/?text=</code> לבחירת הקבוצה. ההורה לוחץ שליחה. חינם, בלי API. אי אפשר לכוון מראש לקבוצה.</span></li>
+        <li><span class="st opt">אופציה</span><b>Telegram bot / ntfy</b><span>Push אמיתי ואוטומטי, חינם, בלי התקנת PWA. צריך /start לבוט פעם אחת, או נושא ntfy לא ניתן לניחוש (הוא הסיסמה). זו עוד אפליקציה להורים.</span></li>
+        <li><span class="st v2">גרסה 2</span><b>Web Push + Scheduled Function</b><span>תזכורת ערב לפני ו-30 דק׳ לפני, "יצאתי" אוטומטי. VAPID + <code>web-push</code> מפונקציה. ב-iOS 16.4+ רק אחרי הוספה למסך הבית ואישור מלחיצה.</span></li>
+        <li class="nope"><span class="st no">לא בשבילנו</span><b>WhatsApp Cloud API</b><span>דורש חשבון Meta Business, מספר ייעודי ותבניות מאושרות, מחיר לכל הודעה (ומ-אוקטובר 2026 על יותר קטגוריות), ושליחה לקבוצות מוגבלת לעסקים זכאים. CallMeBot שולח רק לעצמך; ספריות לא רשמיות מפרות את התנאים ודורשות שרת שתמיד דולק.</span></li>
+      </ol>
+    </div>
+    <div class="fblk full">
+      <h3>יצירת אירוע מתמונת ההזמנה</h3>
+      <p>ב-<code>/g/:group/new</code> הדבר הראשון הוא אזור גרירה ו"בחר/י הזמנה מהגלריה". אחריו טופס מלא מראש שבו השדות שזוהו מסומנים ("זיהינו מההזמנה — בדקו"): כותרת, תאריך, שעת התחלה, שעת חזור, מקום וכתובת. הכל ניתן לעריכה, וכלום לא נשמר עד "צור אירוע". אם בהזמנה כמה זמנים (טקס 10:30, ארוחה 12:30), ההתחלה היא הראשון והחזור המוצע הוא האחרון ועוד משך טיפוסי, עם רמז לבדיקה.</p>
+      <div class="opts">
+        <div class="opt rec"><span class="tg">מומלץ</span><b>Claude vision דרך Netlify Function</b><span>תמונה ← JSON <code>{title, date, times[], place, address}</code>. Haiku 4.5 בשביל העלות או Sonnet 5.5 בשביל הדיוק. הכי טוב עם פונטים מעוצבים בעברית. שבריר סנט להזמנה; מפתח API במשתני הסביבה של Netlify.</span></div>
+        <div class="opt"><span class="tg">חינם</span><b>Tesseract.js בדפדפן</b><span>מודל <code>heb</code> + regex לתאריכים ושעות. בלי שרת, אבל חלש מול פונטים מעוצבים, והורדה של ~10–20MB בשימוש הראשון.</span></div>
+        <div class="opt"><span class="tg">תמיד זמין</span><b>ידני</b><span>התמונה נשמרת כעטיפה בלי זיהוי. זה הגיבוי כשהזיהוי נכשל.</span></div>
+      </div>
+      <ul>
+        <li><b>אחסון</b>: הדפדפן מקטין ודוחס (canvas ← WebP/JPEG בערך 1600px, בערך 200–300KB), פונקציה שומרת ב-Blobs תחת <code>invite/{groupId}/{eventId}</code> ומגישה עם cache headers. עדיין בלי מסד נתונים.</li>
+        <li><b>פרטיות</b>: ההזמנה גלויה רק לקבוצה (קוד קבוצה לא ניתן לניחוש בכתובת) ולא נסרקת במנועי חיפוש.</li>
+        <li><b>שיתוף</b>: ההזמנה כתמונת התצוגה בשיתוף ב-WhatsApp (Open Graph דרך edge function) בגרסה 1.1.</li>
+      </ul>
+    </div>
+    <div class="fblk full">
+      <h3>מודל הנתונים (JSON ב-Blobs)</h3>
+      <pre class="code"><span class="c">group/{groupId}.json</span>   { name, inviteCode, families:[…], createdAt }
+family: { id, color, address, keyHash,
+          parents:[{name, phone}],            <span class="c">// phone חובה, "+97250…"</span>
+          kids:[{id, name, grade?, phone?}],   <span class="c">// phone רשות</span>
+          cars:[{id, label, seats}] }
+
+<span class="c">event/{groupId}/{eventId}.json</span>
+  { id, title, place, address, date, start, returnTime, hostFamilyId,
+    rsvp:  { kidId: "yes" | "no" | "maybe" },
+    needs: { kidId: { out: bool, back: bool } },
+    legs:  { out: { cars:[Offer] }, back: { cars:[Offer] } },
+    log:   [ { at, familyId, action, … } ] }
+
+Offer: { id, familyId, carId, seats, departAt, kids:[kidId],
+         status: "open" | "full" | "closed",
+         run?: { startedAt, picked:[kidId] } }
+
+<span class="c">invite/{groupId}/{eventId}</span>   תמונה דחוסה (WebP/JPEG)
+<span class="c">event/{id}/log/{timestamp}-{rand}</span>   רק ב-C: כל פעולה blob נפרד</pre>
+      <p style="margin-top:10px">כתיבות משתמשות ב-ETag מותנה (<code>onlyIfMatch</code>): אם שני הורים לוחצים יחד, הפונקציה קוראת מחדש, מחילה שוב ומנסה שוב.</p>
+    </div>
+    <div class="fblk full">
+      <details>
+        <summary>עובדות שנבדקו (אוקטובר 2026, לאמת לפני בנייה)</summary>
+        <ul>
+          <li>Netlify free: 300 קרדיטים בחודש. Functions ו-Scheduled Functions זמינים בחינם; אפליקציה בגודל כיתה צורכת שבריר.</li>
+          <li>Netlify Blobs: <code>onlyIfMatch</code> / <code>onlyIfNew</code>, עקביות eventual כברירת מחדל ו-<code>consistency: "strong"</code> לפי צורך, <code>list({prefix})</code>.</li>
+          <li><code>wa.me/&lt;number&gt;?text=</code> ממלא מראש לאדם; אי אפשר לכוון לקבוצה, <code>wa.me/?text=</code> פותח בחירה.</li>
+          <li>Web Push ב-iOS: 16.4+, רק ממסך הבית, הרשאה מלחיצה.</li>
+          <li>Google Maps עם כמה עצירות: לתכנן עד 8 עצירות ביניים. Waze: יעד אחד, לכן "נווט לעצירה הבאה".</li>
+          <li>Nominatim (רק B): בקשה אחת בשנייה, לשמור ב-cache, מספרי בתים בעברית חלקיים, גיבוי "שתפו מיקום".</li>
+          <li><code>.ics</code> פותח "הוסף ליומן" ב-iOS; <code>navigator.share()</code> עובד ב-Safari מלחיצה.</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div></section>
+
+<section id="arch"><div class="wrap">
+  <div class="shead"><span class="eyebrow">ארכיטקטורה</span>
+  <h2>מה רץ איפה</h2>
+  <p class="lede">אותו שלד בשלוש החלופות: SPA סטטי, פונקציות קטנות ו-Blobs. ההבדל הוא מה שמתווסף סביבו.</p></div>
+  <div id="diagrams"></div>
+  <div class="legend"><span><i class="lg-acc"></i>הטלפון של ההורה</span><span><i class="lg-new"></i>חדש לעומת A</span><span><i class="lg-ext"></i>חיצוני, אופציונלי או לחיצה של אדם</span></div>
+</div></section>
+
+<section id="compare"><div class="wrap">
+  <div class="shead"><span class="eyebrow">השוואה</span>
+  <h2>שלוש החלופות זו מול זו</h2></div>
+  <div class="tscroll"><table class="cmpt" id="cmpt" data-hl="a">
+    <thead><tr><th scope="col"></th><th scope="col" data-col="a"><span class="L">A</span>הלוח</th><th scope="col" data-col="b"><span class="L">B</span>הסדרן</th><th scope="col" data-col="c"><span class="L">C</span>בקשות והצעות</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">מאמץ להורה</th><td data-col="a">נמוך</td><td data-col="b">הכי נמוך</td><td data-col="c">נמוך</td></tr>
+      <tr><th scope="row">מאמץ למארגן/ת</th><td data-col="a">בינוני (הושבה)</td><td data-col="b">הכי נמוך</td><td data-col="c">נמוך</td></tr>
+      <tr><th scope="row">עקומת למידה</th><td data-col="a">נמוכה</td><td data-col="b">בינונית (אמון באלגוריתם)</td><td data-col="c">הכי נמוכה</td></tr>
+      <tr><th scope="row">התראות אוטומטיות</th><td data-col="a">לא (לחיצה לשליחה)</td><td data-col="b">כן (Web Push + cron)</td><td data-col="c">רשות (Telegram/ntfy)</td></tr>
+      <tr><th scope="row">חלקי backend</th><td data-col="a">3 פונקציות + Blobs</td><td data-col="b">פונקציות + Blobs + cron + מפתחות Push + geocoding</td><td data-col="c">פונקציות + Blobs (יומן)</td></tr>
+      <tr><th scope="row">מקביליות</th><td data-col="a">ETag ונסיון חוזר</td><td data-col="b">ETag ונסיון חוזר</td><td data-col="c">לא צריך (append-only)</td></tr>
+      <tr><th scope="row">אירועים חוזרים</th><td data-col="a">שכפול</td><td data-col="b">רוטציה שבועית</td><td data-col="c">חזרה לפי בקשה</td></tr>
+      <tr><th scope="row">מאמץ בנייה</th><td data-col="a" class="mono">S</td><td data-col="b" class="mono">M–L</td><td data-col="c" class="mono">M</td></tr>
+      <tr><th scope="row">Netlify free</th><td data-col="a">✓</td><td data-col="b">✓ (לעקוב אחרי קרדיטים של פונקציות)</td><td data-col="c">✓</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section id="reco"><div class="wrap">
+  <div class="shead"><span class="eyebrow">המלצה ומפת דרכים</span>
+  <h2>מתחילים בלוח, מוסיפים אוטומציה כשהיא מרוויחה את מקומה</h2></div>
+  <div class="reco">
+    <div class="reco-main">
+      <p>לבנות את <b>A כגרסה 1</b>, ולקחת שני דברים מ-C: <b>יומן הפעולות append-only</b> (בלי התנגשויות, עם היסטוריה וביטול) ופעולת <b>"אני לוקח/ת"</b> בלחיצה על ילדים שממתינים.</p>
+      <p>התראות בגרסה 1: WhatsApp בלחיצה ומצב נהג. בגרסה 2: תזכורות מתוזמנות ו-Web Push מ-B למשפחות שמתקינות את ה-PWA, ואז אירועים חוזרים עם רוטציה.</p>
+    </div>
+    <ol class="road">
+      <li><span class="v">v1</span><span class="vt">MVP</span><p>הרשמת משפחה, קישור הזמנה לקבוצה, יצירת אירוע (מתמונת ההזמנה, ידני כגיבוי), RSVP וצורך לכל כיוון, הצעת רכב, הושבה, מד חוסרים, סיכום ו"יצאתי" ב-WhatsApp, קישור ילד/ה, היסטוריה וביטול.</p></li>
+      <li><span class="v">v1.1</span><span class="vt">יום ההסעה</span><p>מצב נהג עם מסלול ב-Maps/Waze, ‎.ics, שכפול אירוע, ההזמנה כתמונת תצוגה בשיתוף (Open Graph).</p></li>
+      <li><span class="v">v2</span><span class="vt">אוטומציה</span><p>Push מ-PWA ותזכורות מתוזמנות, אירועים חוזרים עם רוטציה, מונה הוגנות.</p></li>
+      <li><span class="v">v3</span><span class="vt">אולי</span><p>שיבוץ מוצע (הסדרן של B) ככפתור אופציונלי "הצע שיבוץ".</p></li>
+    </ol>
+  </div>
+</div></section>
+
+<section id="questions"><div class="wrap">
+  <div class="shead"><span class="eyebrow">שאלות פתוחות</span>
+  <h2>מה צריך לשמוע מכם לפני שמתחילים</h2></div>
+  <ol class="qs">
+    <li><div><b>קבוצה אחת לכל כיתה או קבוצה, או שהורה יכול להיות בכמה קבוצות?</b><span>כנראה בכמה. העיצוב תומך בזה.</span></div></li>
+    <li><div><b>מי יוצר/ת אירועים: כל אחד בקבוצה, או רק המארח/ת?</b><span>ברירת מחדל: כל אחד.</span></div></li>
+    <li><div><b>מקומות ברכב: סופרים בלי הנהג/ת? צריך הגבלות של בוסטר או גיל?</b><span>ברירת מחדל: רק מספר מקומות.</span></div></li>
+    <li><div><b>צריך RSVP "אולי", או רק כן ולא?</b><span>מודל הנתונים כבר מכיל "maybe".</span></div></li>
+    <li><div><b>רק WhatsApp, או בסדר להציע הצטרפות ל-Telegram או Push להתראות אוטומטיות?</b><span>משפיע על גרסה 2.</span></div></li>
+  </ol>
+  <footer>כל השמות, הכתובות והמספרים באב-הטיפוס הומצאו לצורך ההדגמה. הזיהוי מתמונת ההזמנה מדומה.</footer>
+</div></section>
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+var DOMAIN='trempush.netlify.app', G='/g/kita-d2', KT='/kid/k7Qp2x', ME='cohen';
+var FAM={cohen:{n:'כהן',c:'f1',p:'050-0000001',a:'רח׳ האלון 7',par:'רונית כהן',car:'מאזדה אדומה'},
+  levi:{n:'לוי',c:'f2',p:'050-0000002',a:'רח׳ הדקל 4',par:'דנה לוי',car:'סקודה כסופה'},
+  mizrahi:{n:'מזרחי',c:'f3',p:'050-0000003',a:'רח׳ השקד 9',par:'אבי מזרחי',car:'טויוטה'},
+  peretz:{n:'פרץ',c:'f4',p:'050-0000004',a:'שד׳ הנשיא 3',par:'יוסי פרץ',car:'קיה לבנה'},
+  avraham:{n:'אברהם',c:'f5',p:'050-0000005',a:'רח׳ הזית 12',par:'מיכל אברהם',car:'יונדאי'}};
+var KIDS={noa:{n:'נועה',f:'cohen',fem:1},itai:{n:'איתי',f:'cohen'},maya:{n:'מאיה',f:'levi',fem:1},yonatan:{n:'יונתן',f:'mizrahi'},tamar:{n:'תמר',f:'mizrahi',fem:1},ori:{n:'אורי',f:'peretz'},shira:{n:'שירה',f:'avraham',fem:1},daniel:{n:'דניאל',f:'avraham'}};
+var LEG={out:'הלוך',back:'חזור'};
+var POS={cohen:[0,0],levi:[.6,.2],mizrahi:[2,1],peretz:[1.8,-.4],avraham:[.4,-.5]};
+var FAIR={cohen:1,levi:2,peretz:3,avraham:0,mizrahi:0};
+var DEFEV={title:'יום הולדת 12 לתמר',date:'שישי 16.10',start:'10:00',ret:'12:30',place:'פארק הירקון',addr:'שדרות רוקח, תל אביב',slots:'10:00 עד 12:30',cover:'sample'};
+var SAMPLE={title:'יום הולדת 12 לנועה',date:'שישי 16.10.2026',start:'10:30',ret:'14:00',place:'פארק הירקון',addr:'שדרות רוקח, תל אביב',slots:'10:30 מתכנסים · 12:30 פיקניק'};
+var TIPS={
+  a:{signup:'סמנו לנועה מגיעה, הלוך וחזור ולחצו "סיימתי". היא תופיע ב"ממתינים להסעה" בלוח.',
+     driver:'לחצו "+ אני נוהג/ת בהלוך" (נפתח גיליון עם ?sheet=car). אחר כך בחרו ילד/ה מ"ממתינים" ומושב מקווקו. מד החוסרים מתעדכן. נסו גם להושיב את שירה ברכב של לוי כדי לראות את מעקה ההרשאות.',
+     day:'לחצו "יצאתי" וקבלו כפתור WhatsApp לכל הורה ברכב. סמנו מי עלה, ופתחו את המסלול ב-Maps.'},
+  b:{signup:'ענו על שלוש השאלות בערימת הכרטיסים. כל שאלה היא כתובת (?q=1 עד 3), כך שחץ החזרה חוזר שאלה. בסוף: הצעת שיבוץ ו"אשר ושלח".',
+     driver:'זה מה שנהג/ת רואה אחרי שהשיבוץ אושר: ילדים, סדר איסוף וזמנים. פתחו "למה השיבוץ הזה?".',
+     day:'ההתראה למעלה מדמה Push מ-Scheduled Function. "יצאתי" שולח Push אוטומטית; למשפחה שלא התקינה יש WhatsApp.'},
+  c:{signup:'לחצו על נועה ובחרו מה היא צריכה. נוצר כרטיס בקשה בראש הפיד ונרשמת שורה ביומן.',
+     driver:'לחצו "אני לוקח/ת" על הבקשה של שירה, אשרו, והכרטיס מתקפל ל"סגור ✓". כל פעולה היא blob חדש ביומן, לכן אין התנגשויות.',
+     day:'מצב נהג, עצירה אחרי עצירה. "הגעתי" שולח "אני למטה 🚗": אוטומטית בטלגרם למשפחה שהצטרפה, ב-WhatsApp לאחרות.'},
+  reg:'עברו את ההרשמה: הזמנה מהקבוצה, פרטי משפחה, שמירה. נסו להקליד מספר לא תקין, או להוסיף הורה נוסף ולשמור בלי טלפון, כדי לראות את הבדיקה. אחרי השמירה מופיע שבב "פועל/ת בתור" וקישור גיבוי למכשיר שני.',
+  create:'גררו תמונה לאזור המקווקו, בחרו מהגלריה או לחצו על ההזמנה לדוגמה. הזיהוי באב-הטיפוס מדומה ותמיד מחזיר את פרטי הדוגמה; התמונה שלכם נדחסת בדפדפן ונשארת כעטיפה. "צור אירוע" מוביל לדף האירוע.',
+  kid:'תצוגת ילד/ה: דף לקריאה בלבד בכתובת עם token. ב"יום ההסעה" נסו "אני מוכנה". לחצו על כרטיס נסיעה לפרטים, ואז חזרה.'
+};
+
+var UI={alt:'a',persona:'parent',moment:'driver'};
+var ALTS=['a','b','c'], MOMS=['reg','create','signup','driver','day'];
+
+function kn(k){return KIDS[k].n} function fn(f){return FAM[f].n}
+function gk(k,fe,ma){return KIDS[k].fem?fe:ma}
+function dot(f){return '<span class="fdot" style="--fc:var(--'+FAM[f].c+')"></span>'}
+function av(k){return '<span class="av" style="--fc:var(--'+FAM[KIDS[k].f].c+')" aria-hidden="true">'+kn(k).charAt(0)+'</span>'}
+function addMin(t,m){var p=t.split(':'),x=(+p[0])*60+(+p[1])+m;x=(x+1440)%1440;return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0')}
+function intl(p){return '972'+p.replace(/\D/g,'').slice(1)}
+function car(id,f,seats,dep,kids){return {id:id,f:f,label:FAM[f].car,seats:seats,dep:dep,kids:kids||[]}}
+var KPH={noa:'050-0000011',maya:'050-0000012',shira:'050-0000015'};
+var PHI='<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align:-2px;margin-inline-end:4px"><path d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1z" fill="currentColor"/></svg>';
+function vPhone(v,req){var d=String(v||'').replace(/[\s\-().]/g,'');
+  if(!d)return req?{ok:false,msg:'חובה: טלפון נייד של ההורה'}:{ok:true,msg:'רשות · לדוגמה 050-1234567'};
+  var m=d.match(/^(?:\+?972|0)(5\d{8})$/);
+  if(!m)return {ok:false,msg:'מספר נייד ישראלי: 05X-XXXXXXX'};
+  return {ok:true,n:'+972'+m[1],msg:'✓ יישמר כ-+972'+m[1]};}
+function contacts(k){var f=KIDS[k].f,kp=KPH[k],L=(kp?[['kid',kn(k),kp]]:[]).concat([['par',FAM[f].par,FAM[f].p]]);
+  return '<div class="ctc">'+(kp?'':'<span class="small muted">ל'+kn(k)+' אין טלפון, ברירת המחדל היא ההורה</span>')+L.map(function(x,i){return '<div class="row"><span class="grow1 small"><b>'+x[1]+'</b>'+(i===0?' <span class="tag me">ברירת מחדל</span>':'')+'</span><button class="btn ghost sm" data-act="call" data-arg="'+k+':'+x[0]+'">'+PHI+'התקשר</button><button class="btn wa sm" data-act="down" data-arg="'+k+':'+x[0]+'">WhatsApp</button></div>'}).join('')+'</div>'}
+function dist(a,b){var p=POS[a],q=POS[b];return Math.round(Math.hypot(p[0]-q[0],p[1]-q[1])*10)/10}
+
+function seed(m,alt){
+  var s={m:m,alt:alt,ev:Object.assign({},DEFEV),E:G+'/e/bday12',
+    rsvp:{noa:'yes',itai:'no',maya:'yes',ori:'yes',shira:'yes',daniel:'yes'},
+    need:{noa:{out:1,back:1},itai:{out:0,back:0},maya:{out:1,back:1},ori:{out:1,back:1},shira:{out:1,back:0},daniel:{out:1,back:1}},
+    cars:{out:[car('c1','levi',4,'09:30',['maya'])],back:[car('c2','peretz',3,'12:30',['ori'])]},
+    sel:null,log:[],clock:8*60+42,seq:0,registered:m!=='reg',confirm:null,form:{},
+    r:{noa:{come:1,out:0,back:0},itai:{come:0,out:0,back:0}},
+    b:{come:null,out:1,back:1,drive:'back',seats:4,ok:false,why:false},
+    draft:{seats:4,dep:'09:40'},pseats:4,optPush:false,optTg:false,
+    left:false,picked:{},stop:0,arrived:false,ready:false,cr:{phase:'drop'},
+    keys:['req:shira:out','offer:c1','req:daniel:out','req:ori:out','req:noa:out','req:noa:back','offer:c2','req:daniel:back','req:maya:back','req:maya:out','req:ori:back'],kt:{}
+  };
+  s.keys.forEach(function(k,i){s.kt[k]=addMin('08:40',-i*4)});
+  addLog(s,'levi','הציעו רכב בהלוך · 4 מקומות','08:12');addLog(s,'levi','הושיבו את מאיה בהלוך','08:13');
+  addLog(s,'peretz','הציעו רכב בחזור · 3 מקומות','08:31');addLog(s,'peretz','הושיבו את אורי בחזור','08:31');
+  if(m==='signup'||m==='create'){s.need.noa={out:0,back:0};s.rsvp.noa=null}
+  if(m==='day'){s.cars.out[0].kids.push('daniel');s.cars.out.push(car('c3','cohen',4,'09:40',['noa','shira','ori']));s.keys.unshift('offer:c3');s.kt['offer:c3']='08:44'}
+  if(alt==='b'&&m==='driver'){s.cars.back.push(car('c4','cohen',4,'12:30',['maya','daniel','noa']));s.b.ok=true}
+  return s;
+}
+function addLog(s,f,text,t){
+  if(!t){s.clock++;t=addMin('00:00',s.clock)}
+  s.seq++;var r=(s.seq*7919).toString(36).slice(-3);
+  s.log.unshift({t:t,f:f,text:text,key:'event/bday12/log/20261016T'+t.replace(':','')+'-'+r});
+}
+function needers(s,leg){return Object.keys(s.need).filter(function(k){return s.need[k][leg]&&s.rsvp[k]==='yes'})}
+function seatedIn(s,leg,k){return s.cars[leg].filter(function(c){return c.kids.indexOf(k)>=0})[0]}
+function findCar(s,id){var r=null;['out','back'].forEach(function(l){s.cars[l].forEach(function(c){if(c.id===id)r={car:c,leg:l}})});return r}
+function gapInfo(s,leg){var n=needers(s,leg),seats=s.cars[leg].reduce(function(a,c){return a+c.seats},0);var w=n.filter(function(k){return !seatedIn(s,leg,k)});return {need:n.length,seats:seats,missing:Math.max(0,n.length-seats),waiting:w.length,wl:w}}
+function missTxt(n,leg){return n===1?'חסר מקום אחד ב'+LEG[leg]:'חסרים '+n+' מקומות ב'+LEG[leg]}
+function gapHTML(s,leg,o){o=o||{};var g=gapInfo(s,leg),cls,txt;
+  if(g.missing>0){cls='gap';txt=missTxt(g.missing,leg)}
+  else if(g.waiting>0){cls='mid';txt=o.short?g.waiting+' ממתינים · '+LEG[leg]:'יש מקום לכולם · '+g.waiting+' ממתינים לשיבוץ'}
+  else{cls='ok';txt=(o.short?LEG[leg]+': ':'')+'כולם מסודרים'+(o.short?'':' ב'+LEG[leg])+' ✓'}
+  if(o.short&&g.missing>0)txt=(g.missing===1?'חסר 1':'חסרים '+g.missing)+' · '+LEG[leg];
+  var pct=g.need?Math.round((g.need-g.waiting)/g.need*100):100;
+  return '<div class="gm '+cls+'"><div class="gm-t"><b>'+txt+'</b>'+(o.short?'':'<span class="num">'+(g.need-g.waiting)+'/'+g.need+' שובצו</span>')+'</div><div class="gm-bar"><i style="width:'+pct+'%"></i></div>'+(g.missing>0&&!o.short?'<button class="mini" data-act="ask" data-arg="'+leg+'">בקש מהקבוצה</button>':'')+'</div>';
+}
+function inviteSVG(f){
+  var t=f.title||'',m=t.match(/^(.*?\d+)\s+(.*)$/),l1=m?m[1]:t,l2=m?m[2]:'';
+  return '<svg viewBox="0 0 240 320" role="img" aria-label="הזמנה: '+esc(t)+'"><rect width="240" height="320" fill="var(--inv-bg)"/>'+
+  '<circle cx="30" cy="34" r="16" fill="var(--accent)"/><circle cx="208" cy="58" r="10" fill="var(--f2)"/><circle cx="190" cy="22" r="6" fill="var(--f4)"/><circle cx="48" cy="282" r="8" fill="var(--f2)"/><circle cx="214" cy="290" r="14" fill="var(--accent)"/><circle cx="22" cy="240" r="5" fill="var(--f4)"/>'+
+  '<path d="M60 96 q60 -26 120 0" fill="none" stroke="var(--f2)" stroke-width="2" stroke-dasharray="3 5"/>'+
+  '<text x="120" y="82" text-anchor="middle" class="inv-t2">מוזמנים לחגוג איתנו!</text>'+
+  '<text x="120" y="132" text-anchor="middle" class="inv-t1">'+esc(l1)+'</text>'+(l2?'<text x="120" y="162" text-anchor="middle" class="inv-t1">'+esc(l2)+'</text>':'')+
+  '<text x="120" y="200" text-anchor="middle" class="inv-t3">'+esc(f.date||'')+'</text>'+
+  '<text x="120" y="222" text-anchor="middle" class="inv-t2">'+esc(f.slots||f.start||'')+'</text>'+
+  '<text x="120" y="252" text-anchor="middle" class="inv-t3">'+esc(f.place||'')+'</text>'+
+  '<text x="120" y="270" text-anchor="middle" class="inv-t2">'+esc(f.addr||'')+'</text></svg>';
+}
+function coverHTML(ev){return ev.cover&&ev.cover.indexOf('data:')===0?'<img src="'+ev.cover+'" alt="ההזמנה שהועלתה">':inviteSVG(ev)}
+function evHead(p){var e=p.s.ev;return '<div class="evh"><button class="cov" data-act="invite" aria-label="ההזמנה במסך מלא">'+coverHTML(e)+'</button><div class="evh-t"><b>'+esc(e.title)+'</b><small>'+esc(e.date)+' · '+esc(e.start)+' · '+esc(e.place)+'</small><small>איסוף לחזור: '+esc(e.ret)+'</small></div></div>'}
+function logHTML(s,n,keys){return '<div class="card"><div class="hs">'+(keys?'יומן פעולות (append-only)':'היסטוריה')+'</div><div class="logl">'+s.log.slice(0,n||4).map(function(l){return '<div><span class="t">'+l.t+'</span>'+dot(l.f)+'<span>'+fn(l.f)+': '+esc(l.text)+(keys?'<code>'+l.key+'</code>':'')+'</span></div>'}).join('')+'</div></div>'}
+function summaryText(s){
+  var t='🎈 '+s.ev.title+' · '+s.ev.date+'\n📍 '+s.ev.place+'\n';
+  ['out','back'].forEach(function(l){t+='\n'+LEG[l]+' ('+(l==='out'?s.ev.start:s.ev.ret)+'):\n';
+    s.cars[l].forEach(function(c){t+='🚗 '+fn(c.f)+' '+c.dep+' — '+(c.kids.length?c.kids.map(kn).join(', '):'עוד אין ילדים')+'\n'});
+    var g=gapInfo(s,l);if(g.missing)t+='⚠️ '+missTxt(g.missing,l)+'\n';});
+  return t+'\nפרטים והרשמה: '+DOMAIN+s.E;
+}
+
+/* ---------- routes ---------- */
+function evStart(alt,m,s){var E=s.E;
+  if(m==='reg'||m==='create'||m==='signup'){if(alt==='a')return {scr:'a_rsvp',path:E};if(alt==='b')return {scr:'b_q',path:E+'?q=1',q:1};return {scr:'c_feed',path:E}}
+  if(m==='driver'){if(alt==='a')return {scr:'a_board',path:E+'/out',leg:'out'};if(alt==='b')return {scr:'b_drive',path:E+'/drive/back'};return {scr:'c_feed',path:E}}
+  if(alt==='c')return {scr:'c_run',path:E+'/drive/out'};
+  return {scr:'run',path:E+'/drive/out'};
+}
+function startRoutes(alt,per,m,s){
+  if(per==='kid')return [{scr:'kid',path:KT}];
+  if(m==='reg')return [{scr:'join',path:'/join/kita-d2'}];
+  if(m==='create')return [{scr:'group',path:G},{scr:'newev',path:G+'/new'}];
+  return [{scr:'group',path:G},evStart(alt,m,s)];
+}
+
+/* ---------- screens ---------- */
+var SCR={};
+SCR.group=function(p,c){var s=p.s;return {t:'כיתה ד׳ 2',b:
+  (c.welcome?'<div class="note ok"><b>נרשמתם!</b> המפתח של משפחת כהן נשמר במכשיר הזה. <button class="lnk" data-act="selflink">שלחו לעצמכם קישור גיבוי</button></div>':'')+
+  '<div class="hs">אירועים קרובים</div>'+
+  '<button class="evcard" data-act="openev"><span class="evd"><b>16</b>אוק׳</span><span class="evm"><b>'+esc(s.ev.title)+'</b><small>'+esc(s.ev.date)+' · '+esc(s.ev.start)+' · '+esc(s.ev.place)+'</small><span class="gms" style="margin-top:4px">'+gapHTML(s,'out',{short:1})+gapHTML(s,'back',{short:1})+'</span></span></button>'+
+  '<div class="evcard dim"><span class="evd"><b>24</b>אוק׳</span><span class="evm"><b>משחק כדורגל</b><small>שבת 24.10 · 17:00 · המגרש העירוני</small><small>עוד לא נפתחו הסעות</small></span></div>'+
+  '<button class="btn ghost big" data-act="newev">+ אירוע חדש מהזמנה</button>'}};
+SCR.join=function(p){return {t:'הצטרפות',b:
+  '<div class="card" style="padding:18px 14px;gap:12px"><span class="muted small">קיבלתם קישור בקבוצת ההורים</span><b style="font-size:20px;line-height:1.3">הוזמנתם לקבוצה <span style="background:var(--accent-soft);padding:0 4px">כיתה ד׳ 2</span></b>'+
+  '<div class="row">'+['levi','mizrahi','peretz','avraham'].map(dot).join('')+'<span class="small muted">12 משפחות כבר כאן</span></div>'+
+  '<p class="small muted">פעם אחת: שם הורה, טלפון, כתובת, ילדים ורכב. בלי סיסמה ובלי אפליקציה להתקין.</p>'+
+  '<button class="btn big" data-act="startreg">התחלת הרשמה</button></div>'+
+  '<button class="lnk" data-act="otherdev" style="align-self:flex-start">כבר נרשמתי בטלפון אחר</button>'}};
+SCR.me=function(p){var s=p.s,f=s.form,id=p.id;function fld(k,l,v,t){return '<label class="fld" for="'+id+'-'+k+'"><span>'+l+'</span><input id="'+id+'-'+k+'" data-k="'+k+'" type="'+(t||'text')+'" value="'+esc(f[k]!=null?f[k]:v)+'"></label>'}
+  var extra='';
+  if(p.alt==='b')extra='<div class="note"><b>מיקום הבית אותר במפה ✓</b> (Nominatim, פעם אחת) · <button class="lnk" data-act="flash" data-arg="pin">לא מדויק? סמנו נקודה</button></div><button class="sw" role="switch" aria-checked="'+s.optPush+'" data-act="opt" data-arg="optPush"><span>התראות Push<br><small class="muted">דורש הוספה למסך הבית באייפון</small></span><i></i></button>';
+  if(p.alt==='c')extra='<button class="sw" role="switch" aria-checked="'+s.optTg+'" data-act="opt" data-arg="optTg"><span>התראות אוטומטיות ב-Telegram או ntfy<br><small class="muted">רשות. בלי זה: WhatsApp בלחיצה</small></span><i></i></button>';
+  function ph(k,l,v,req){var val=f[k]!=null?f[k]:v,r=vPhone(val,req),show=val||s.tried;return '<label class="fld'+(show&&!r.ok?' err':show&&r.n?' okv':'')+'" for="'+id+'-'+k+'"><span>'+l+'</span><input id="'+id+'-'+k+'" data-k="'+k+'" data-ph="'+(req?'req':'opt')+'" type="tel" inputmode="tel" autocomplete="tel" placeholder="050-1234567" dir="ltr" value="'+esc(val)+'"><span class="hint" data-msg="1">'+(show?r.msg:(req?'חובה · לדוגמה 050-1234567':'רשות · לדוגמה 050-1234567'))+'</span></label>'}
+  var kv=f.k_noa!=null?f.k_noa:'050-0000011',kok=vPhone(kv,false);
+  return {t:'המשפחה שלי',b:'<div class="card"><div class="hs">הורים</div>'+fld('pname','שם הורה','רונית כהן')+ph('phone','טלפון נייד','050-0000001',true)+
+    (s.p2?fld('pname2','שם הורה נוסף','דנה כהן')+ph('phone2','טלפון נייד','',true):'<button class="mini" data-act="p2" style="align-self:flex-start">+ הורה נוסף</button>')+'</div>'+
+  '<div class="card">'+fld('addr','כתובת','רח׳ האלון 7, גבעתיים')+'</div>'+
+  '<div class="card"><div class="hs">ילדים · טלפון לילד/ה הוא רשות</div><div class="row">'+av('noa')+'<b>נועה</b></div>'+ph('k_noa','הטלפון של נועה','050-0000011',false)+
+    (kok.ok&&kok.n?'<button class="mini" data-act="kidlink" style="align-self:flex-start">שליחת הקישור האישי לנועה ב-WhatsApp</button>':'')+
+    '<div class="row">'+av('itai')+'<b>איתי</b></div>'+ph('k_itai','הטלפון של איתי','',false)+'<button class="mini" data-act="flash" data-arg="kid" style="align-self:flex-start">+ ילד/ה</button></div>'+
+  '<div class="card"><div class="hs">רכב</div><div class="row sp"><span>מאזדה אדומה</span><span class="step"><button data-act="pseats" data-arg="-1" aria-label="פחות">−</button><b>'+s.pseats+' מק׳</b><button data-act="pseats" data-arg="1" aria-label="יותר">+</button></span></div><small class="muted">מקומות לילדים, בלי הנהג/ת</small></div>'+
+  extra+'<button class="btn big" data-act="save">שמירה והצטרפות</button>'}};
+SCR.newev=function(p){var s=p.s,cr=s.cr,id=p.id;
+  if(cr.phase==='drop')return {t:'אירוע חדש',b:
+    '<p>מתחילים מתמונת ההזמנה שקיבלתם. נזהה את הפרטים ונמלא את הטופס בשבילכם.</p>'+
+    '<label class="drop" for="'+id+'-file" data-drop="1"><svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>גררו לכאן את ההזמנה</b><span class="small muted">או</span><span class="btn">בחר/י הזמנה מהגלריה</span><input type="file" id="'+id+'-file" accept="image/*" class="vh" data-file="1"></label>'+
+    '<div class="hs">אין הזמנה בהישג יד? נסו את הדוגמה</div>'+
+    '<button class="invs" data-act="sample">'+inviteSVG(SAMPLE)+'<span><b>הזמנה לדוגמה</b><br><span class="small muted">לחצו כדי לראות את הזיהוי</span></span></button>'+
+    '<button class="lnk" data-act="manual" style="align-self:flex-start">בלי הזמנה: מילוי ידני</button>'};
+  if(cr.phase==='scan')return {t:'אירוע חדש',b:
+    '<div class="scan">'+(cr.img?'<img src="'+cr.img+'" alt="ההזמנה שהועלתה">':inviteSVG(SAMPLE))+'</div>'+
+    '<b style="text-align:center">מזהה פרטים…</b><div class="skel" aria-hidden="true"><i style="width:80%"></i><i style="width:55%"></i><i style="width:70%"></i><i style="width:45%"></i></div>'+
+    '<div class="note">באב-הטיפוס הזיהוי מדומה ומחזיר תמיד את פרטי הדוגמה. בגרסה האמיתית Netlify Function שולחת את התמונה ל-Claude vision ומקבלת JSON.</div>'};
+  var F=cr.fields||{},auto=!cr.manual,f=s.form;
+  function fld(k,l,hint){var v=f['ev_'+k]!=null?f['ev_'+k]:(F[k]||'');var hl=auto&&!(cr.edited&&cr.edited[k]);return '<label class="fld'+(hl?' hl':'')+'" for="'+id+'-ev-'+k+'"><span>'+l+(hl?'<i class="auto">זוהה</i>':'')+'</span><input id="'+id+'-ev-'+k+'" data-k="ev_'+k+'" data-ed="'+k+'" value="'+esc(v)+'">'+(hint?'<span class="hint">'+hint+'</span>':'')+'</label>'}
+  return {t:'אירוע חדש',b:
+    '<div class="row" style="align-items:flex-start;gap:10px"><div class="evh"><span class="cov" style="display:block">'+(cr.img?'<img src="'+cr.img+'" alt="עטיפת האירוע">':(cr.manual?'':inviteSVG(SAMPLE)))+'</span></div><div class="grow1">'+
+      (auto?'<b>זיהינו מההזמנה — בדקו</b><div class="small muted">השדות הצהובים מולאו אוטומטית (בהדמיה). אפשר לשנות הכל, וכלום לא נשמר עד "צור אירוע".</div>':'<b>מילוי ידני</b><div class="small muted">אפשר להוסיף את ההזמנה כעטיפה גם אחר כך.</div>')+'</div></div>'+
+    (cr.orig?'<div class="note">התמונה הוקטנה ונדחסה בדפדפן: <span class="num">'+Math.round(cr.orig/1024)+'KB ← '+Math.round(cr.comp/1024)+'KB</span>. באפליקציה: בערך 1600px, WebP/JPEG.</div>':'')+
+    '<div class="card">'+fld('title','כותרת')+fld('date','תאריך')+'<div class="row" style="align-items:flex-start">'+'<div class="grow1">'+fld('start','שעת התחלה')+'</div><div class="grow1">'+fld('ret','איסוף לחזור')+'</div></div>'+
+    (auto?'<div class="note gap small">בהזמנה שני זמנים: 10:30 ו-12:30 (פיקניק). הצענו חזור ב-14:00 = 12:30 ועוד שעה וחצי. בדקו.</div>':'')+
+    fld('place','מקום')+fld('addr','כתובת')+'</div>'+
+    '<button class="btn big" data-act="create">צור אירוע</button>'};
+};
+SCR.invite=function(p){return {t:'ההזמנה',b:'<div class="inv-full">'+coverHTML(p.s.ev)+'</div><div class="note">נשמרה ב-Blobs תחת <code>invite/kita-d2/'+p.s.E.split('/').pop()+'</code>. גלויה רק לחברי הקבוצה.</div>'}};
+
+/* A */
+SCR.a_rsvp=function(p){var s=p.s;
+  function sw(k,f,l,dis){var on=s.r[k][f];return '<button class="sw" role="switch" aria-checked="'+(!!on)+'" data-act="tog" data-arg="'+k+'.'+f+'"'+(dis?' disabled':'')+'><span>'+l+'</span><i></i></button>'}
+  return {t:'הרשמה לאירוע',b:evHead(p)+'<div class="hs">הילדים שלי</div>'+['noa','itai'].map(function(k){var r=s.r[k];return '<div class="card"><div class="row">'+av(k)+'<b>'+kn(k)+'</b>'+(k==='itai'&&!r.come?'<span class="small muted">· בחו״ל</span>':'')+'</div>'+sw(k,'come',gk(k,'מגיעה','מגיע'))+sw(k,'out','צריכ'+gk(k,'ה','')+' הסעה בהלוך',!r.come)+sw(k,'back','צריכ'+gk(k,'ה','')+' הסעה בחזור',!r.come)+'</div>'}).join('')+
+  '<button class="btn big" data-act="rsvpdone">סיימתי</button>'}};
+SCR.a_board=function(p,c){var s=p.s,leg=c.leg,g=gapInfo(s,leg),mine=s.cars[leg].some(function(x){return x.f===ME});
+  var cars=s.cars[leg].map(function(cr){var seats='';for(var i=0;i<cr.seats;i++){var k=cr.kids[i];
+      seats+=k?'<span class="seat full" style="--fc:var(--'+FAM[KIDS[k].f].c+')" aria-label="'+kn(k)+'">'+av(k)+'<span class="nm">'+kn(k)+'</span></span>':'<button class="seat'+(s.sel?' arm':'')+'" data-act="seat" data-arg="'+cr.id+'" aria-label="מושב פנוי ברכב של '+fn(cr.f)+'">+</button>'}
+    return '<div class="car'+(cr.f===ME?' me':'')+'" style="--fc:var(--'+FAM[cr.f].c+')"><div class="car-h">'+dot(cr.f)+'<b>משפחת '+fn(cr.f)+'</b><span class="muted">'+cr.label+' · '+cr.dep+'</span><span class="num">'+cr.kids.length+'/'+cr.seats+'</span></div><div class="seats seat-wrap">'+seats+'</div></div>'}).join('');
+  return {t:esc(s.ev.title),b:evHead(p)+
+  '<div class="tabs" role="group" aria-label="כיוון"><button aria-pressed="'+(leg==='out')+'" data-act="leg" data-arg="out">הלוך · '+esc(s.ev.start)+'</button><button aria-pressed="'+(leg==='back')+'" data-act="leg" data-arg="back">חזור · '+esc(s.ev.ret)+'</button></div>'+
+  gapHTML(s,leg)+
+  '<div class="hs">ממתינים להסעה ב'+LEG[leg]+'</div>'+(g.wl.length?'<div class="chips">'+g.wl.map(function(k){return '<button class="kchip'+(s.sel===k?' sel':'')+'" data-act="pick" data-arg="'+k+'" aria-pressed="'+(s.sel===k)+'">'+av(k)+kn(k)+'</button>'}).join('')+'</div><div class="small muted">'+(s.sel?'עכשיו לחצו על מושב מקווקו':'בחרו ילד/ה, ואז מושב פנוי')+'</div>':'<div class="small muted">אין ממתינים ✓</div>')+
+  cars+(mine?'':'<button class="btn ghost big" data-act="addcar">+ אני נוהג/ת ב'+LEG[leg]+'</button>')+
+  '<button class="btn dark" data-act="summary">שתף סיכום לקבוצה</button>'+logHTML(s,3)}};
+
+/* run (A & B day) */
+SCR.run=function(p){var s=p.s,cr=s.cars.out.filter(function(x){return x.f===ME})[0];
+  var fams=[];cr.kids.forEach(function(k){var f=KIDS[k].f;if(f!==ME&&fams.indexOf(f)<0)fams.push(f)});
+  var after='';
+  if(s.left){
+    if(p.alt==='b')after='<div class="card"><div class="hs">עדכון להורים</div>'+fams.map(function(f){return f==='peretz'?'<div class="row sp">'+dot(f)+'<span class="grow1">משפחת '+fn(f)+' <small class="muted">· לא הפעילו Push</small></span><button class="btn wa" data-act="notify" data-arg="'+f+'">WhatsApp</button></div>':'<div class="row">'+dot(f)+'<span class="grow1">משפחת '+fn(f)+'</span><span class="tag off">Push נשלח ✓</span></div>'}).join('')+'</div>';
+    else after='<div class="card"><div class="hs">הודיעו להורים שיצאת</div>'+fams.map(function(f){return '<div class="row sp">'+dot(f)+'<span class="grow1">משפחת '+fn(f)+' <small class="muted">· '+cr.kids.filter(function(k){return KIDS[k].f===f}).map(kn).join(', ')+'</small></span><button class="btn wa" data-act="notify" data-arg="'+f+'">WhatsApp</button></div>'}).join('')+'</div>';
+  }
+  var order=['noa','shira','ori'];
+  return {t:'מצב נהג · הלוך',b:'<div class="card"><div class="row sp"><b>'+cr.label+' · '+cr.kids.length+' ילדים</b><span class="num muted">יציאה '+cr.dep+'</span></div><div class="small muted">יעד: '+esc(s.ev.place)+' · '+esc(s.ev.start)+'</div></div>'+
+  (s.left?'<div class="live">בדרך · עדכון אחרון 09:41</div>':'<button class="btn big" data-act="left">יצאתי</button>')+after+
+  '<div class="hs">רשימת איסוף</div>'+order.map(function(k,i){var on=!!s.picked[k];return '<div class="card" style="padding:8px"><button class="chk" style="border:0;padding:2px" role="checkbox" aria-checked="'+on+'" data-act="pk" data-arg="'+k+'"><span class="bx">'+(on?'✓':'')+'</span>'+av(k)+'<span class="grow1"><b>'+kn(k)+'</b>'+(k==='shira'?' <span class="tag off">'+(KPH[k]?'מוכנה ✓ ':'')+'</span>':'')+'<small>'+(KIDS[k].f===ME?'מהבית':FAM[KIDS[k].f].a)+' · '+addMin(cr.dep,i*6)+'</small></span></button>'+(KIDS[k].f===ME?'':contacts(k))+'</div>'}).join('')+
+  '<div class="row"><button class="btn ghost grow1" data-act="maps">Google Maps · כל העצירות</button><button class="btn ghost" data-act="waze">Waze</button></div>'}};
+
+/* B */
+function bNeed(s,k,leg){if(k==='noa'&&s.m==='signup'){if(s.b.come!==true)return false;return !!s.b[leg]}return s.need[k][leg]&&s.rsvp[k]==='yes'}
+function bPlan(s){var plan={};['out','back'].forEach(function(leg){
+  var drv=[leg==='out'?{f:'levi',seats:4,dep:'09:30',kids:[]}:{f:'peretz',seats:3,dep:'12:30',kids:[]}];
+  var d=s.b.drive;if(d===leg||d==='both')drv.push({f:'cohen',seats:s.b.seats,dep:leg==='out'?'09:40':'12:30',kids:[]});
+  var kids=Object.keys(s.need).filter(function(k){return bNeed(s,k,leg)}),left=[],un=[];
+  kids.forEach(function(k){var own=drv.filter(function(x){return x.f===KIDS[k].f&&x.kids.length<x.seats})[0];if(own)own.kids.push({k:k,why:'הילד/ה של הנהג/ת'});else left.push(k)});
+  left.forEach(function(k){var fr=drv.filter(function(x){return x.kids.length<x.seats});if(!fr.length){un.push(k);return}
+    fr.sort(function(a,b){return dist(KIDS[k].f,a.f)-dist(KIDS[k].f,b.f)||FAIR[a.f]-FAIR[b.f]});fr[0].kids.push({k:k,why:'קרוב לבית · '+dist(KIDS[k].f,fr[0].f)+' ק״מ'})});
+  plan[leg]={drv:drv,un:un}});return plan}
+SCR.b_q=function(p,c){var s=p.s,q=c.q,b=s.b,body='';
+  if(q===1)body='<h4>נועה מגיעה ל'+esc(s.ev.title)+'?</h4><div class="yn"><button data-act="q1" data-arg="yes">כן</button><button data-act="q1" data-arg="no">לא</button></div><div class="small muted">איתי: סומן "לא מגיע (בחו״ל)" ✓</div>';
+  if(q===2)body='<h4>נועה צריכה הסעה?</h4><div class="pills"><button class="pill" aria-pressed="'+(!!b.out)+'" data-act="q2" data-arg="out">הלוך · '+esc(s.ev.start)+'</button><button class="pill" aria-pressed="'+(!!b.back)+'" data-act="q2" data-arg="back">חזור · '+esc(s.ev.ret)+'</button></div><button class="btn big" data-act="q2next">המשך</button>';
+  if(q===3)body='<h4>את/ה יכול/ה להסיע?</h4><div class="pills">'+[['out','הלוך'],['back','חזור'],['both','שניהם'],['none','לא הפעם']].map(function(o){return '<button class="pill" aria-pressed="'+(b.drive===o[0])+'" data-act="q3" data-arg="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'+
+    (b.drive!=='none'?'<div class="row sp"><span>כמה מקומות?</span><span class="step"><button data-act="bseats" data-arg="-1" aria-label="פחות">−</button><b>'+b.seats+'</b><button data-act="bseats" data-arg="1" aria-label="יותר">+</button></span></div>':'')+'<button class="btn big" data-act="q3done">סיום</button>';
+  return {t:'3 שאלות קצרות',b:evHead(p)+'<div class="qstack"><div class="qcard"><div class="row sp"><span class="qn num">שאלה '+q+' מתוך 3</span><span class="dots"><i class="on"></i><i class="'+(q>1?'on':'')+'"></i><i class="'+(q>2?'on':'')+'"></i></span></div>'+body+'</div></div>'}};
+SCR.b_done=function(p){return {t:esc(p.s.ev.title),b:evHead(p)+'<div class="card" style="text-align:center;padding:18px"><b style="font-size:18px">תודה! זה הכל.</b><span class="muted"><span class="num">6 מתוך 7</span> משפחות ענו. חסרה תשובה ממשפחת פרץ.</span><button class="mini" data-act="nudge" style="align-self:center">תזכורת בקבוצה</button></div><button class="btn big" data-act="plan">הצג הצעת שיבוץ</button>'}};
+SCR.b_plan=function(p){var s=p.s,pl=bPlan(s),h='';
+  ['out','back'].forEach(function(leg){var P=pl[leg];h+='<div class="hs">'+LEG[leg]+' · '+(leg==='out'?esc(s.ev.start):esc(s.ev.ret))+'</div>';
+    if(P.un.length)h+='<div class="gm gap"><div class="gm-t"><b>חסר נהג אחד ל'+LEG[leg]+'</b><span>'+P.un.map(kn).join(', ')+' בלי מקום</span></div><button class="mini" data-act="ask" data-arg="'+leg+'">בקש מהקבוצה</button></div>';
+    P.drv.forEach(function(d){h+='<div class="car'+(d.f===ME?' me':'')+'" style="--fc:var(--'+FAM[d.f].c+')"><div class="car-h">'+dot(d.f)+'<b>משפחת '+fn(d.f)+'</b><span class="fair">הסיעו '+FAIR[d.f]+' פעמים החודש</span><span class="num">'+d.kids.length+'/'+d.seats+'</span></div>'+
+      d.kids.map(function(x){return '<div class="row">'+av(x.k)+'<span>'+kn(x.k)+'</span><span class="why">· '+x.why+'</span></div>'}).join('')+'</div>'})});
+  return {t:'הצעת שיבוץ',b:'<div class="note">האפליקציה הציעה לפי קרבה לבית, הכיוון שכל אחד ביקש, והוגנות. אפשר לשנות לפני אישור.</div>'+h+
+    (s.b.ok?'<div class="note ok"><b>השיבוץ אושר ונשלח ✓</b></div>':'<button class="btn big" data-act="planok">אשר ושלח</button>')}};
+SCR.b_drive=function(p){var s=p.s,cr=s.cars.back.filter(function(x){return x.f===ME})[0];
+  var st=[['12:30','יציאה מ'+esc(s.ev.place),'']].concat(cr.kids.map(function(k,i){return [addMin('12:44',i*5),kn(k),KIDS[k].f===ME?'הביתה':FAM[KIDS[k].f].a]}));
+  return {t:'את/ה מסיע/ה בחזור',b:
+  '<div class="pushb" style="position:static;animation:none"><span class="ic">ט</span><div><b>טרמפוש</b><span>מחר את/ה מסיע/ה 3 ילדים בחזור, יציאה 12:30</span><small>תזכורת ערב לפני · Scheduled Function</small></div></div>'+
+  '<div class="card"><div class="row sp"><b>'+cr.label+'</b><span class="num muted">'+cr.kids.length+'/'+cr.seats+' מקומות</span></div><div class="chips">'+cr.kids.map(function(k){return '<span class="kchip ro">'+av(k)+kn(k)+'</span>'}).join('')+'</div></div>'+
+  '<div class="hs">סדר איסוף משוער</div><ol class="route">'+st.map(function(x){return '<li><span class="t">'+x[0]+'</span><span class="pin"></span><span><b>'+x[1]+'</b>'+(x[2]?' <small class="muted">· '+x[2]+'</small>':'')+'</span></li>'}).join('')+'</ol>'+
+  '<button class="sw" role="switch" aria-checked="'+s.b.why+'" data-act="why"><span>למה השיבוץ הזה?</span><i></i></button>'+
+  (s.b.why?'<div class="note">'+cr.kids.map(function(k){return kn(k)+': '+(KIDS[k].f===ME?'הילדה שלך':'גרים '+dist(KIDS[k].f,ME)+' ק״מ ממך')}).join(' · ')+'. משפחת כהן הסיעה פעם אחת החודש, פחות מהממוצע.</div>':'')+
+  '<div class="row"><button class="btn ghost grow1" data-act="ics">הוספה ליומן</button><button class="btn ghost grow1" data-act="maps">מסלול</button></div>'+
+  '<button class="lnk" data-act="plan" style="align-self:flex-start">לכל הצעת השיבוץ</button>'}};
+
+/* C */
+function cCard(p,key){var s=p.s,a=key.split(':'),t=s.kt[key]||'08:42';
+  if(a[0]==='req'){var k=a[1],leg=a[2];if(!s.need[k]||!s.need[k][leg]||s.rsvp[k]!=='yes')return '';
+    var cr=seatedIn(s,leg,k);if(cr)return '<div class="fc closed"><span class="ck">✓</span><span>סגור · משפחת '+fn(cr.f)+' לוקחים את '+kn(k)+' ב'+LEG[leg]+'</span></div>';
+    var mine=KIDS[k].f===ME,f=KIDS[k].f;
+    var my=s.cars[leg].filter(function(x){return x.f===ME})[0];
+    var act=s.confirm===key?'<div class="conf"><span>לקחת את <b>'+kn(k)+'</b> ברכב שלך, '+LEG[leg]+', '+(my?my.dep:(leg==='out'?'09:40':'12:30'))+'?'+(my?'':' <span class="small muted">(נפתחת הצעה: '+FAM[ME].car+', '+s.pseats+' מקומות)</span>')+'</span><div class="row"><button class="btn grow1" data-act="takeok" data-arg="'+key+'">כן, אני לוקח/ת</button><button class="btn ghost" data-act="noconf">לא</button></div></div>':'<button class="btn big" data-act="take" data-arg="'+key+'">אני לוקח/ת</button>';
+    return '<div class="fc'+(mine?' mine':'')+'"><div class="fc-h"><span class="tag req">בקשה</span>'+(mine?'<span class="tag me">שלי</span>':'')+dot(f)+'<span>משפחת '+fn(f)+'</span><span class="t">'+t+'</span></div><div class="fc-b"><b>'+kn(k)+' '+gk(k,'צריכה','צריך')+' '+LEG[leg]+'</b><small>'+(leg==='out'?'איסוף מ'+FAM[f].a+' · להגיע עד '+esc(s.ev.start):'איסוף מ'+esc(s.ev.place)+' · '+esc(s.ev.ret))+'</small></div>'+act+'</div>';}
+  var fc=findCar(s,a[1]);if(!fc)return '';var c=fc.car,lg=fc.leg,free=c.seats-c.kids.length;
+  if(free<=0)return '<div class="fc closed"><span class="ck">✓</span><span>מלא · הרכב של משפחת '+fn(c.f)+' ב'+LEG[lg]+'</span></div>';
+  var myk=['noa'].filter(function(k){return s.need[k][lg]&&s.rsvp[k]==='yes'&&!seatedIn(s,lg,k)})[0],act2='';
+  if(c.f!==ME&&myk)act2=s.confirm===key?'<div class="conf"><span>להושיב את <b>'+kn(myk)+'</b> ברכב של <b>משפחת '+fn(c.f)+'</b>, '+LEG[lg]+', '+c.dep+'? <span class="small muted">הם יראו את זה מיד, עם השם שלך.</span></span><div class="row"><button class="btn grow1" data-act="seatmeok" data-arg="'+c.id+'">כן, להושיב</button><button class="btn ghost" data-act="noconf">לא</button></div></div>':'<button class="btn big" data-act="seatme" data-arg="'+key+'">תושיב/י את '+kn(myk)+'</button>';
+  return '<div class="fc'+(c.f===ME?' mine':'')+'"><div class="fc-h"><span class="tag off">הצעה</span>'+(c.f===ME?'<span class="tag me">שלי</span>':'')+dot(c.f)+'<span>משפחת '+fn(c.f)+'</span><span class="t">'+t+'</span></div><div class="fc-b"><b>יש '+(free===1?'מקום אחד':free+' מקומות')+' ב'+LEG[lg]+', יציאה '+c.dep+'</b><small>'+c.label+(c.kids.length?' · כבר נוסעים: '+c.kids.map(kn).join(', '):'')+'</small></div>'+act2+'</div>';}
+SCR.c_feed=function(p){var s=p.s;
+  return {t:esc(s.ev.title),b:evHead(p)+'<div class="gms" style="position:sticky;top:-4px;z-index:2;background:var(--app-bg);padding-block:4px">'+gapHTML(s,'out',{short:1})+gapHTML(s,'back',{short:1})+'</div>'+
+  '<div class="card"><div class="hs">מה הילדים שלי צריכים?</div><div class="chips"><button class="kchip" data-act="need" data-arg="noa">'+av('noa')+'נועה</button><span class="kchip ro">'+av('itai')+'איתי · לא מגיע</span></div><button class="btn ghost" data-act="offer">אני יכול/ה להסיע</button></div>'+
+  s.keys.map(function(k){return cCard(p,k)}).join('')+logHTML(s,4,true)}};
+var STOPS=[{k:'shira',tg:1},{k:'ori',tg:0},{k:'noa'}];
+SCR.c_run=function(p){var s=p.s,i=s.stop,h='';
+  if(i<STOPS.length){var st=STOPS[i],f=KIDS[st.k].f,own=f===ME;
+    h='<div class="stop"><span class="k num">עצירה '+(i+1)+' מתוך '+STOPS.length+'</span><div class="row">'+av(st.k)+'<b class="big">'+kn(st.k)+'</b></div><span class="muted">'+(own?'מהבית':FAM[f].a+' · משפחת '+fn(f))+'</span>'+
+    (own?'':contacts(st.k))+(own?'':'<span class="small muted">'+(st.tg?'מחוברים לטלגרם: ההודעה תישלח אוטומטית':'בלי חיבור אוטומטי: WhatsApp בלחיצה')+'</span>')+
+    (s.arrived||own?'<button class="btn big" data-act="board">'+kn(st.k)+' '+gk(st.k,'עלתה','עלה')+' ✓</button>':'<button class="btn big" data-act="arrive">הגעתי ל'+kn(st.k)+'</button>')+'<button class="btn ghost" data-act="waze">Waze לעצירה הזאת</button></div>';
+  } else h='<div class="note ok"><b>כולם עלו · 3/3</b> בדרך ל'+esc(s.ev.place)+'</div><button class="btn big" data-act="waze">Waze ליעד</button>';
+  h+='<div class="hs">העצירות</div>'+STOPS.map(function(x,j){return '<div class="row">'+(j<i?'<span class="ck">✓</span>':'<span class="pin" style="width:14px;height:14px;border-radius:50%;border:2.5px solid var(--ink-3)"></span>')+av(x.k)+'<span class="'+(j<i?'muted':'')+'">'+kn(x.k)+'</span></div>'}).join('');
+  return {t:'מצב נהג · הלוך',b:h+logHTML(s,3,true)}};
+
+/* kid */
+var KIDR={driver:{out:{f:'levi',t:'09:30',w:['maya']},back:{f:'peretz',t:'12:30',w:['ori']}},day:{out:{f:'levi',t:'09:30',w:['maya','daniel']},back:{f:'peretz',t:'12:30',w:['ori']}}};
+SCR.kid=function(p){var s=p.s,m=s.m,R=KIDR[m];
+  var h='<div><b style="font-family:var(--ff-display);font-size:24px;font-weight:400">היי נועה!</b><div class="muted">'+(m==='reg'?'זה הקישור שלך. כאן תראי מי אוסף אותך.':'ההסעות שלך ל'+esc(s.ev.title))+'</div></div>';
+  if(m==='reg')return {t:'ההסעות שלי',b:h+'<div class="legc wait"><span class="k">עוד אין הסעות</span><span class="muted">כשההורים ירשמו אותך לאירוע, הוא יופיע כאן.</span></div><div class="note">טיפ: שמרו את הדף במסך הבית של הטלפון.</div>'};
+  ['out','back'].forEach(function(l){var r=R&&R[l];
+    if(!r)h+='<div class="legc wait"><span class="k">'+LEG[l]+' · '+(l==='out'?esc(s.ev.start):esc(s.ev.ret))+'</span><b style="color:var(--gap)">עוד מחפשים לך הסעה</b><span class="small muted">ההורים שלך יקבלו עדכון</span></div>';
+    else h+='<div class="legc"><span class="k">'+LEG[l]+' · איסוף <span class="num">'+r.t+'</span></span><span class="row">'+dot(r.f)+'<b>'+FAM[r.f].par+' מסיע/ה</b></span><span class="muted">'+FAM[r.f].car+' · איתך: '+r.w.map(kn).join(', ')+'</span>'+(m==='day'&&l==='out'?'<span class="live">בדרך אלייך · ~8 דק׳</span>':'')+'<div class="row"><button class="btn sm" data-act="kcall" data-arg="'+r.f+'">'+PHI+'התקשרי ל'+FAM[r.f].par.split(' ')[0]+'</button><button class="lnk" data-act="kidleg" data-arg="'+l+'">פרטים</button></div></div>';});
+  if(m==='day')h+=s.ready?'<div class="note ok"><b>שלחת "אני מוכנה" ✓</b> '+(p.alt==='b'?'משפחת לוי קיבלה Push.':p.alt==='c'?'נרשם ביומן, ומשפחת לוי רואה את זה.':'משפחת לוי תראה את זה ברענון.')+'</div>':'<button class="readybtn" data-act="ready">אני מוכנה</button>';
+  return {t:'ההסעות שלי',b:h}};
+SCR.kid_leg=function(p,c){var R=KIDR[p.s.m],r=R[c.leg],f=FAM[r.f];
+  return {t:LEG[c.leg],b:'<div class="card"><span class="muted small">'+LEG[c.leg]+' · איסוף <span class="num">'+r.t+'</span></span><div class="row">'+dot(r.f)+'<b style="font-size:17px">'+f.par+'</b></div><span>'+f.car+'</span><span class="muted">'+(c.leg==='out'?'אוספים אותך מהבית':'איסוף מ'+esc(p.s.ev.place))+'</span></div>'+
+  '<div class="card"><span class="muted small">טלפון של הנהג/ת</span><div class="row sp"><b class="num" dir="ltr">'+f.p+'</b><span class="row"><button class="btn sm" data-act="kcall" data-arg="'+r.f+'">'+PHI+'התקשרי</button><button class="mini" data-act="copynum" data-arg="'+r.f+'">העתקה</button></span></div></div>'+
+  '<div class="card"><span class="muted small">נוסעים איתך</span><div class="chips">'+r.w.map(function(k){return '<span class="kchip ro">'+av(k)+kn(k)+'</span>'}).join('')+'</div></div>'}};
+
+/* ---------- sheets ---------- */
+var SHEET={};
+SHEET.seat=function(p,c){var d=c.data,cr=findCar(p.s,d.car).car,other=cr.f!==ME;
+  return '<h4>אישור הושבה</h4><p class="sent">להושיב את <b>'+kn(d.kid)+'</b> ברכב של <b>משפחת '+fn(cr.f)+'</b>, '+LEG[d.leg]+', <span class="num">'+cr.dep+'</span>?</p>'+(other?'<div class="note">משפחת '+fn(cr.f)+' תראה את זה מיד, עם השם שלך.</div>':'')+'<div class="row"><button class="btn grow1" data-act="seatok">כן, להושיב</button><button class="btn ghost" data-act="back">ביטול</button></div>'};
+SHEET.car=function(p,c){var d=p.s.draft;return '<h4>אני נוהג/ת ב'+LEG[c.leg]+'</h4><div class="card"><div class="row">'+dot(ME)+'<b>'+FAM[ME].car+'</b><span class="small muted">מהפרופיל</span></div><div class="row sp"><span>מקומות לילדים</span><span class="step"><button data-act="dseats" data-arg="-1" aria-label="פחות">−</button><b>'+d.seats+'</b><button data-act="dseats" data-arg="1" aria-label="יותר">+</button></span></div><div class="row sp"><span>שעת יציאה</span><span class="step"><button data-act="ddep" data-arg="-5" aria-label="מוקדם יותר">−</button><b>'+d.dep+'</b><button data-act="ddep" data-arg="5" aria-label="מאוחר יותר">+</button></span></div></div><button class="btn big" data-act="carok">הוספת הרכב</button>'};
+SHEET.need=function(p){return '<h4>מה נועה צריכה?</h4><div class="pills" style="flex-direction:column">'+[['out','הלוך'],['back','חזור'],['both','הלוך וחזור'],['none','מסתדרים לבד']].map(function(o){return '<button class="pill" data-act="needset" data-arg="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'};
+SHEET.offer=function(p){var d=p.s.draft;d.leg=d.leg||'back';return '<h4>אני יכול/ה להסיע</h4><div class="pills">'+['out','back'].map(function(l){return '<button class="pill" aria-pressed="'+(d.leg===l)+'" data-act="oleg" data-arg="'+l+'">'+LEG[l]+'</button>'}).join('')+'</div><div class="row sp"><span>מקומות</span><span class="step"><button data-act="dseats" data-arg="-1" aria-label="פחות">−</button><b>'+d.seats+'</b><button data-act="dseats" data-arg="1" aria-label="יותר">+</button></span></div><button class="btn big" data-act="offerok">פרסום ההצעה</button>'};
+
+/* ---------- phone ---------- */
+function Phone(el,alt){this.root=el;this.alt=alt;this.id='p'+alt;var me=this;
+  el.addEventListener('click',function(e){me.onClick(e)});
+  el.addEventListener('change',function(e){if(e.target.matches('[data-file]'))me.handleFile(e.target.files&&e.target.files[0])});
+  el.addEventListener('input',function(e){var t=e.target;if(t.dataset&&t.dataset.ph){var r=vPhone(t.value,t.dataset.ph==='req'),l=t.closest('.fld'),m=l&&l.querySelector('[data-msg]');if(l){l.classList.toggle('err',!r.ok&&(!!t.value||!!me.s.tried));l.classList.toggle('okv',r.ok&&!!r.n)}if(m)m.textContent=t.value||me.s.tried?r.msg:(t.dataset.ph==='req'?'חובה · לדוגמה 050-1234567':'רשות · לדוגמה 050-1234567')}
+  var k=e.target.dataset&&e.target.dataset.ed;if(k){me.s.cr.edited=me.s.cr.edited||{};me.s.cr.edited[k]=1;var l=e.target.closest('.fld');if(l){l.classList.remove('hl');var t=l.querySelector('.auto');if(t)t.remove()}}});
+  el.addEventListener('dragover',function(e){var d=e.target.closest&&e.target.closest('[data-drop]');if(d){e.preventDefault();d.classList.add('over')}});
+  el.addEventListener('dragleave',function(e){var d=e.target.closest&&e.target.closest('[data-drop]');if(d)d.classList.remove('over')});
+  el.addEventListener('drop',function(e){var d=e.target.closest&&e.target.closest('[data-drop]');if(d){e.preventDefault();me.handleFile(e.dataTransfer.files&&e.dataTransfer.files[0])}});
+}
+Phone.prototype.reset=function(){clearTimeout(this.tt);clearTimeout(this.st);this.s=seed(UI.moment,this.alt);this.toast=null;this.ov=null;this.push=null;
+  this.hist=startRoutes(this.alt,UI.persona,UI.moment,this.s);
+  if(this.alt==='b'&&UI.moment==='day'&&UI.persona==='parent')this.push={text:'בעוד 30 דק׳ יוצאים להלוך · 3 ילדים · 09:40',sub:'תזכורת · Scheduled Function'};
+  this.render('top')};
+Phone.prototype.cur=function(){return this.hist[this.hist.length-1]};
+Phone.prototype.capture=function(){var s=this.s;$$('[data-k]',this.root).forEach(function(i){s.form[i.dataset.k]=i.value})};
+Phone.prototype.go=function(r){var c=this.content();if(c)this.cur().scroll=c.scrollTop;this.hist.push(r);this.ov=null;this.render('top')};
+Phone.prototype.sheet=function(name,extra){var c=this.cur(),r=Object.assign({},c,extra||{},{sheet:name,path:c.path.split('?')[0]+'?sheet='+name});var ct=this.content();if(ct)c.scroll=ct.scrollTop;r.scroll=c.scroll;this.hist.push(r);this.render('keep')};
+Phone.prototype.back=function(){if(this.hist.length>1){var wasSheet=this.cur().sheet;this.hist.pop();this.ov=null;this.render(wasSheet?'keep':'restore')}};
+Phone.prototype.content=function(){return $('.content',this.root)};
+Phone.prototype.toastShow=function(text,o){o=o||{};var me=this;clearTimeout(this.tt);this.toast={text:text,undo:o.undo,warn:o.warn,at:Date.now()};
+  this.tt=setTimeout(function(){me.toast=null;me.render('keep')},o.undo?10000:3800)};
+Phone.prototype.wa=function(to,phone,text,note){this.ov={kind:'wa',to:to,text:text,link:'wa.me/'+(phone?intl(phone):'')+'?text='+encodeURIComponent(text).slice(0,48)+'…',note:note||'באפליקציה זה פותח את WhatsApp עם הטקסט מוכן, וההורה לוחץ שליחה. כאן מוצגת רק תצוגה מקדימה.'};this.render('keep')};
+Phone.prototype.preview=function(title,text,note,copy){this.ov={kind:'link',title:title,text:text,note:note,copy:copy};this.render('keep')};
+Phone.prototype.callPrev=function(who,n){this.preview('התקשרות · '+who,n+'\ntel:+'+intl(n),'בדף הזה קישורי tel: לא תמיד עובדים, לכן מוצג המספר להעתקה. באפליקציה זה חיוג בלחיצה.',n)};
+Phone.prototype.render=function(mode){
+  var c=this.cur(),s=this.s,ct=this.content(),keep=ct?ct.scrollTop:0;this.capture&&ct&&this.capture();
+  var v=SCR[c.scr](this,c),kid=UI.persona==='kid';
+  var who=kid?'<div class="who">'+dot('cohen')+'<span>הקישור של <b>נועה</b> · צפייה בלבד</span></div>':(s.registered?'<div class="who">'+dot(ME)+'<span>פועל/ת בתור: <b>משפחת כהן</b></span></div>':'<div class="who anon"><span>עוד לא רשומים במכשיר הזה</span></div>');
+  var ov='';
+  if(c.sheet)ov='<div class="ov"><button class="scrim" data-act="back" aria-label="סגירת הגיליון"></button><div class="sheet" role="dialog" aria-label="גיליון"><div class="grab"></div>'+SHEET[c.sheet](this,c)+'</div></div>';
+  if(this.ov){var o=this.ov;ov+='<div class="ov"><button class="scrim" data-act="ovclose" aria-label="סגירה"></button><div class="wa" role="dialog" aria-label="תצוגה מקדימה">'+
+    (o.kind==='wa'?'<div class="wa-h"><b>תצוגה מקדימה · WhatsApp</b><button class="xbtn" data-act="ovclose" aria-label="סגירה">×</button></div><div class="wa-to">אל: '+esc(o.to)+'</div><div class="wa-chat"><div class="wa-b"><span class="wa-text">'+esc(o.text)+'</span><small class="num">09:41 ✓✓</small></div></div><div class="wa-link">'+esc(o.link)+'</div>'
+    :'<div class="wa-h"><b>'+esc(o.title)+'</b><button class="xbtn" data-act="ovclose" aria-label="סגירה">×</button></div><div class="lnkbox wa-text">'+esc(o.text)+'</div>')+
+    '<div class="wa-act"><button class="btn" data-act="copy">העתקה</button><button class="btn ghost" data-act="ovclose">סגירה</button></div><p class="wa-note">'+esc(o.note||'')+'</p></div></div>'}
+  if(this.toast){var t=this.toast,el=(Date.now()-t.at)/1000;ov+='<div class="toast'+(t.warn?' warn':'')+'" role="status"><span>'+t.text+'</span>'+(t.undo?'<button data-act="undo">ביטול</button><i class="tbar" style="animation-delay:-'+el.toFixed(2)+'s"></i>':'')+'</div>'}
+  if(this.push)ov+='<div class="pushb" role="status"><span class="ic">ט</span><div><b>טרמפוש</b><span>'+esc(this.push.text)+'</span><small>'+esc(this.push.sub)+'</small></div><button class="xbtn" data-act="pushclose" aria-label="סגירת ההתראה">×</button></div>';
+  var path=c.path,base=path.split('?')[0],q=path.indexOf('?')>=0?path.slice(path.indexOf('?')):'';
+  this.root.innerHTML='<div class="screen"><div class="sbar"><span class="num">09:41</span><span class="batt">5G <i></i></span></div>'+
+    '<div class="url" aria-label="כתובת הדף"><svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><rect x="1" y="5" width="8" height="6.5" rx="1.5" fill="var(--ink-3)"/><path d="M3 5V3.5a2 2 0 014 0V5" fill="none" stroke="var(--ink-3)" stroke-width="1.4"/></svg><span class="dom">'+DOMAIN+'</span><span class="pth">'+esc(base)+'<span style="color:var(--gap)">'+esc(q)+'</span></span></div>'+
+    '<div class="ahdr"><button class="bk" data-act="back"'+(this.hist.length>1?'':' disabled')+' aria-label="חזרה"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="attl">'+v.t+'</span></div>'+
+    who+'<div class="content">'+v.b+'</div>'+ov+'</div>';
+  var nc=this.content();if(nc){nc.scrollTop=mode==='keep'?keep:mode==='restore'?(c.scroll||0):0}
+  if(this.onRender)this.onRender(this);
+};
+Phone.prototype.handleFile=function(file){var me=this;
+  if(!file||!/^image\//.test(file.type)){this.toastShow('זה לא נראה כמו תמונה. נסו קובץ JPG או PNG.',{warn:1});this.render('keep');return}
+  var fr=new FileReader();fr.onload=function(){var img=new Image();img.onload=function(){var mx=800,sc=Math.min(1,mx/Math.max(img.width,img.height)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*sc));cv.height=Math.max(1,Math.round(img.height*sc));var url;
+      try{cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);url=cv.toDataURL('image/jpeg',.8)}catch(e){url=fr.result}
+      me.s.cr.img=url;me.s.cr.orig=file.size;me.s.cr.comp=Math.round(url.length*.75);me.startScan()};
+    img.onerror=function(){me.toastShow('לא הצלחנו לפתוח את התמונה. אפשר לנסות אחרת או למלא ידנית.',{warn:1});me.render('keep')};img.src=fr.result};
+  fr.readAsDataURL(file)};
+Phone.prototype.startScan=function(){var me=this;this.s.cr.phase='scan';this.s.cr.manual=false;this.s.cr.edited={};this.render('top');clearTimeout(this.st);
+  this.st=setTimeout(function(){me.s.cr.phase='form';me.s.cr.fields=Object.assign({},SAMPLE);Object.keys(me.s.form).forEach(function(k){if(k.indexOf('ev_')===0)delete me.s.form[k]});if(me.cur().scr==='newev')me.render('top')},1500)};
+Phone.prototype.onClick=function(e){var b=e.target.closest('[data-act]');if(!b||!this.root.contains(b)||b.disabled)return;this.capture();var f=ACT[b.dataset.act];if(f)f(this,b.dataset.arg,b,e)};
+
+/* ---------- actions ---------- */
+var ACT={};
+ACT.back=function(p){p.back()};
+ACT.ovclose=function(p){p.ov=null;p.render('keep')};
+ACT.pushclose=function(p){p.push=null;p.render('keep')};
+ACT.undo=function(p){var t=p.toast;if(t&&t.undo){t.undo();clearTimeout(p.tt);p.toast=null;p.toastShow('בוטל. נרשם ביומן כפעולה מפצה.')}p.render('keep')};
+ACT.copy=function(p){var o=p.ov;if(!o)return;var done=function(){p.toastShow('הטקסט הועתק');p.render('keep')};
+  var sel=function(){var el=$('.wa-text',p.root);if(el){var r=document.createRange();r.selectNodeContents(el);var w=window.getSelection();w.removeAllRanges();w.addRange(r)}p.toastShow('ההעתקה נחסמה. הטקסט מסומן, אפשר להעתיק ידנית.')};
+  try{navigator.clipboard.writeText(o.copy||o.text).then(done,sel)}catch(err){sel()}};
+ACT.copynum=function(p,f){var n=FAM[f].p;try{navigator.clipboard.writeText(n).then(function(){p.toastShow('המספר הועתק');p.render('keep')},function(){p.toastShow('המספר: '+n);p.render('keep')})}catch(e){p.toastShow('המספר: '+n);p.render('keep')}};
+ACT.flash=function(p,a){var m={pin:'כאן נפתחת מפה לסימון נקודה, או "שתפו מיקום".',kid:'כאן מוסיפים שם וכיתה, אופציונלי.'};p.toastShow(m[a]||'');p.render('keep')};
+ACT.openev=function(p){p.go(evStart(p.alt,(UI.moment==='reg'||UI.moment==='create')?'signup':UI.moment,p.s))};
+ACT.newev=function(p){p.s.cr={phase:'drop'};p.go({scr:'newev',path:G+'/new'})};
+ACT.invite=function(p){p.go({scr:'invite',path:p.s.E+'/invite'})};
+ACT.startreg=function(p){p.go({scr:'me',path:'/me'})};
+ACT.otherdev=function(p){p.toastShow('פתחו את הקישור ששלחתם לעצמכם מהטלפון הראשון (/me/devices).');p.render('keep')};
+ACT.pseats=function(p,a){p.s.pseats=Math.max(1,Math.min(7,p.s.pseats+(+a)));p.render('keep')};
+ACT.opt=function(p,k){p.s[k]=!p.s[k];p.render('keep')};
+ACT.save=function(p){var bad=$$('[data-ph]',p.root).filter(function(i){return !vPhone(i.value,i.dataset.ph==='req').ok});
+  if(bad.length){p.s.tried=true;p.toastShow('יש מספר טלפון לא תקין. תקנו את השדה המסומן.',{warn:1});p.render('keep');var c=$('#'+bad[0].id,p.root);if(c)c.focus();return}
+  p.s.registered=true;p.go({scr:'group',path:G,welcome:true});p.toastShow('נרשמתם · המפתח נשמר במכשיר הזה');p.render('keep')};
+ACT.p2=function(p){p.s.p2=true;p.render('keep')};
+ACT.kidlink=function(p){var n=p.s.form.k_noa||KPH.noa;p.wa('נועה · '+n,n,'היי נועה 💛 זה הקישור שלך לטרמפוש. שם תראי מי אוסף אותך ומתי:\n'+DOMAIN+KT,'הקישור לקריאה בלבד, בטוח לטלפון של ילד/ה.')};
+ACT.call=function(p,a){var x=a.split(':'),k=x[0],n=x[1]==='kid'?KPH[k]:FAM[KIDS[k].f].p,who=x[1]==='kid'?kn(k):FAM[KIDS[k].f].par;p.callPrev(who,n)};
+ACT.kcall=function(p,f){p.callPrev(FAM[f].par,FAM[f].p)};
+ACT.down=function(p,a){var x=a.split(':'),k=x[0],kid=x[1]==='kid',n=kid?KPH[k]:FAM[KIDS[k].f].p;
+  p.wa((kid?kn(k):FAM[KIDS[k].f].par)+' · '+n,n,kid?'אני למטה 🚗 מחכה לך':'אני למטה 🚗 מחכה ל'+kn(k))};
+ACT.selflink=function(p){p.wa('לעצמי · '+FAM[ME].p,FAM[ME].p,'הקישור שלי לטרמפוש (לא לשתף):\n'+DOMAIN+'/me/devices#k-7f3a9c2e81','המפתח נמצא אחרי ה-# ולכן לא מגיע לשרת או ללוגים.')};
+ACT.sample=function(p){p.s.cr.img=null;p.s.cr.orig=0;p.startScan()};
+ACT.manual=function(p){p.s.cr={phase:'form',manual:true,fields:{}};p.render('top')};
+ACT.create=function(p){var s=p.s,f=s.form,F=s.cr.fields||{};function v(k){return (f['ev_'+k]!=null?f['ev_'+k]:F[k])||''}
+  if(!v('title')){p.toastShow('חסרה כותרת לאירוע.',{warn:1});p.render('keep');return}
+  s.ev={title:v('title'),date:v('date')||'—',start:v('start')||'—',ret:v('ret')||'—',place:v('place')||'—',addr:v('addr'),slots:F.slots||v('start'),cover:s.cr.img||(s.cr.manual?'':'sample')};
+  if(!s.ev.cover)s.ev.cover='sample';s.E=G+'/e/bday-noa';addLog(s,ME,'יצרו את האירוע "'+s.ev.title+'"');
+  p.go(evStart(p.alt,'signup',s));p.toastShow('האירוע נוצר · אפשר לשתף את הקישור בקבוצה');p.render('keep')};
+ACT.ask=function(p,leg){var s=p.s,g=gapInfo(s,leg),miss=g.missing?missTxt(g.missing,leg):'חסר נהג ל'+LEG[leg];
+  var link=DOMAIN+s.E+(p.alt==='b'?'?q=3':'/'+leg);p.wa('בחירת צ׳אט (הקבוצה)','', 'היי לכולם 👋\nל'+s.ev.title+' ('+s.ev.date+') '+miss+'.\nמי יכול/ה להסיע? נרשמים כאן:\n'+link,'wa.me/?text= פותח בחירת צ׳אט. אי אפשר לכוון מראש לקבוצה.')};
+ACT.summary=function(p){p.wa('בחירת צ׳אט (הקבוצה)','',summaryText(p.s),'סיכום אחד מסודר במקום עשרות הודעות. נשלח בלחיצה של ההורה.')};
+/* A */
+ACT.tog=function(p,a){var x=a.split('.'),r=p.s.r[x[0]];r[x[1]]=r[x[1]]?0:1;if(x[1]==='come'&&!r.come){r.out=0;r.back=0}if(x[1]==='come'&&r.come){r.out=1;r.back=1}p.render('keep')};
+ACT.rsvpdone=function(p){var s=p.s;['noa','itai'].forEach(function(k){var r=s.r[k];s.rsvp[k]=r.come?'yes':'no';s.need[k]={out:r.come&&r.out?1:0,back:r.come&&r.back?1:0}});
+  addLog(s,ME,'עדכנו RSVP: נועה '+(s.r.noa.come?'מגיעה':'לא מגיעה')+', איתי לא מגיע');
+  p.go({scr:'a_board',path:s.E+'/out',leg:'out'});p.toastShow(s.need.noa.out?'נשמר · נועה ממתינה להסעה בהלוך':'נשמר');p.render('keep')};
+ACT.leg=function(p,l){if(p.cur().leg===l)return;p.s.sel=null;p.go({scr:'a_board',path:p.s.E+'/'+l,leg:l})};
+ACT.pick=function(p,k){p.s.sel=p.s.sel===k?null:k;p.render('keep')};
+ACT.seat=function(p,id){var s=p.s,k=s.sel;if(!k){p.toastShow('בחרו קודם ילד/ה מ"ממתינים להסעה".');p.render('keep');return}
+  var fc=findCar(s,id);if(KIDS[k].f!==ME&&fc.car.f!==ME){p.toastShow('אפשר להושיב רק את הילדים שלך, או ילדים ברכב שלך. את '+kn(k)+' יושיבו משפחת '+fn(KIDS[k].f)+' או הנהג/ת.',{warn:1});p.render('keep');return}
+  p.sheet('seat',{data:{kid:k,car:id,leg:fc.leg}})};
+ACT.seatok=function(p){var s=p.s,d=p.cur().data,fc=findCar(s,d.car);fc.car.kids.push(d.kid);s.sel=null;addLog(s,ME,'הושיבו את '+kn(d.kid)+' ברכב של '+fn(fc.car.f)+' · '+LEG[d.leg]);p.back();
+  p.toastShow(kn(d.kid)+' '+gk(d.kid,'הושבה','הושב')+' ברכב של '+fn(fc.car.f),{undo:function(){var i=fc.car.kids.indexOf(d.kid);if(i>=0)fc.car.kids.splice(i,1);addLog(s,ME,'ביטול: '+kn(d.kid)+' הוצא/ה מהרכב של '+fn(fc.car.f))}});p.render('keep')};
+ACT.addcar=function(p){var l=p.cur().leg;p.s.draft={seats:p.s.pseats,dep:l==='out'?'09:40':p.s.ev.ret.match(/^\d\d:\d\d$/)?p.s.ev.ret:'12:30'};p.sheet('car')};
+ACT.dseats=function(p,a){var d=p.s.draft;d.seats=Math.max(1,Math.min(7,d.seats+(+a)));p.render('keep')};
+ACT.ddep=function(p,a){var d=p.s.draft;d.dep=addMin(d.dep,+a);p.render('keep')};
+ACT.carok=function(p){var s=p.s,l=p.cur().leg,d=s.draft,c=car('m'+(++s.seq),ME,d.seats,d.dep,[]);s.cars[l].push(c);addLog(s,ME,'הציעו רכב ב'+LEG[l]+' · '+d.seats+' מקומות');p.back();
+  p.toastShow('הרכב שלך נוסף ל'+LEG[l],{undo:function(){s.cars[l]=s.cars[l].filter(function(x){return x!==c});addLog(s,ME,'ביטול: הרכב הוסר')}});p.render('keep')};
+ACT.left=function(p){p.s.left=true;addLog(p.s,ME,'יצאו להלוך');if(p.alt==='b')p.push={text:'נשלח Push אוטומטית להורים של הנוסעים',sub:'action → web-push'};p.render('keep')};
+ACT.pk=function(p,k){p.s.picked[k]=!p.s.picked[k];p.render('keep')};
+ACT.notify=function(p,f){var kids=Object.keys(KIDS).filter(function(k){return KIDS[k].f===f}).filter(function(k){return p.s.cars.out.some(function(c){return c.f===ME&&c.kids.indexOf(k)>=0})});
+  p.wa('משפחת '+fn(f)+' · '+FAM[f].p,FAM[f].p,'היי, יצאתי 🚗 אגיע לאסוף את '+kids.map(kn).join(' ו')+' בעוד ~10 דק׳')};
+ACT.maps=function(p){var s=p.s;p.preview('Google Maps · מסלול עם עצירות','https://www.google.com/maps/dir/?api=1\n&origin='+encodeURIComponent(FAM[ME].a)+'\n&waypoints='+encodeURIComponent(FAM.avraham.a+'|'+FAM.peretz.a)+'\n&destination='+encodeURIComponent(s.ev.place),'עד 8 עצירות ביניים. בגלל מגבלות הדף כאן מוצג רק הקישור.')};
+ACT.waze=function(p){p.preview('Waze · יעד אחד','https://waze.com/ul?q='+encodeURIComponent(FAM.avraham.a)+'&navigate=yes','Waze מקבל יעד אחד בלבד, לכן "נווט לעצירה הבאה".')};
+ACT.ics=function(p){var s=p.s;p.preview('הוספה ליומן (.ics)','BEGIN:VEVENT\nSUMMARY:הסעה חזור · '+s.ev.title+'\nDTSTART:20261016T123000\nLOCATION:'+s.ev.place+'\nDESCRIPTION:מאיה, דניאל, נועה\nEND:VEVENT','באייפון קובץ .ics פותח "הוסף ליומן". כאן מוצג התוכן בלבד.')};
+/* B */
+ACT.q1=function(p,a){var s=p.s;s.b.come=a==='yes';if(a==='yes')p.go({scr:'b_q',path:s.E+'?q=2',q:2});else p.go({scr:'b_q',path:s.E+'?q=3',q:3})};
+ACT.q2=function(p,l){p.s.b[l]=p.s.b[l]?0:1;p.render('keep')};
+ACT.q2next=function(p){p.go({scr:'b_q',path:p.s.E+'?q=3',q:3})};
+ACT.q3=function(p,o){p.s.b.drive=o;p.render('keep')};
+ACT.bseats=function(p,a){p.s.b.seats=Math.max(1,Math.min(7,p.s.b.seats+(+a)));p.render('keep')};
+ACT.q3done=function(p){addLog(p.s,ME,'ענו על השאלות');p.go({scr:'b_done',path:p.s.E})};
+ACT.nudge=function(p){p.wa('בחירת צ׳אט (הקבוצה)','','תזכורת קטנה 🙏 עוד משפחה אחת לא ענתה על '+p.s.ev.title+'. 20 שניות:\n'+DOMAIN+p.s.E+'?q=1')};
+ACT.plan=function(p){p.go({scr:'b_plan',path:p.s.E+'?view=plan'})};
+ACT.planok=function(p){var s=p.s;s.b.ok=true;addLog(s,ME,'אישרו את הצעת השיבוץ');p.toastShow('השיבוץ אושר · Push נשלח ל-4 משפחות, WhatsApp למשפחה אחת',{undo:function(){s.b.ok=false}});p.render('keep')};
+ACT.why=function(p){p.s.b.why=!p.s.b.why;p.render('keep')};
+/* C */
+ACT.need=function(p){p.sheet('need')};
+ACT.needset=function(p,o){var s=p.s,prev={n:Object.assign({},s.need.noa),r:s.rsvp.noa,keys:s.keys.slice()};
+  s.need.noa={out:o==='out'||o==='both'?1:0,back:o==='back'||o==='both'?1:0};s.rsvp.noa='yes';
+  ['back','out'].forEach(function(l){var k='req:noa:'+l;if(s.need.noa[l]){var i=s.keys.indexOf(k);if(i>=0)s.keys.splice(i,1);s.keys.unshift(k);s.clock++;s.kt[k]=addMin('00:00',s.clock)}});
+  addLog(s,ME,o==='none'?'נועה מסתדרת לבד':'בקשה: נועה צריכה '+(o==='both'?'הלוך וחזור':LEG[o]));p.back();
+  p.toastShow(o==='none'?'נשמר: נועה מסתדרת לבד':'נוצרה בקשה בראש הפיד',{undo:function(){s.need.noa=prev.n;s.rsvp.noa=prev.r;s.keys=prev.keys}});p.render('keep')};
+ACT.take=function(p,k){p.s.confirm=k;p.render('keep')};
+ACT.seatme=function(p,k){p.s.confirm=k;p.render('keep')};
+ACT.noconf=function(p){p.s.confirm=null;p.render('keep')};
+ACT.takeok=function(p,key){var s=p.s,a=key.split(':'),k=a[1],l=a[2],c=s.cars[l].filter(function(x){return x.f===ME&&x.kids.length<x.seats})[0],made=null;
+  if(!c){c=made=car('m'+(++s.seq),ME,s.pseats,l==='out'?'09:40':'12:30',[]);s.cars[l].push(c);s.keys.unshift('offer:'+c.id);s.kt['offer:'+c.id]=addMin('00:00',s.clock+1)}
+  c.kids.push(k);s.confirm=null;addLog(s,ME,'לוקחים את '+kn(k)+' ב'+LEG[l]);
+  p.toastShow('סגור ✓ '+kn(k)+' נוסע'+gk(k,'ת','')+' איתך. משפחת '+fn(KIDS[k].f)+' רואה את זה',{undo:function(){var i=c.kids.indexOf(k);if(i>=0)c.kids.splice(i,1);if(made){s.cars[l]=s.cars[l].filter(function(x){return x!==made});s.keys=s.keys.filter(function(x){return x!=='offer:'+made.id})}addLog(s,ME,'ביטול: '+kn(k)+' חזר/ה לבקשה')}});p.render('keep')};
+ACT.seatmeok=function(p,id){var s=p.s,fc=findCar(s,id);fc.car.kids.push('noa');s.confirm=null;addLog(s,ME,'הושיבו את נועה ברכב של '+fn(fc.car.f)+' · '+LEG[fc.leg]);
+  p.toastShow('נועה הושבה ברכב של '+fn(fc.car.f),{undo:function(){var i=fc.car.kids.indexOf('noa');if(i>=0)fc.car.kids.splice(i,1);addLog(s,ME,'ביטול: נועה הוצאה מהרכב של '+fn(fc.car.f))}});p.render('keep')};
+ACT.offer=function(p){p.s.draft={seats:p.s.pseats,dep:'09:40',leg:'back'};p.sheet('offer')};
+ACT.oleg=function(p,l){p.s.draft.leg=l;p.render('keep')};
+ACT.offerok=function(p){var s=p.s,d=s.draft,c=car('m'+(++s.seq),ME,d.seats,d.leg==='out'?'09:40':'12:30',[]);s.cars[d.leg].push(c);var key='offer:'+c.id;s.keys.unshift(key);s.clock++;s.kt[key]=addMin('00:00',s.clock);addLog(s,ME,'הציעו '+d.seats+' מקומות ב'+LEG[d.leg]);p.back();
+  p.toastShow('ההצעה פורסמה בראש הפיד',{undo:function(){s.cars[d.leg]=s.cars[d.leg].filter(function(x){return x!==c});s.keys=s.keys.filter(function(x){return x!==key})}});p.render('keep')};
+ACT.arrive=function(p){var s=p.s,st=STOPS[s.stop],f=KIDS[st.k].f;s.arrived=true;addLog(s,ME,'הגיעו ל'+kn(st.k));
+  if(st.tg){p.toastShow('נשלח אוטומטית בטלגרם למשפחת '+fn(f)+': "אני למטה 🚗"');p.render('keep')}
+  else p.wa('משפחת '+fn(f)+' · '+FAM[f].p,FAM[f].p,'אני למטה 🚗 מחכה ל'+kn(st.k))};
+ACT.board=function(p){var s=p.s;addLog(s,ME,kn(STOPS[s.stop].k)+' עלה/תה לרכב');s.stop++;s.arrived=false;p.render('keep')};
+/* kid */
+ACT.ready=function(p){p.s.ready=true;p.toastShow('נשלח: "אני מוכנה"');p.render('keep')};
+ACT.kidleg=function(p,l){p.go({scr:'kid_leg',path:KT+'?leg='+l,leg:l})};
+
+/* ---------- page wiring ---------- */
+var phones={};ALTS.forEach(function(a){phones[a]=new Phone($('#ph-'+a),a)});
+phones.a.onRender=phones.b.onRender=phones.c.onRender=function(p){if(UI.alt===p.alt)updSide(p)};
+function updSide(p){var h=p.hist;$('#hist').innerHTML=h.map(function(r,i){return '<li class="'+(i===h.length-1?'cur':'')+'">'+esc(r.path)+'</li>'}).join('')}
+function tip(){if(UI.persona==='kid')return TIPS.kid;if(UI.moment==='reg'||UI.moment==='create')return TIPS[UI.moment];return TIPS[UI.alt][UI.moment]}
+var LBL={a:'A · הלוח',b:'B · הסדרן',c:'C · בקשות והצעות'},MLBL={reg:'הרשמה חד-פעמית',create:'יצירת אירוע',signup:'הרשמה לאירוע',driver:'נהג/ת',day:'יום ההסעה'};
+
+var DG={
+ a:{h:320,label:'ארכיטקטורה של חלופה A',nodes:[
+   {x:560,y:30,w:180,h:96,t:'הטלפון של ההורה',s:['SPA · Vite + Preact','History API · כתובת לכל מסך'],k:'acc'},
+   {x:290,y:30,w:200,h:96,t:'Netlify Functions',pills:['group','event','action']},
+   {x:20,y:30,w:200,h:96,t:'Netlify Blobs',s:['group/*.json · event/*.json','ETag · onlyIfMatch']},
+   {x:20,y:200,w:200,h:90,t:'Vision Function',s:['Claude vision → JSON','Blobs: invite/{group}/{event}'],k:'ext'},
+   {x:290,y:200,w:200,h:90,t:'Netlify CDN',s:['קבצים סטטיים','/* → /index.html 200']},
+   {x:560,y:200,w:180,h:90,t:'WhatsApp',s:['wa.me/?text=…','ההורה לוחץ שליחה'],k:'ext'}],
+  edges:[[560,62,490,62,'fetch + מפתח',525,54],[490,104,560,104,'polling ~15s',525,120],[290,78,220,78,'כתיבה מותנית',255,70],[330,126,180,200,'תמונת הזמנה',238,160,1],[490,235,600,126,'HTML/JS',560,190],[700,126,700,200,'טקסט מוכן',700,165,1]]},
+ b:{h:430,label:'ארכיטקטורה של חלופה B',nodes:[
+   {x:560,y:30,w:180,h:96,t:'הטלפון של ההורה',s:['PWA במסך הבית','מקבל Push'],k:'acc'},
+   {x:290,y:30,w:200,h:96,t:'Netlify Functions',pills:['group','event','action','push']},
+   {x:20,y:30,w:200,h:96,t:'Netlify Blobs',s:['אירועים · משפחות','מנויי Push למשפחה']},
+   {x:20,y:190,w:200,h:80,t:'OSM Nominatim',s:['כתובת ← נ״צ, פעם אחת','בקשה בשנייה · cache'],k:'ext new'},
+   {x:290,y:190,w:200,h:80,t:'Scheduled Function',s:['cron · ערב לפני, 30 דק׳ לפני'],k:'new'},
+   {x:560,y:190,w:180,h:80,t:'Web Push',s:['VAPID · web-push'],k:'new'},
+   {x:20,y:330,w:200,h:80,t:'Vision Function',s:['Claude vision → JSON','Blobs: invite/{group}/{event}'],k:'ext'},
+   {x:290,y:330,w:200,h:80,t:'Netlify CDN',s:['/* → /index.html 200']},
+   {x:560,y:330,w:180,h:80,t:'WhatsApp',s:['גיבוי למי שלא התקין/ה'],k:'ext'}],
+  edges:[[560,62,490,62,'fetch + מפתח',525,54],[490,104,560,104,'polling',525,120],[290,78,220,78,'כתיבה מותנית',255,70],[300,126,190,190,'בהרשמה',250,136,1],[300,190,200,126,'קורא אירועים',300,176],[490,230,560,230,'שולח',525,222],[470,126,590,190,'"יצאתי"',548,150],[650,190,650,126,'התראה',650,160],[310,126,150,330,'תמונת הזמנה',262,290,1],[730,126,730,330,'',0,0,1]]},
+ c:{h:410,label:'ארכיטקטורה של חלופה C',nodes:[
+   {x:560,y:30,w:180,h:96,t:'הטלפון של ההורה',s:['SPA · פיד בקשות והצעות','מצב = replay של היומן'],k:'acc'},
+   {x:290,y:30,w:200,h:96,t:'Netlify Functions',pills:['group','event','action']},
+   {x:20,y:30,w:200,h:200,t:'Netlify Blobs · יומן',stack:['log/0812-a1f','log/0813-b7k','log/0831-c2q','log/0842-x7m'],k:'new'},
+   {x:20,y:260,w:200,h:70,t:'Netlify CDN',s:['/* → /index.html 200']},
+   {x:290,y:200,w:180,h:80,t:'Telegram bot / ntfy',s:['רשות · התראה אוטומטית'],k:'ext new'},
+   {x:290,y:310,w:220,h:80,t:'Vision Function',s:['Claude vision → JSON','Blobs: invite/{group}/{event}'],k:'ext'},
+   {x:560,y:200,w:180,h:80,t:'WhatsApp',s:['wa.me · "אני למטה 🚗"'],k:'ext'}],
+  edges:[[560,62,490,62,'fetch + מפתח',525,54],[490,104,560,104,'polling',525,120],[290,62,220,62,'רק מוסיף · onlyIfNew',255,50],[220,110,290,110,'list({prefix})',255,124],[380,126,380,200,'אוטומטי',380,165,1],[485,126,485,310,'תמונת הזמנה',485,296,1],[650,126,650,200,'טקסט מוכן',650,165,1]]}
+};
+function svg(id){var d=DG[id],o='<svg class="dg" viewBox="0 0 760 '+d.h+'" role="img" aria-label="'+d.label+'"><defs><marker id="ar-'+id+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="dg-arh"/></marker></defs>';
+  d.nodes.forEach(function(n){var cx=n.x+n.w/2;o+='<rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'" rx="12" class="dg-n '+(n.k||'')+'"/><text x="'+cx+'" y="'+(n.y+24)+'" text-anchor="middle" class="dg-t">'+esc(n.t)+'</text>';
+    (n.s||[]).forEach(function(l,i){o+='<text x="'+cx+'" y="'+(n.y+46+i*18)+'" text-anchor="middle" class="dg-s" direction="'+(/^[A-Za-z\/*]/.test(l)?'ltr':'rtl')+'">'+esc(l)+'</text>'});
+    if(n.pills){var pw=(n.w-20-(n.pills.length-1)*6)/n.pills.length;n.pills.forEach(function(p,i){var px=n.x+10+i*(pw+6);o+='<rect x="'+px+'" y="'+(n.y+44)+'" width="'+pw+'" height="26" rx="7" class="dg-p"/><text x="'+(px+pw/2)+'" y="'+(n.y+61)+'" text-anchor="middle" class="dg-m">'+p+'</text>'});o+='<text x="'+cx+'" y="'+(n.y+88)+'" text-anchor="middle" class="dg-s">פונקציות קטנות, בלי שרת</text>'}
+    if(n.stack){n.stack.forEach(function(p,i){o+='<rect x="'+(n.x+20+i*4)+'" y="'+(n.y+40+i*30)+'" width="'+(n.w-56)+'" height="24" rx="6" class="dg-p"/><text x="'+(cx+i*4-8)+'" y="'+(n.y+56+i*30)+'" text-anchor="middle" class="dg-m">'+p+'</text>'});o+='<text x="'+cx+'" y="'+(n.y+n.h-14)+'" text-anchor="middle" class="dg-s">המצב = הרצה מחדש של היומן</text>'}});
+  d.edges.forEach(function(e){o+='<line x1="'+e[0]+'" y1="'+e[1]+'" x2="'+e[2]+'" y2="'+e[3]+'" class="dg-e'+(e[7]?' d':'')+'" marker-end="url(#ar-'+id+')"/>';if(e[4])o+='<text x="'+e[5]+'" y="'+e[6]+'" text-anchor="middle" class="dg-l" direction="'+(/^[A-Za-z\/*]/.test(e[4])?'ltr':'rtl')+'">'+esc(e[4])+'</text>'});
+  return o+'</svg>'}
+$('#diagrams').innerHTML=ALTS.map(function(a){return '<div class="dgbox" data-alt="'+a+'"><h3>'+LBL[a]+'</h3>'+svg(a)+'</div>'}).join('');
+
+function store(){try{localStorage.setItem('trempush-ws',JSON.stringify(UI))}catch(e){}}
+function load(){try{var v=JSON.parse(localStorage.getItem('trempush-ws')||'null');if(v){if(ALTS.concat('compare').indexOf(v.alt)>=0)UI.alt=v.alt;if(v.persona==='kid'||v.persona==='parent')UI.persona=v.persona;if(MOMS.indexOf(v.moment)>=0)UI.moment=v.moment}}catch(e){}}
+function readHash(){var h=(location.hash||'').replace('#','');if(h==='a'||h==='b'||h==='c'||h==='compare'){UI.alt=h;return true}return false}
+function writeHash(){try{history.replaceState(null,'','#'+UI.alt)}catch(e){try{location.hash=UI.alt}catch(e2){}}}
+
+function apply(reset){
+  var cmp=UI.alt==='compare';
+  $$('#seg-alt button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.alt===UI.alt))});
+  $$('#seg-per button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.per===UI.persona))});
+  $$('#seg-mom button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mom===UI.moment))});
+  $('#proto-grid').classList.toggle('cmp',cmp);$('#side').hidden=cmp;
+  $$('#phones .pcol').forEach(function(c){c.hidden=!cmp&&c.dataset.alt!==UI.alt;$('.pcap',c).hidden=!cmp});
+  $('#alts').classList.toggle('cmp',cmp);$$('#alts .alt').forEach(function(a){a.hidden=!cmp&&a.dataset.alt!==UI.alt});
+  $$('#diagrams .dgbox').forEach(function(a){a.hidden=!cmp&&a.dataset.alt!==UI.alt});
+  $('#cmpt').setAttribute('data-hl',cmp?'none':UI.alt);
+  $('#detail-h').textContent=cmp?'שלוש החלופות בקצרה':'איך '+LBL[UI.alt].split(' · ')[1]+' עובד מקצה לקצה';
+  if(reset)ALTS.forEach(function(a){phones[a].reset()});
+  if(!cmp){$('#tip-h').textContent='מה לנסות · '+LBL[UI.alt]+' · '+(UI.persona==='kid'?'ילד':MLBL[UI.moment]);$('#tip-p').textContent=tip();updSide(phones[UI.alt])}
+  store();
+}
+$('#seg-alt').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;UI.alt=b.dataset.alt;writeHash();apply(false)});
+$('#seg-per').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||b.dataset.per===UI.persona)return;UI.persona=b.dataset.per;apply(true)});
+$('#seg-mom').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;UI.moment=b.dataset.mom;apply(true)});
+$('#reset').addEventListener('click',function(){phones[UI.alt==='compare'?'a':UI.alt].reset()});
+window.addEventListener('hashchange',function(){if(readHash())apply(false)});
+load();readHash();apply(true);
+})();
+</script>
