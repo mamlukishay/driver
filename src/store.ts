@@ -82,8 +82,14 @@ export function activeKeys(group: string): string[] {
 }
 
 // When the identity changes (register, import, key dropped), everything visible must be refetched.
+// A request already in flight was made with the old identity (e.g. the very request whose 403 got the key
+// dropped), so wait for it to settle and fetch again instead of reusing its result.
 onIdentityChange(() => {
-  for (const [k, e] of cache) if (e.subs.size > 0) void refetch(k);
+  for (const [k, e] of cache) {
+    if (e.subs.size === 0) continue;
+    if (e.inflight) void e.inflight.then(() => refetch(k));
+    else void refetch(k);
+  }
 });
 
 export interface Resource<T> {
