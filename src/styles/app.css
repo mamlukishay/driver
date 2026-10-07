@@ -445,6 +445,12 @@ a.who:hover {
   background: var(--bad);
   color: var(--surface);
 }
+/* Outline danger: opens a confirmation; the filled .btn.danger is kept for the final confirm. */
+.btn.ghost.danger {
+  background: var(--surface);
+  color: var(--bad);
+  border-color: var(--bad);
+}
 .btn:disabled {
   opacity: 0.45;
   cursor: default;
@@ -476,6 +482,9 @@ a.who:hover {
 .lnk.bad,
 .bad {
   color: var(--bad);
+}
+.lnk.quiet {
+  color: var(--ink-2);
 }
 .lnk-wa {
   color: var(--ok) !important;
@@ -1751,4 +1760,29 @@ details.past[open] > summary {
   background: var(--sunk);
   border-radius: 999px;
   padding: 2px 9px;
+}
+
+/* ---------- settings ---------- */
+.set-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--sunk);
+  font-size: 16px;
+  min-inline-size: 0;
+}
+.set-me b {
+  overflow-wrap: anywhere;
+}
+.set-wa .ic {
+  color: var(--ok);
+}
+.set-acts {
+  gap: 16px;
+}
+/* A card's one-line hint sits with its heading. */
+.settings .hs + .muted {
+  margin-block-start: -4px;
 }
