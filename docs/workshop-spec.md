@@ -178,3 +178,8 @@ Parents usually get a designed invitation image (date, times, venue, address). C
 - In the family profile, each car can have an optional **photo** (and optional color + last 3 plate digits). Add it with "+ תמונת הרכב (רשות)" from the gallery or camera. It's compressed on the phone (~800px, ~100 KB) and stored in Blobs at `car/{familyId}/{carId}`.
 - **Where it shows**: as a thumbnail on the car card in every leg/offer, large on the **kid page** ("חפשי את הרכב הזה" + color + plate digits), and in the passengers' parents' view. When there's no photo, it falls back to a car icon tinted with the family color + the car label.
 - Why: kids (and other parents at pickup) recognize the car at the curb outside a school or event.
+
+## 13. Language convention
+- **Hebrew is display-only.** Everything a user sees is Hebrew, RTL.
+- **Everything else is English**: code, identifiers, data objects / JSON keys, URLs and routes (`/g/class-4b/e/bday12/back`), blob keys, API, commit messages.
+- All UI strings live in one dictionary (`src/i18n/he.ts`). Dates and times are formatted with `Intl` (`he-IL`). Layout uses `dir="rtl"` + logical CSS properties (`margin-inline-start`, `inset-inline`), so the code never hard-codes left/right.
