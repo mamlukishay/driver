@@ -32,24 +32,35 @@ export interface FamilySpec {
   car?: { label: string; seats?: number };
 }
 
-/** Creates a group on the "my groups" flow and returns its id and invite link. */
-export async function createGroup(page: Page, groupName: string): Promise<{ groupId: string; inviteUrl: string }> {
+/** A slug unique enough for repeated runs against the same dev server. */
+export const uniqueSlug = (prefix: string) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+
+/** Creates a group on the "my groups" flow (optionally with a custom URL name) and returns its slug and invite link. */
+export async function createGroup(page: Page, groupName: string, slug?: string): Promise<{ groupId: string; inviteUrl: string }> {
   await page.goto("/");
   await page.getByRole("link", { name: he.home.create }).click();
   await expect(page).toHaveURL(/\/new-group$/);
   await page.getByLabel(he.newGroup.nameLabel).fill(groupName);
+  if (slug) await page.getByLabel(he.newGroup.slugLabel).fill(slug);
   await page.getByRole("button", { name: he.newGroup.submit }).click();
   await expect(page.getByRole("heading", { name: he.newGroup.createdTitle })).toBeVisible();
   const inviteUrl = await page.getByLabel(he.newGroup.linkLabel).inputValue();
-  const groupId = /\/join\/([a-z0-9]+)$/.exec(inviteUrl)?.[1];
+  const groupId = /\/join\/([a-z0-9-]+)$/.exec(inviteUrl)?.[1];
   if (!groupId) throw new Error(`unexpected invite link ${inviteUrl}`);
   return { groupId, inviteUrl };
 }
 
-/** Fills the registration form on /join/:group and submits. Ends on the group home. */
-export async function registerFamily(page: Page, groupId: string, f: FamilySpec): Promise<void> {
-  await expect(page).toHaveURL(new RegExp(`/join/${groupId}$`));
+/**
+ * Fills the registration form and submits. Starts on `/join/:group?new=1` or on the "מי אתם?" screen
+ * (where it taps "משפחה חדשה"). Ends on the page `next` points to (the group home by default).
+ */
+export async function registerFamily(page: Page, groupId: string, f: FamilySpec, ends: RegExp | null = new RegExp(`/g/${groupId}$`)): Promise<void> {
+  await expect(page).toHaveURL(new RegExp(`/join/${groupId}\\?new=1|/g/${groupId}/who`));
+  if (page.url().includes("/who")) await page.getByRole("link", { name: he.who.newFamily }).click();
+  await expect(page).toHaveURL(new RegExp(`/join/${groupId}\\?new=1`));
   await page.getByLabel(he.form.familyName, { exact: true }).fill(f.name);
+  // Live preview of how the family will be shown.
+  await expect(page.locator("#fam-name-hint")).toHaveText(he.form.familyNameHint(f.name.trim()));
   await page.getByLabel(he.form.parentName, { exact: true }).fill(f.parent);
   await page.getByLabel(he.form.parentPhone, { exact: true }).fill(f.phone);
   await page.getByLabel(he.form.kidName, { exact: true }).fill(f.kid);
@@ -60,18 +71,35 @@ export async function registerFamily(page: Page, groupId: string, f: FamilySpec)
     for (let n = 4; n > seats; n--) await page.getByRole("button", { name: he.form.less }).click();
   }
   await page.getByRole("button", { name: he.join.submit }).click();
-  await expect(page).toHaveURL(new RegExp(`/g/${groupId}$`));
+  if (ends) await expect(page).toHaveURL(ends);
+}
+
+/** On "מי אתם?": taps the family button whose label contains `label`, then confirms. */
+export async function pickFamily(page: Page, label: string): Promise<void> {
+  await expect(page.getByRole("heading", { name: he.who.title })).toBeVisible();
+  await page.getByRole("button", { name: label }).click();
+  const sheet = page.getByRole("dialog", { name: he.who.confirmTitle });
+  await expect(sheet).toContainText(label);
+  await sheet.getByRole("button", { name: he.who.confirm }).click();
+}
+
+/** Local date `days` from today as YYYY-MM-DD. */
+export function isoInDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /** Creates an event through the manual form. Returns the event id. */
 export async function createEventManually(page: Page, groupId: string, title: string, place = "פארק הירקון"): Promise<string> {
   await page.getByRole("link", { name: he.group.newEvent }).click();
   await expect(page).toHaveURL(new RegExp(`/g/${groupId}/new$`));
-  await page.getByRole("button", { name: he.newEvent.manual }).click();
   await page.getByLabel(he.newEvent.fTitle, { exact: true }).fill(title);
   await page.getByLabel(he.newEvent.fPlace, { exact: true }).fill(place);
+  await page.getByLabel(he.newEvent.fDate, { exact: true }).fill(isoInDays(7));
+  await expect(page.getByLabel(he.newEvent.fStart, { exact: true })).toHaveValue("10:00");
   await page.getByRole("button", { name: he.newEvent.submit }).click();
-  await expect(page).toHaveURL(new RegExp(`/g/${groupId}/e/[a-z0-9]+$`));
+  await expect(page).toHaveURL(new RegExp(`/g/${groupId}/e/[a-z0-9-]+$`));
   return eventIdFromUrl(page.url());
 }
 
@@ -99,11 +127,11 @@ export async function offerCar(page: Page, leg: "out" | "back"): Promise<void> {
   await expect(page).not.toHaveURL(/sheet=/);
 }
 
-/** This device's stored identity for a group, read from localStorage. */
-export async function identityOf(page: Page, groupId: string): Promise<{ familyId: string; key: string; familyName: string } | null> {
+/** This device's stored family id for a group (`trempush.identities` = `{ [slug]: familyId }`). */
+export async function identityOf(page: Page, groupId: string): Promise<string | null> {
   return page.evaluate((g) => {
     try {
-      const all = JSON.parse(localStorage.getItem("trempush.identities") ?? "{}") as Record<string, { familyId: string; key: string; familyName: string }>;
+      const all = JSON.parse(localStorage.getItem("trempush.identities") ?? "{}") as Record<string, string>;
       return all[g] ?? null;
     } catch {
       return null;
@@ -111,22 +139,22 @@ export async function identityOf(page: Page, groupId: string): Promise<{ familyI
   }, groupId);
 }
 
-export async function keyOf(page: Page, groupId: string): Promise<string> {
+export async function familyIdOf(page: Page, groupId: string): Promise<string> {
   const id = await identityOf(page, groupId);
   if (!id) throw new Error("no identity on this device");
-  return id.key;
+  return id;
 }
 
-const hdr = (key: string) => ({ "X-Family-Key": key });
+const hdr = (familyId: string | null) => (familyId ? { "X-Family-Id": familyId } : undefined);
 
-export async function apiEvent(page: Page, groupId: string, eventId: string, key: string): Promise<EventView> {
-  const r = await page.request.get(`/api/g/${groupId}/events/${eventId}`, { headers: hdr(key) });
+export async function apiEvent(page: Page, groupId: string, eventId: string, familyId: string | null): Promise<EventView> {
+  const r = await page.request.get(`/api/g/${groupId}/events/${eventId}`, { headers: hdr(familyId) });
   expect(r.ok()).toBeTruthy();
   return (await r.json()) as EventView;
 }
 
-export async function apiGroup(page: Page, groupId: string, key: string): Promise<GroupResponse> {
-  const r = await page.request.get(`/api/g/${groupId}`, { headers: hdr(key) });
+export async function apiGroup(page: Page, groupId: string, familyId: string | null): Promise<GroupResponse> {
+  const r = await page.request.get(`/api/g/${groupId}`, { headers: hdr(familyId) });
   expect(r.ok()).toBeTruthy();
   return (await r.json()) as GroupResponse;
 }
@@ -138,7 +166,7 @@ export const waitingSection = (page: Page, leg: "out" | "back") => page.getByRol
 export const seatedKid = (page: Page, kid: string) => page.getByRole("button", { name: he.board.seatedKid(kid) });
 
 /** The empty-seat button of a family's car. */
-export const emptySeat = (page: Page, family: string) => page.getByRole("button", { name: he.board.emptySeat(family) }).first();
+export const emptySeat = (page: Page, family: string) => page.getByRole("button", { name: he.board.emptySeat(he.family(family)) }).first();
 
 /** The 10-second undo button in the toast. */
 export const undoButton = (page: Page) => page.getByRole("status").getByRole("button", { name: new RegExp(`^${he.common.undo}`) });

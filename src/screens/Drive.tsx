@@ -1,6 +1,7 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { EventView, FamilyView, Leg, Offer } from "../../shared/types.ts";
 import { formatPhoneLocal, telHref } from "../../shared/phone.ts";
+import { pickupStops } from "../../shared/view.ts";
 import { Header } from "../components/Header.tsx";
 import { Avatar } from "../components/KidChip.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
@@ -8,8 +9,9 @@ import { PhoneIcon, WaButton } from "../components/WaButton.tsx";
 import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { useEvent } from "../store.ts";
-import { eventIndex } from "../util.ts";
-import { EventHead, runAction } from "./eventCommon.tsx";
+import { appUrl, cx, eventIndex, kidPath } from "../util.ts";
+import { DepartCheck } from "../components/CarCard.tsx";
+import { EventHead, kidPhonePath, runAction } from "./eventCommon.tsx";
 
 export function Drive({ group, event, leg }: { group: string; event: string; leg: Leg }) {
   const res = useEvent(group, event);
@@ -18,7 +20,7 @@ export function Drive({ group, event, leg }: { group: string; event: string; leg
   const valid = leg === "out" || leg === "back";
   return (
     <>
-      <Header title={he.drive.title(valid ? leg : "out")} up={`/g/${group}/e/${event}/${valid ? leg : "out"}`} group={group} />
+      <Header title={he.drive.title(valid ? leg : "out")} up={`/g/${group}/e/${event}`} group={group} groupLine />
       <main id="main" class="content">
         {!valid ? (
           <ErrorState code="not_found" />
@@ -47,6 +49,11 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   const idx = eventIndex(ev);
   const offer = ev.offers[leg].find((o) => o.familyId === ev.me);
   const [busy, setBusy] = useState(false);
+  const [justStarted, setJustStarted] = useState(false);
+  const shareRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (justStarted) shareRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [justStarted]);
 
   if (!offer)
     return (
@@ -59,6 +66,8 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
       </>
     );
 
+  // The pickup order (shared with the kid page's "you're next"): out = one stop per family in seating order.
+  const order = pickupStops(leg, offer.kidIds, (k) => idx.kid(k)?.family.id).flat();
   // Families in the car, in seating order.
   const fams: { fam: FamilyView; kids: string[] }[] = [];
   for (const kidId of offer.kidIds) {
@@ -86,17 +95,28 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
 
   const start = async () => {
     setBusy(true);
-    await runAction(group, ev, { type: "startRun", offerId: offer.id }, he.toast.started);
+    const ok = await runAction(group, ev, { type: "startRun", offerId: offer.id }, he.toast.started);
     setBusy(false);
+    if (ok) setJustStarted(true);
   };
+
+  const frozen = !!ev.cancelled;
+  const confirmDepart = () => runAction(group, ev, { type: "confirmDeparture", offerId: offer.id }, he.manage.toastConfirmed);
 
   return (
     <>
       <EventHead group={group} ev={ev} />
+      {frozen && (
+        <p class="note cancel-note" role="status">
+          <b>{he.manage.cancelled}</b>
+          <span class="small">{he.manage.cancelledNote}</span>
+        </p>
+      )}
+      {offer.departAtCheck && !frozen && <DepartCheck onConfirm={confirmDepart} />}
       {offer.run ? (
         <span class="live">{he.drive.onTheWay}</span>
       ) : (
-        <button type="button" class="btn big" onClick={start} disabled={busy || offer.kidIds.length === 0}>
+        <button type="button" class="btn big" onClick={start} disabled={busy || frozen || offer.kidIds.length === 0}>
           {he.drive.start}
         </button>
       )}
@@ -124,6 +144,36 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
         </section>
       )}
 
+      {offer.kidIds.length > 0 && (
+        <section ref={shareRef} class={cx("card", justStarted && "hl")} aria-labelledby="share-h">
+          <h2 class="hs" id="share-h">
+            {he.drive.shareTitle}
+          </h2>
+          <p class="small muted">{he.drive.shareHint}</p>
+          {order.map((kidId) => {
+            const k = idx.kid(kidId);
+            if (!k) return null;
+            // KISS: send only to the kid's own phone. No phone: my kid gets an "add a phone" shortcut.
+            return (
+              <div class="row sp">
+                <b>{k.name}</b>
+                {k.phone ? (
+                  <WaButton class="btn wa sm" phone={k.phone} text={he.wa.trackRide(appUrl(kidPath(group, kidId, ev.id)))}>
+                    {he.drive.shareTo(k.name)}
+                  </WaButton>
+                ) : k.family.id === ev.me ? (
+                  <a class="lnk" href={kidPhonePath(group, kidId)}>
+                    {he.manage.noPhone(k.name)}
+                  </a>
+                ) : (
+                  <small class="muted">{he.manage.noPhoneOther(k.name)}</small>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
       <section class="stack" aria-labelledby="check-h">
         <h2 class="hs" id="check-h">
           {he.drive.checklist}
@@ -134,7 +184,7 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
             <b>{he.drive.allIn(offer.kidIds.length)}</b>
           </p>
         )}
-        {offer.kidIds.map((kidId) => (
+        {order.map((kidId) => (
           <KidStop group={group} ev={ev} offer={offer} kidId={kidId} picked={picked.has(kidId)} />
         ))}
       </section>
@@ -172,6 +222,19 @@ function KidStop({ group, ev, offer, kidId, picked }: { group: string; ev: Event
   if (!k) return null;
   const parent = k.family.parents.find((p) => p.phone);
   const ready = offer.ready?.includes(kidId);
+  const arrived = !!offer.run?.arrived?.includes(kidId);
+  const arrive = async () => {
+    if (!offer.run) return;
+    setBusy(true);
+    await runAction(
+      group,
+      ev,
+      { type: "setArrived", offerId: offer.id, kidId, arrived: !arrived },
+      arrived ? he.toast.unarrived(k.name) : he.toast.arrived(k.name),
+      { undo: false },
+    );
+    setBusy(false);
+  };
   const toggle = async () => {
     if (!offer.run) return;
     setBusy(true);
@@ -202,6 +265,23 @@ function KidStop({ group, ev, offer, kidId, picked }: { group: string; ev: Event
         </span>
         {ready && <span class="tag ok">{he.drive.ready}</span>}
       </button>
+      {offer.run && !picked && (
+        <div class="stop-acts">
+          <button
+            type="button"
+            class={cx("btn sm grow1", arrived ? "on" : "ghost")}
+            aria-pressed={arrived}
+            aria-label={he.drive.arrivedLabel(k.name)}
+            onClick={arrive}
+            disabled={busy}
+          >
+            {arrived ? he.drive.arrivedOn : he.drive.arrived}
+          </button>
+          <button type="button" class="btn sm grow1" onClick={toggle} disabled={busy}>
+            {he.drive.pickedBtn}
+          </button>
+        </div>
+      )}
       {primary && (
         <div class="ctc">
           <div class="row sp">

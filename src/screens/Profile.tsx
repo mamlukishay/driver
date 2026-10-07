@@ -1,4 +1,5 @@
-import { useState } from "preact/hooks";
+import { useLocation } from "preact-iso";
+import { useEffect, useState } from "preact/hooks";
 import { draftFrom, draftToInput, FamilyForm, uploadCarPhotos, type FamilyDraft } from "../components/FamilyForm.tsx";
 import { Header, useIdentity, whoUrl } from "../components/Header.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
@@ -8,7 +9,7 @@ import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { keys, setData, useGroup } from "../store.ts";
 import type { GroupResponse } from "../../shared/types.ts";
-import { appUrl } from "../util.ts";
+import { appUrl, kidPath } from "../util.ts";
 import { useConfig } from "./Join.tsx";
 
 export function Profile({ group }: { group: string }) {
@@ -18,7 +19,7 @@ export function Profile({ group }: { group: string }) {
   const fam = res.data?.me;
   return (
     <>
-      <Header title={he.profile.title} up={`/g/${group}`} group={group} />
+      <Header title={he.profile.title} up={`/g/${group}`} group={group} groupLine />
       <main id="main" class="content">
         {!me ? (
           <>
@@ -42,6 +43,19 @@ export function Profile({ group }: { group: string }) {
 function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNullable<GroupResponse["me"]>; places: boolean; data: GroupResponse }) {
   // Re-mount the form when the server copy changes version-wise (e.g. after save).
   const [initial] = useState<FamilyDraft>(() => draftFrom(fam));
+  // `?focus=kid-<kidId>-phone` (from "+ הוספת טלפון ל…"): scroll to that kid's phone field and focus it.
+  const focus = useLocation().query.focus;
+  useEffect(() => {
+    const kidId = /^kid-(.+)-phone$/.exec(focus ?? "")?.[1];
+    const i = kidId ? fam.kids.findIndex((k) => k.id === kidId) : -1;
+    if (i < 0) return;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`kid-${i}-phone`);
+      el?.scrollIntoView({ block: "center" });
+      el?.focus({ preventScroll: true });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [focus]);
   const save = async (d: FamilyDraft) => {
     try {
       const withPhotos = await uploadCarPhotos(group, d);
@@ -61,12 +75,26 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
           <h2 class="hs" id="kidlinks-h">
             {he.profile.kidLinks}
           </h2>
-          <p class="small muted">{he.profile.kidLinksHint}</p>
-          {fam.kids.map((k) => (
-            <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(`/g/${group}/kid/${k.id}`))}>
-              {he.profile.sendKidLink(k.name)}
-            </WaButton>
-          ))}
+          {fam.kids.map((k, i) =>
+            k.phone ? (
+              <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(kidPath(group, k.id)))}>
+                {he.profile.sendKidLink(k.name)}
+              </WaButton>
+            ) : (
+              // KISS: no phone, no sending; jump to the kid's phone field instead.
+              <button
+                type="button"
+                class="lnk start"
+                onClick={() => {
+                  const el = document.getElementById(`kid-${i}-phone`);
+                  el?.scrollIntoView({ block: "center" });
+                  el?.focus({ preventScroll: true });
+                }}
+              >
+                {he.manage.noPhone(k.name)}
+              </button>
+            ),
+          )}
         </section>
       )}
     </>

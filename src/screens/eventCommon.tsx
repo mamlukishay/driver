@@ -78,6 +78,30 @@ export function askText(group: string, ev: EventView, leg: Leg): string {
   return he.wa.ask(ev.title, fmtDate(ev.date), ev.gaps[leg].missing, leg, appUrl(`/g/${group}/e/${ev.id}/${leg}`));
 }
 
+const BANNER_MS = 48 * 60 * 60 * 1000;
+
+/**
+ * The latest date/time change (from the newest editEvent log entry that changed one, within 48h and
+ * not undone), as Hebrew lines for the "עודכן" banner. Null when there is none.
+ */
+export function latestTimeChange(ev: EventView, now = Date.now()): { logId: string; lines: string[] } | null {
+  for (let i = ev.log.length - 1; i >= 0; i--) {
+    const l = ev.log[i]!;
+    if (now - l.at > BANNER_MS) return null;
+    const a = l.action;
+    if (a.type !== "editEvent" || l.undoneBy || !a.prev) continue;
+    const lines: string[] = [];
+    if (a.prev.date && a.patch.date) lines.push(he.manage.dateChanged(fmtDate(a.prev.date), fmtDate(a.patch.date)));
+    if (a.prev.start && a.patch.start) lines.push(he.manage.timeChanged(a.prev.start, a.patch.start));
+    if (a.prev.returnTime && a.patch.returnTime) lines.push(he.manage.returnChanged(a.prev.returnTime, a.patch.returnTime));
+    if (lines.length) return { logId: l.id, lines };
+  }
+  return null;
+}
+
+/** Link to the family profile with a kid's phone field focused ("+ הוספת טלפון ל{kid}"). */
+export const kidPhonePath = (group: string, kidId: string) => `/g/${group}/me?focus=kid-${kidId}-phone`;
+
 /** Human sentence for a log entry. */
 export function logLine(ev: EventView, entry: EventView["log"][number]): string {
   const idx = eventIndex(ev);
@@ -114,8 +138,28 @@ export function logLine(ev: EventView, entry: EventView["log"][number]): string 
     case "setKidReady":
       text = L.setKidReady(idx.kidName(a.kidId));
       break;
-    case "editEvent":
-      text = L.editEvent;
+    case "setArrived":
+      text = L.setArrived(idx.kidName(a.kidId), a.arrived);
+      break;
+    case "editEvent": {
+      const changes = Object.keys(a.prev ?? {}).map((k) => {
+        const from = a.prev?.[k as keyof typeof a.prev];
+        const to = a.patch[k as keyof typeof a.patch];
+        const name = he.manage.field[k] ?? k;
+        const show = (v: unknown) => (k === "date" && typeof v === "string" ? fmtDate(v) : String(v ?? ""));
+        return k === "start" || k === "returnTime" || k === "date" ? he.manage.fieldChange(name, show(from), show(to)) : name;
+      });
+      text = changes.length ? L.editEventChanges(changes) : L.editEvent;
+      break;
+    }
+    case "cancelEvent":
+      text = L.cancelEvent;
+      break;
+    case "restoreEvent":
+      text = L.restoreEvent;
+      break;
+    case "confirmDeparture":
+      text = L.confirmDeparture;
       break;
     case "undo":
       text = L.undo;

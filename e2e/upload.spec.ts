@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createGroup, expectImageLoaded, he, makePng, newUser, registerFamily, type User } from "./helpers.ts";
+import { createGroup, expectImageLoaded, he, isoInDays, makePng, newUser, registerFamily, type User } from "./helpers.ts";
 
 const FAMILY = { name: "כהן", parent: "רונית", phone: "052-111-1111", kid: "נועה" };
 const png = { name: "test.png", mimeType: "image/png", buffer: makePng(96) };
@@ -29,10 +29,11 @@ test("an invitation image uploaded on a new event renders", async () => {
   await expectImageLoaded(preview);
   await page.getByLabel(he.newEvent.fTitle, { exact: true }).fill("יום הולדת עם הזמנה");
   await page.getByLabel(he.newEvent.fPlace, { exact: true }).fill("הפארק");
+  await page.getByLabel(he.newEvent.fDate, { exact: true }).fill(isoInDays(3));
   await page.getByRole("button", { name: he.newEvent.submit }).click();
 
   // The event header shows the uploaded image from the server (R2/DO), not the placeholder.
-  await expect(page).toHaveURL(/\/e\/[a-z0-9]+$/);
+  await expect(page).toHaveURL(/\/e\/[a-z0-9-]+$/);
   const cover = page.getByRole("link", { name: he.event.inviteFull }).locator("img");
   await expectImageLoaded(cover);
   expect(await cover.getAttribute("src")).toContain(`/api/g/${groupId}/images/`);

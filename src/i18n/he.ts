@@ -19,7 +19,6 @@ export const he = {
   /** "משפחת כהן", "משפחת כהן (נועה, טל)" or "משפחת כהן 2" (see shared/familyLabel.ts). */
   familyLabel: (p: FamilyLabelParts) =>
     p.ordinal ? `משפחת ${p.name.trim()} ${p.ordinal}` : p.extra?.length ? `משפחת ${p.name.trim()} (${p.extra.join(", ")})` : `משפחת ${p.name.trim()}`,
-  seats: seatsText,
   joinNames,
 
   common: {
@@ -29,18 +28,10 @@ export const he = {
     save: "שמירה",
     saving: "שומרים…",
     loading: "טוען…",
-    yes: "כן",
-    no: "לא",
-    optional: "רשות",
-    required: "חובה",
     retry: "לנסות שוב",
-    copy: "העתקה",
-    copied: "הועתק",
     edit: "עריכה",
-    remove: "הסרה",
     undo: "ביטול",
     mine: "שלי",
-    whatsapp: "WhatsApp",
     call: "התקשרות",
     skip: "דילוג לתוכן",
   },
@@ -55,8 +46,8 @@ export const he = {
 
   who: {
     title: "מי אתם?",
-    lead: "בחרו את המשפחה שלכם. הבחירה נשמרת בטלפון הזה.",
-    empty: "עוד אין משפחות בקבוצה. הירשמו ראשונים.",
+    lead: "בחרו את המשפחה שלכם.",
+    empty: "עוד אין משפחות בקבוצה.",
     newFamily: "משפחה חדשה — הרשמה",
     justLook: "רק להסתכל",
     confirmTitle: "אישור משפחה",
@@ -76,9 +67,35 @@ export const he = {
     logout: "התנתקות מהטלפון הזה",
     logoutDone: "הטלפון הזה כבר לא פועל בתור אף משפחה",
     shareTitle: "קישור לקבוצה",
-    shareHint: "כל מי שיש לו את הקישור יכול לצפות ולפעול בקבוצה. שלחו אותו רק בקבוצת ההורים.",
+    shareHint: "שלחו רק בקבוצת ההורים.",
     share: "שליחת הקישור ב-WhatsApp",
-    linkLabel: "קישור לקבוצה",
+    linkLabel: "קישור ההזמנה לקבוצה",
+    waTitle: "קבוצת הוואטסאפ",
+    waSave: "שמירת הקישור",
+    waRemove: "הסרת הקישור",
+    waSaved: "הקישור נשמר",
+    waRemoved: "הקישור הוסר",
+    deleteTitle: "מחיקת הקבוצה",
+    deleteOpen: "מחיקת הקבוצה",
+    deleteBody: "כל המשפחות, האירועים והתמונות יימחקו לכולם.",
+    deleteType: (name: string) => `לאישור, הקלידו את שם הקבוצה: ${name}`,
+    deleteYes: "מחיקה",
+    deleting: "מוחקים…",
+    deleted: "הקבוצה נמחקה",
+  },
+
+  /** The optional linked WhatsApp group (create form, settings, group home). */
+  waGroup: {
+    label: "קישור לקבוצת הוואטסאפ (לא חובה)",
+    hint: "קישור הזמנה מהגדרות הקבוצה בוואטסאפ",
+    invalid: "זה לא קישור לקבוצת וואטסאפ. הוא מתחיל ב-chat.whatsapp.com/",
+    open: "פתיחת קבוצת הוואטסאפ",
+  },
+
+  groupGone: {
+    title: "הקבוצה נמחקה",
+    body: "המשפחות, האירועים והתמונות שלה נמחקו לכולם.",
+    home: "לקבוצות שלי",
   },
 
   errors: {
@@ -92,25 +109,22 @@ export const he = {
     too_large: "התמונה גדולה מדי. נסו תמונה אחרת או צלמו מחדש.",
     undo_expired: "עברו יותר משתי דקות, אז כבר אי אפשר לבטל. אפשר לתקן ידנית.",
     slug_taken: "הכתובת הזאת כבר תפוסה. בחרו שם אחר באנגלית.",
+    event_cancelled: "האירוע בוטל, אז ההסעות מוקפאות. אפשר לשחזר אותו מתפריט האירוע.",
     network: "אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.",
     unknown: "משהו השתבש. נסו שוב בעוד רגע.",
   } satisfies Record<ClientErrorCode, string>,
 
   home: {
     title: "הקבוצות שלי",
-    emptyTitle: "הסעות משותפות בלי בלגן",
-    emptyBody:
-      "טרמפוש מסדר מי מסיע את מי לאירועים של הילדים. פותחים קבוצה לכיתה או לחוג, שולחים קישור בקבוצת ההורים, וכל משפחה נרשמת פעם אחת.",
-    emptyHint: "קיבלתם קישור מהורה אחר? פשוט פתחו אותו.",
+    emptyHint: "קיבלתם קישור מהורה אחר? פתחו אותו.",
     create: "צור קבוצה חדשה",
-    open: "פתיחה",
+    nextEvent: (date: string) => `האירוע הבא: ${date}`,
   },
 
   newGroup: {
     title: "קבוצה חדשה",
     nameLabel: "שם הקבוצה",
     namePlaceholder: "לדוגמה: כיתה ד׳ 2",
-    nameHint: "השם שההורים יראו בהזמנה.",
     slugLabel: "שם באנגלית לכתובת",
     slugHint: (url: string) => `הקישור יהיה ${url}`,
     slugInvalid: "רק אותיות אנגליות קטנות, ספרות ומקף, 3–40 תווים, בלי מקף בהתחלה או בסוף.",
@@ -119,16 +133,14 @@ export const he = {
     useSuggestion: (s: string) => `להשתמש ב-${s}`,
     submit: "יצירת הקבוצה",
     createdTitle: "הקבוצה מוכנה!",
-    createdBody: "שלחו את הקישור בקבוצת ההורים. כל משפחה נרשמת פעם אחת.",
+    createdBody: "שלחו את הקישור בקבוצת ההורים.",
     share: "שליחה בקבוצת ההורים",
     continue: "המשך להרשמה של המשפחה שלי",
     linkLabel: "קישור ההזמנה",
   },
 
   join: {
-    invited: "קיבלתם קישור בקבוצת ההורים",
-    title: (group: string) => `הוזמנתם לקבוצה ${group}`,
-    lead: "פעם אחת: שם המשפחה, הורים וטלפונים, כתובת, ילדים ורכב. בלי סיסמה ובלי אפליקציה להתקין.",
+    title: "הצטרפות לקבוצה",
     submit: "שמירה והצטרפות",
     pickExisting: "המשפחה שלכם כבר רשומה? בחרו אותה",
     already: (family: string) => `הטלפון הזה כבר פועל בקבוצה בתור ${family}.`,
@@ -136,14 +148,17 @@ export const he = {
     dupTitle: "זו המשפחה שלכם?",
     dupText: (family: string, kids: string[]) =>
       `יש כבר ${family} בקבוצה${kids.length ? ` (${kids.join(", ")})` : ""}. זו המשפחה שלכם?`,
+    dupTextMany: (name: string, n: number) => `יש כבר ${n} משפחות בשם ${name} בקבוצה. אחת מהן שלכם?`,
     dupYes: "כן, זו אנחנו",
+    dupYesOf: (label: string) => `כן, אנחנו ${label}`,
     dupNo: "לא, משפחה אחרת",
-    savedPhotosLater: "התמונות של הרכב יעלו מיד אחרי ההרשמה.",
+    copyFrom: "העתקה מ:",
+    copyNone: "בלי העתקה",
   },
 
   form: {
     familyName: "שם משפחה",
-    familyNameHint: "יופיע כ\"משפחת …\"",
+    familyNameHint: (name: string) => `יופיע כ"משפחת ${name}"`,
     parents: "הורים",
     parentName: "שם הורה",
     parentPhone: "טלפון נייד",
@@ -153,16 +168,17 @@ export const he = {
     addParent: "+ הורה נוסף",
     removeParent: "הסרת ההורה",
     address: "כתובת הבית",
-    addressHint: "לאיסוף. כל המשפחות בקבוצה רואות אותה.",
+    addressHint: "גלויה לכל המשפחות בקבוצה",
     addressSuggestions: "הצעות כתובת",
     kids: "ילדים",
-    kidsHint: "טלפון לילד/ה הוא רשות",
     kidName: "שם הילד/ה",
     kidPhone: "הטלפון של הילד/ה",
     addKid: "+ ילד/ה",
+    kidsPick: "מי מהילדים בקבוצה הזו?",
+    kidsPickRequired: "סמנו או הוסיפו לפחות ילד/ה אחד/ת",
     removeKid: "הסרת הילד/ה",
     cars: "רכבים",
-    carsHint: "רשות. בלי רכב אפשר עדיין להושיב את הילדים אצל אחרים.",
+    carsHint: "רשות",
     carLabel: "איזה רכב?",
     carLabelPlaceholder: "לדוגמה: מאזדה אדומה",
     carSeats: "מקומות לילדים",
@@ -184,10 +200,10 @@ export const he = {
   group: {
     upcoming: "אירועים קרובים",
     past: "אירועים שעברו",
-    empty: "עוד אין אירועים. הוסיפו את הראשון, מתחילים מתמונת ההזמנה.",
+    empty: "עוד אין אירועים.",
     newEvent: "+ אירוע חדש",
     joinCta: "בחירת משפחה או הרשמה",
-    viewOnlyNote: "אתם צופים בקבוצה בלי לבחור משפחה. כדי להושיב ילדים או להציע רכב, בחרו את המשפחה שלכם או הירשמו.",
+    viewOnlyNote: "כדי להושיב ילדים או להציע רכב, בחרו את המשפחה שלכם או הירשמו.",
     myFamily: "המשפחה שלי",
     settings: "הגדרות",
     invite: "הזמנת משפחות לקבוצה",
@@ -196,23 +212,21 @@ export const he = {
 
   newEvent: {
     title: "אירוע חדש",
-    lead: "מתחילים מתמונת ההזמנה שקיבלתם.",
-    leadParse: "מתחילים מתמונת ההזמנה שקיבלתם. נזהה את הפרטים ונמלא את הטופס בשבילכם.",
-    drop: "גררו לכאן את ההזמנה",
-    or: "או",
-    pick: "בחר/י הזמנה מהגלריה",
-    manual: "בלי הזמנה: מילוי ידני",
+    drop: "יש לכם הזמנה - הוסיפו תמונה",
+    dropParse: "יש לכם הזמנה - הוסיפו תמונה וניקח ממנה את הפרטים",
+    dropHint: "לא חובה. אפשר גם לגרור או להדביק תמונה.",
     uploading: "מעלים את התמונה…",
     parsing: "מזהה פרטים…",
     parsed: "זיהינו מההזמנה. בדקו",
-    parsedHint: "השדות הצהובים מולאו אוטומטית. אפשר לשנות הכל, וכלום לא נשמר עד \"צור אירוע\".",
-    parseFailed: "לא הצלחנו לקרוא את ההזמנה. מלאו את הפרטים ידנית, התמונה תישאר כעטיפה.",
+    parsedHint: "השדות הצהובים מולאו מההזמנה.",
+    parseFailed: "לא הצלחנו לקרוא את ההזמנה. מלאו את הפרטים ידנית.",
     multiTimes: (times: string[]) =>
       `בהזמנה כמה זמנים: ${times.join(", ")}. שמנו את הראשון כהתחלה ואת האחרון כאיסוף לחזור. בדקו.`,
     detected: "זוהה",
     fTitle: "שם האירוע",
     fTitlePlaceholder: "לדוגמה: יום הולדת 12 לתמר",
     fDate: "תאריך",
+    datePast: "התאריך כבר עבר. בחרו תאריך מהיום והלאה.",
     fStart: "שעת התחלה",
     fReturn: "איסוף לחזור",
     fReturnHint: "מתי אוספים את הילדים בסוף",
@@ -241,7 +255,8 @@ export const he = {
     driveMode: "מצב נהג",
     share: "שתף סיכום לקבוצה",
     joinToRsvp: "כדי לרשום את הילדים, בחרו את המשפחה שלכם או הירשמו.",
-    savedPlan: (kid: string) => `עודכן: ${kid}`,
+    sendToKid: (kid: string) => `שליחה ל${kid}`,
+    sendToKidLabel: (kid: string) => `שליחת פרטי ההסעה והקישור ל${kid} ב-WhatsApp`,
   },
 
   gap: {
@@ -284,7 +299,6 @@ export const he = {
     whyPickFirst: "בחרו קודם ילד/ה מהממתינים, ואז לחצו על מושב פנוי.",
     whyNoWaiting: "אין ילדים שממתינים בכיוון הזה.",
     whyUnseat: (kid: string) => `רק הנהג/ת או המשפחה של ${kid} יכולים להוריד אותו/ה מהרכב.`,
-    whyFull: "הרכב הזה מלא.",
   },
 
   seatSheet: {
@@ -294,7 +308,6 @@ export const he = {
       ["להושיב את ", { b: kid }, " ברכב של ", { b: family }, `, ${legName[leg]}, `, { b: time }, "?"],
     partsMine: (kid: string, leg: Leg, time: string): (string | { b: string })[] =>
       ["לקחת את ", { b: kid }, ` ברכב שלך, ${legName[leg]}, `, { b: time }, "?"],
-    notice: "הם יראו את זה מיד, עם השם שלך.",
     confirm: "כן, להושיב",
     confirmTake: "כן, אני לוקח/ת",
   },
@@ -330,10 +343,10 @@ export const he = {
     planSaved: (kid: string) => `עודכן: ${kid}`,
     started: "סימנו שיצאת",
     picked: (kid: string) => `${kid} עלה/תה`,
+    arrived: (kid: string) => `סומן: הגעת לאסוף את ${kid}`,
+    unarrived: (kid: string) => `בוטל "הגעתי" אצל ${kid}`,
     unpicked: (kid: string) => `${kid} סומן/ה כלא עלה/תה`,
     undone: "בוטל",
-    saved: "נשמר",
-    copied: "הועתק",
     undoIn: (s: number) => `${s} שנ׳`,
   },
 
@@ -353,7 +366,12 @@ export const he = {
     startRun: "יצאו לדרך",
     setPicked: (kid: string, picked: boolean) => (picked ? `${kid} עלה/תה לרכב` : `ביטלו איסוף של ${kid}`),
     setKidReady: (kid: string) => `${kid} מוכן/ה`,
+    setArrived: (kid: string, arrived: boolean) => (arrived ? `הגיעו לאסוף את ${kid}` : `ביטלו "הגעתי" אצל ${kid}`),
     editEvent: "עדכנו את פרטי האירוע",
+    editEventChanges: (changes: string[]) => `עדכנו את פרטי האירוע: ${changes.join(", ")}`,
+    cancelEvent: "ביטלו את האירוע",
+    restoreEvent: "שחזרו את האירוע",
+    confirmDeparture: "אישרו את שעת היציאה",
     undo: "ביטלו פעולה",
     other: "פעולה",
   },
@@ -381,12 +399,18 @@ export const he = {
     waze: "Waze לעצירה הבאה",
     tooMany: "יש יותר מ-8 עצירות, Maps יציג את 8 הראשונות.",
     noAddress: "אין כתובות גלויות לניווט.",
+    arrived: "הגעתי",
+    arrivedOn: "הגעתי ✓",
+    arrivedLabel: (kid: string) => `הגעתי לאסוף את ${kid}`,
+    pickedBtn: "עלה/תה",
+    shareTitle: "שיתוף עם הנוסעים",
+    shareHint: "קישור למעקב אחרי ההסעה בזמן אמת",
+    shareTo: (kid: string) => `שליחה ל${kid}`,
   },
 
   profile: {
     title: "המשפחה שלי",
     kidLinks: "קישור אישי לכל ילד/ה",
-    kidLinksHint: "הקישור לקריאה בלבד, אפשר לשלוח לטלפון של הילד/ה.",
     sendKidLink: (kid: string) => `שליחת הקישור ל${kid} ב-WhatsApp`,
     saved: "הפרופיל נשמר",
     notRegistered: "עוד לא בחרתם משפחה בטלפון הזה.",
@@ -394,28 +418,81 @@ export const he = {
 
   kid: {
     hi: (name: string) => `היי ${name}!`,
-    lead: "זה הקישור שלך. כאן רואים מי אוסף אותך ומתי.",
-    noEvents: "עוד אין הסעות. כשההורים ירשמו אותך לאירוע, הוא יופיע כאן.",
-    tip: "טיפ: שמרו את הדף במסך הבית של הטלפון.",
+    noEvents: "עוד אין הסעות.",
     pickup: (leg: Leg) => (leg === "out" ? "הלוך · אוספים אותך מהבית" : "חזור · איסוף הביתה"),
     notNeeded: "לא צריך הסעה בכיוון הזה",
-    searching: "עוד מחפשים לך הסעה",
     noRide: "עוד אין לך הסעה",
-    searchingHint: "ההורים שלך יקבלו עדכון",
     driver: (family: string) => `משפחת ${family} אוספת אותך`,
     at: (t: string) => `יציאה ב-${t}`,
     findCar: "חפשי/חפש את הרכב הזה",
     callDriver: (name: string) => `התקשרות ל${name}`,
     ready: "אני מוכן/ה",
     readyDone: "שלחת \"אני מוכן/ה\" ✓",
-    onTheWay: "בדרך אליך",
-    pickedUp: "עלית לרכב ✓",
     notComing: "סומן שלא מגיע/ה",
+    allRides: "כל ההסעות שלי",
+    statusLabel: (leg: Leg) => `מצב ההסעה ב${legName[leg]}`,
+    status: {
+      waiting: "עוד מחפשים לך הסעה",
+      onTheWay: (driver: string) => `${driver} יצא/ה לדרך`,
+      next: "את/ה הבא/ה בתור",
+      nextHint: "תתכוננו, עוד רגע מגיעים",
+      arrived: (driver: string) => `${driver} למטה! 🚗`,
+      arrivedHint: "צאו לרכב",
+      picked: "עלית לרכב ✓",
+      done: "ההסעה הזאת הסתיימה",
+    },
   },
 
   invite: {
     title: "ההזמנה",
     none: "אין תמונת הזמנה לאירוע הזה.",
+  },
+
+  /* ---------- event tabs, ⋯ menu, editing, cancelling ---------- */
+  manage: {
+    tabs: "מסכי האירוע",
+    details: "פרטים",
+    gapLabel: { missing: "חסרים מקומות", unassigned: "ממתינים לשיבוץ", ok: "מסודר", none: "אין צורך" } as Record<"missing" | "unassigned" | "ok" | "none", string>,
+    menu: "פעולות לאירוע",
+    menuTitle: "האירוע",
+    edit: "עריכת פרטים",
+    share: "שיתוף לקבוצה",
+    cancel: "ביטול אירוע",
+    restore: "שחזור",
+    restoreLong: "שחזור האירוע",
+    editTitle: "עריכת פרטי האירוע",
+    coverReplace: "החלפת תמונת ההזמנה",
+    coverAdd: "+ תמונת הזמנה",
+    noChange: "לא שונה כלום",
+    cancelTitle: "ביטול האירוע",
+    cancelParts: (title: string): (string | { b: string })[] => ["לבטל את ", { b: title }, "?"],
+    cancelNote: "האירוע יסומן כמבוטל וההסעות יוקפאו. אפשר לשחזר הכל אחר כך.",
+    cancelYes: "כן, לבטל",
+    cancelled: "האירוע בוטל",
+    cancelledTag: "בוטל",
+    cancelledNote: "ההסעות מוקפאות: אין שיבוץ ואין מצב נהג.",
+    shareCancel: "שתף את הביטול לקבוצה",
+    updatedTag: "עודכן",
+    timeChanged: (from: string, to: string) => `השעה השתנתה מ-${from} ל-${to}`,
+    returnChanged: (from: string, to: string) => `שעת האיסוף לחזור השתנתה מ-${from} ל-${to}`,
+    dateChanged: (from: string, to: string) => `התאריך השתנה מ-${from} ל-${to}`,
+    shareUpdate: "שתף עדכון לקבוצה",
+    dismiss: "הסתרת העדכון",
+    checkDepart: "בדקו שעת יציאה",
+    confirmDepart: "אישור שעה",
+    noPhone: (kid: string) => `+ הוספת טלפון ל${kid}`,
+    noPhoneOther: (kid: string) => `אין טלפון ל${kid}`,
+    fieldChange: (name: string, from: string, to: string) => `${name} מ-${from} ל-${to}`,
+    field: { title: "שם", date: "תאריך", start: "שעה", returnTime: "איסוף לחזור", place: "מקום", address: "כתובת", coverImageId: "תמונה" } as Record<string, string>,
+    toastEdited: "פרטי האירוע עודכנו",
+    toastCancelled: "האירוע בוטל",
+    toastRestored: "האירוע שוחזר",
+    toastConfirmed: "שעת היציאה אושרה",
+    kidCancelled: "האירוע בוטל",
+    myKid: (kid: string, out: string, back: string) => `${kid}: הלוך ${out} · חזור ${back}`,
+    waUpdate: (p: { title: string; date: string; lines: string[]; url: string }) =>
+      `עדכון ל${p.title} (${p.date}): ${p.lines.join(". ")}.\nנהגים, בדקו את שעת היציאה.\n${p.url}`,
+    waCancel: (p: { title: string; date: string; url: string }) => `בוטל: ${p.title} (${p.date}). ההסעות מבוטלות.\n${p.url}`,
   },
 
   notFound: {
@@ -432,10 +509,10 @@ export const he = {
 
   /* ---------- WhatsApp templates ---------- */
   wa: {
-    groupInvite: (group: string, url: string) =>
-      `היי לכולם 👋\nפתחתי קבוצה בטרמפוש לתיאום הסעות של ${group}.\nכל משפחה נרשמת פעם אחת (דקה):\n${url}`,
+    groupInvite: (group: string, url: string) => `תיאום הסעות ל${group} בטרמפוש 🚗\nנרשמים כאן פעם אחת:\n${url}`,
     ask: (title: string, date: string, missing: number, leg: Leg, url: string) =>
-      `היי לכולם 👋\nל${title} (${date}) ${missing > 0 ? missingText(missing, leg) : `חסר נהג ל${legName[leg]}`}.\nמי יכול/ה להסיע? נרשמים כאן:\n${url}`,
+      `${title} (${date}): ${missing > 0 ? missingText(missing, leg) : `חסר נהג ל${legName[leg]}`}. מי יכול/ה להסיע?\n${url}`,
+    /** Title line, one line per leg ("הלוך 09:30: לוי (מאיה, נועה) · חסר מקום אחד"), link. Legs with nothing to say are left out. */
     summary: (p: {
       title: string;
       date: string;
@@ -443,20 +520,56 @@ export const he = {
       legs: { leg: Leg; time: string; cars: { family: string; departAt: string; kids: string[] }[]; missing: number }[];
       url: string;
     }) => {
-      let t = `🎈 ${p.title} · ${p.date}\n📍 ${p.place}\n`;
+      const lines = [`🎈 ${p.title} · ${p.date} · ${p.place}`];
       for (const l of p.legs) {
-        t += `\n${legName[l.leg]} (${l.time}):\n`;
-        if (l.cars.length === 0) t += "עוד אין רכבים\n";
-        for (const c of l.cars) t += `🚗 ${c.family} ${c.departAt}: ${c.kids.length ? c.kids.join(", ") : "עוד אין ילדים"}\n`;
-        if (l.missing > 0) t += `⚠️ ${missingText(l.missing, l.leg)}\n`;
+        const parts = l.cars.map(
+          (c) =>
+            `${c.family.replace(/^משפחת /, "")}${c.departAt && c.departAt !== l.time ? ` ${c.departAt}` : ""}${c.kids.length ? ` (${c.kids.join(", ")})` : ""}`,
+        );
+        if (l.missing > 0) parts.push(l.missing === 1 ? "חסר מקום אחד" : `חסרים ${l.missing} מקומות`);
+        if (parts.length) lines.push(`${legName[l.leg]} ${l.time}: ${parts.join(" · ")}`);
       }
-      return `${t}\nפרטים והרשמה: ${p.url}`;
+      return `${lines.join("\n")}\n${p.url}`;
     },
-    leftHome: (kids: string[]) => `היי, יצאתי 🚗 אגיע לאסוף את ${joinNames(kids)} בעוד ~10 דק׳`,
-    downstairs: (kid: string) => `היי ${kid}, אני למטה 🚗`,
-    downstairsParent: (kid: string) => `היי, אני למטה עם הרכב, מחכה ל${kid} 🚗`,
-    kidLink: (kid: string, url: string) =>
-      `היי ${kid} 💛 זה הקישור שלך לטרמפוש. שם רואים מי אוסף אותך ומתי:\n${url}`,
+    leftHome: (kids: string[]) => `יצאתי 🚗 אגיע לאסוף את ${joinNames(kids)} בעוד כ-10 דק׳`,
+    downstairs: (kid: string) => `${kid}, אני למטה 🚗`,
+    downstairsParent: (kid: string) => `אני למטה, מחכה ל${kid} 🚗`,
+    /** Per-event message to a kid: event, one line per leg, and the live kid link. */
+    kidEvent: (p: { kid: string; title: string; date: string; legs: string[]; url: string }) =>
+      `היי ${p.kid} 💛 ${p.title} · ${p.date}\n${p.legs.join("\n")}\n${p.url}`,
+    legLine: (leg: Leg, ride: { family: string; departAt: string } | null) =>
+      ride ? `${legName[leg]} ${ride.departAt}: ${ride.family}` : `${legName[leg]}: עוד מחפשים הסעה`,
+    trackRide: (url: string) => `אני בדרך לאסוף אותך 🚗 רואים כאן איפה אני:\n${url}`,
+    kidLink: (kid: string, url: string) => `היי ${kid} 💛 כאן רואים מי אוסף אותך ומתי:\n${url}`,
+  },
+
+  feedback: {
+    button: "משוב",
+    buttonLabel: "שליחת משוב",
+    title: "משוב",
+    kindLabel: "סוג המשוב",
+    improve: "לשיפור",
+    keep: "לשימור",
+    textLabel: "מה תרצו לספר לנו?",
+    placeholderImprove: "מה הפריע, מה לא עבד, מה חסר… (אפשר גם להקליט)",
+    placeholderKeep: "מה עבד טוב ושכדאי לשמור… (אפשר גם להקליט)",
+    micStart: "הקלטה קולית",
+    micStop: "עצירת ההקלטה",
+    transcribing: "מתמלל…",
+    transcribeFailed: "לא הצלחנו לתמלל, אבל ההקלטה תצורף למשוב.",
+    audioAttached: "הקלטה קולית מצורפת",
+    micDenied: "אין גישה למיקרופון. אפשר לכתוב במקום.",
+    micUnsupported: "הקלטה לא נתמכת בדפדפן הזה. אפשר לכתוב במקום.",
+    uploadFailed: "לא הצלחנו להעלות את ההקלטה. נסו שוב או כתבו.",
+    shotAlt: "צילום המסך שיצורף",
+    shotRemove: "הסר",
+    shotRestore: "צרף",
+    shotRemoved: "צילום המסך לא יצורף",
+    contextNote: "יצורפו צילום מסך ופרטי מכשיר",
+    send: "שליחה",
+    sending: "שולחים…",
+    thanks: "תודה! המשוב נשלח",
+    failed: "השליחה נכשלה. נסו שוב בעוד רגע.",
   },
 };
 

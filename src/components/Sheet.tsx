@@ -9,11 +9,13 @@ interface Props {
   title: string;
   onClose: () => void;
   children: ComponentChildren;
+  /** Full-screen (e.g. the event edit form). */
+  full?: boolean;
 }
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])';
 
-export function Sheet({ open, title, onClose, children }: Props) {
+export function Sheet({ open, title, onClose, children, full }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   useReturnFocus(open);
   useEffect(() => {
@@ -50,7 +52,7 @@ export function Sheet({ open, title, onClose, children }: Props) {
   return (
     <div class="ov">
       <button type="button" class="scrim" aria-label={he.common.close} tabIndex={-1} onClick={onClose} />
-      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" ref={ref}>
+      <div class={full ? "sheet full" : "sheet"} role="dialog" aria-modal="true" aria-labelledby="sheet-title" ref={ref}>
         <span class="grab" aria-hidden="true" />
         <div class="row sp">
           <h2 id="sheet-title" class="sheet-t">

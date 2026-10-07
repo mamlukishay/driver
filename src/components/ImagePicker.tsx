@@ -56,9 +56,11 @@ interface Props {
   variant: "drop" | "button";
   children: ComponentChildren;
   sub?: ComponentChildren;
+  /** Slim one-line drop zone, for when the picker is optional. */
+  compact?: boolean;
 }
 
-export function ImagePicker({ id, maxDim, onPicked, variant, children, sub }: Props) {
+export function ImagePicker({ id, maxDim, onPicked, variant, children, sub, compact }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -103,7 +105,7 @@ export function ImagePicker({ id, maxDim, onPicked, variant, children, sub }: Pr
   return (
     <div>
       <label
-        class={cx("drop", over && "over")}
+        class={cx("drop", compact && "compact", over && "over")}
         for={id}
         onDragOver={(e) => {
           e.preventDefault();
@@ -116,11 +118,20 @@ export function ImagePicker({ id, maxDim, onPicked, variant, children, sub }: Pr
           void handle(e.dataTransfer?.files?.[0]);
         }}
       >
-        <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">
+        <svg class="ic" width={compact ? 24 : 34} height={compact ? 24 : 34} viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        {busy ? <b>{he.image.processing}</b> : children}
-        {sub}
+        {compact ? (
+          <span class="drop-t">
+            {busy ? <b>{he.image.processing}</b> : children}
+            {sub}
+          </span>
+        ) : (
+          <>
+            {busy ? <b>{he.image.processing}</b> : children}
+            {sub}
+          </>
+        )}
         {fileInput}
       </label>
       {err && <p class="note gap">{err}</p>}

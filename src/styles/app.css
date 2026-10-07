@@ -177,6 +177,24 @@ mark {
   white-space: nowrap;
   flex: 1;
 }
+.attl-w {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hdr-grp {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 2px;
+  align-self: flex-start;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .bk {
   border: 0;
   background: transparent;
@@ -500,6 +518,14 @@ a.who:hover {
   min-inline-size: 0;
   min-block-size: var(--tap);
 }
+.fld select {
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
 .fld input[dir="ltr"] {
   text-align: end;
 }
@@ -534,6 +560,27 @@ a.who:hover {
 .fld.err .hint,
 .hint.bad {
   color: var(--bad);
+}
+.kidpick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.kidpick-i {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.kidpick-i input {
+  inline-size: 22px;
+  block-size: 22px;
+  accent-color: var(--accent);
+}
+.kidpick-i small {
+  color: var(--ink-2);
 }
 .fld.okv .hint {
   color: var(--ok);
@@ -615,7 +662,8 @@ a.who:hover {
   inline-size: 22px;
   block-size: 22px;
   border-radius: 50%;
-  background: var(--surface);
+  /* Always white: --surface is darker than --line in dark mode, which made an enabled switch read as disabled. */
+  background: #fff;
   box-shadow: 0 1px 2px var(--shadow);
   transition: inset-inline-start 0.15s;
 }
@@ -692,6 +740,32 @@ a.who:hover {
 }
 .drop .btn {
   pointer-events: none;
+}
+.drop.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  text-align: start;
+  border-width: 1.5px;
+  border-radius: 12px;
+}
+.drop-t {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+}
+.invite-busy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.scan.sm {
+  inline-size: 54px;
+  block-size: 70px;
+  border-radius: 9px;
+  flex: none;
 }
 .scan {
   position: relative;
@@ -795,10 +869,6 @@ a.who:hover {
   color: var(--ink-2);
   font-size: 13.5px;
 }
-.invite-card {
-  gap: 8px;
-}
-
 /* ---------- event cards ---------- */
 .evcard {
   display: flex;
@@ -1388,7 +1458,7 @@ a.who:hover {
 /* ---------- kid page ---------- */
 .kidpage {
   gap: 18px;
-  padding-block-start: calc(env(safe-area-inset-top, 0px) + 22px);
+  padding-block: calc(env(safe-area-inset-top, 0px) + 22px) 24px;
 }
 .kid-hdr {
   display: flex;
@@ -1402,6 +1472,10 @@ a.who:hover {
 }
 .kidpage .muted {
   font-size: 17px;
+}
+.kidpage .kid-grp {
+  font-size: 14px;
+  margin: 0;
 }
 .legc {
   background: var(--surface);
@@ -1450,6 +1524,80 @@ a.who:hover {
 .readybtn:disabled {
   opacity: 0.5;
 }
+.kstat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--sunk);
+}
+.kstat-main {
+  font-family: var(--ff-display);
+  font-size: 26px;
+  line-height: 1.25;
+}
+.kstat-hint {
+  font-size: 17px;
+  color: var(--ink-2);
+}
+.kstat-waiting {
+  background: var(--gap-soft);
+  color: var(--gap);
+}
+.kstat-assigned {
+  background: transparent;
+  padding: 0;
+}
+.kstat-onTheWay,
+.kstat-next {
+  background: var(--accent-soft);
+}
+.kstat-next .kstat-main {
+  font-size: 30px;
+}
+.kstat-arrived {
+  background: var(--accent);
+  color: var(--on-accent);
+  animation: kpulse 1.2s ease-in-out 3;
+}
+.kstat-arrived .kstat-main {
+  font-size: 38px;
+}
+.kstat-arrived .kstat-hint {
+  color: var(--on-accent);
+}
+.kstat-picked {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.kstat-done {
+  background: transparent;
+  padding: 0;
+}
+.kstat-done .kstat-main {
+  font-size: 20px;
+  color: var(--ink-2);
+}
+@keyframes kpulse {
+  50% {
+    transform: scale(1.03);
+  }
+}
+.stop-acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn.on {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.card.hl {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1458,4 +1606,149 @@ a.who:hover {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ---------- event tabs, ⋯ menu, edit / cancel ---------- */
+.evframe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap, 14px);
+}
+.evh-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.evh-row .evh {
+  flex: 1;
+  min-inline-size: 0;
+}
+.dots {
+  flex: none;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  padding-inline: 4px;
+}
+.gdot {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--ink-3);
+}
+.gdot.missing {
+  background: var(--gap);
+}
+.gdot.unassigned {
+  background: var(--accent);
+}
+.gdot.ok {
+  background: var(--ok);
+}
+.is-cancelled .evh,
+.is-cancelled .gm,
+.is-cancelled .car,
+.is-cancelled .chips,
+.is-cancelled .rsvp,
+.evcard.is-cancelled {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.is-cancelled .evh-t b,
+.evcard.is-cancelled .evm b {
+  text-decoration: line-through;
+}
+.tag.off {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+.note.upd {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.upd-h {
+  inline-size: 100%;
+}
+.tag.upd-tag {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.note .xbtn {
+  min-block-size: 32px;
+}
+.dchk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--gap-soft);
+  color: var(--gap);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+.menu-list {
+  display: flex;
+  flex-direction: column;
+}
+.menu-i {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 52px;
+  padding-inline: 4px;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+.menu-i:last-child {
+  border-block-end: 0;
+}
+.menu-i.bad {
+  color: var(--bad);
+}
+.sheet.full {
+  max-block-size: 100dvh;
+  block-size: 100dvh;
+  border-radius: 0;
+}
+details.past > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+details.past[open] > summary {
+  margin-block-end: 10px;
+}
+.kidchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block-start: 4px;
+}
+.kchip {
+  font-size: 12.5px;
+  background: var(--sunk);
+  border-radius: 999px;
+  padding: 2px 9px;
 }

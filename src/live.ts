@@ -2,6 +2,7 @@
 import { useEffect } from "preact/hooks";
 import type { WsMessage } from "../shared/types.ts";
 import { api } from "./api.ts";
+import { markGroupDeleted } from "./identity.ts";
 import { activeKeys, keys, peek, refetch } from "./store.ts";
 
 interface Conn {
@@ -22,6 +23,19 @@ function refetchAll(group: string) {
 }
 
 function onMessage(group: string, msg: WsMessage) {
+  if (msg.t === "deleted") {
+    // The server closes the socket next; don't reconnect to a group that no longer exists.
+    const c = conns.get(group);
+    if (c) {
+      c.closed = true;
+      clearTimeout(c.retryTimer);
+      clearInterval(c.pingTimer);
+      stopPoll(c);
+      conns.delete(group);
+    }
+    markGroupDeleted(group);
+    return;
+  }
   const active = activeKeys(group);
   if (msg.t === "group") {
     const cur = peek<{ group: { version: number } }>(keys.group(group));
@@ -136,7 +150,7 @@ export function subscribeGroup(group: string): () => void {
       clearInterval(conn.pingTimer);
       stopPoll(conn);
       conn.ws?.close();
-      conns.delete(group);
+      if (conns.get(group) === conn) conns.delete(group);
     }, 5000);
   };
 }

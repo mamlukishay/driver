@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 import { formatPhoneLocal } from "../shared/phone.ts";
 import type { EventView } from "../shared/types.ts";
 import {
-  PHONE_RE,
   apiEvent,
   apiGroup,
   createEventManually,
@@ -10,7 +9,7 @@ import {
   emptySeat,
   eventIdFromUrl,
   he,
-  keyOf,
+  familyIdOf,
   newUser,
   offerCar,
   registerFamily,
@@ -25,7 +24,7 @@ const A = { name: "כהן", parent: "רונית", phone: "052-111-1111", kid: "�
 const B = { name: "לוי", parent: "דוד", phone: "054-222-2222", kid: "דני", car: { label: "מאזדה אדומה", seats: 3 } };
 const C = { name: "מזרחי", parent: "יעל", phone: "053-333-3333", kid: "גל" };
 
-test("main flow: two families, live seating, undo, driver phones, privacy, kid page", async ({ browser }) => {
+test("main flow: two families, live seating, undo, driver phones, shared contacts, kid page", async ({ browser }) => {
   const users: User[] = [];
   const spawn = async () => {
     const u = await newUser(browser);
@@ -44,7 +43,7 @@ test("main flow: two families, live seating, undo, driver phones, privacy, kid p
 
     // --- B joins from the invite link, registers with a car ---
     await b.page.goto(inviteUrl);
-    await expect(b.page.getByRole("heading", { name: new RegExp(he.join.title("").trim()) })).toBeVisible();
+    await expect(b.page.getByRole("heading", { name: he.who.title })).toBeVisible();
     await registerFamily(b.page, groupId, B);
     await expect(b.page.locator(".who")).toContainText(he.family(B.name));
 
@@ -85,7 +84,8 @@ test("main flow: two families, live seating, undo, driver phones, privacy, kid p
     await a.page.getByRole("link", { name: new RegExp(he.legName.back) }).click();
     await expect(a.page).toHaveURL(/\/back$/);
     await expect(waitingSection(a.page, "back").getByRole("button", { name: A.kid })).toBeVisible();
-    await a.page.goBack();
+    // Tabs replace the history entry, so switching back is another tab tap (not browser back).
+    await a.page.getByRole("link", { name: new RegExp(he.legName.out) }).click();
     await expect(a.page).toHaveURL(/\/out$/);
 
     // --- A seats again ---
@@ -105,34 +105,26 @@ test("main flow: two families, live seating, undo, driver phones, privacy, kid p
     await b.page.getByRole("button", { name: he.drive.start }).click();
     await expect(b.page.getByText(he.drive.onTheWay)).toBeVisible();
 
-    // --- C, an unrelated family in a third context, sees no phone numbers anywhere ---
+    // --- C, an unrelated family in a third context, sees everyone's contacts (trust model) ---
     const c = await spawn();
     await c.page.goto(inviteUrl);
     await registerFamily(c.page, groupId, C);
-    for (const path of [`/g/${groupId}`, eventUrl, `${eventUrl}/out`, `${eventUrl}/back`, `${eventUrl}/drive/out`]) {
-      await c.page.goto(path);
-      await expect(c.page.locator(".who")).toContainText(he.family(C.name));
-      await expect(c.page.locator("main")).not.toBeEmpty();
-      await expect(c.page.getByText(he.common.loading)).toHaveCount(0);
-      const text = await c.page.locator("body").innerText();
-      expect(text, `phone leaked on ${path}`).not.toMatch(PHONE_RE);
-      expect(await c.page.locator("a[href^='tel:']").count()).toBe(0);
-    }
-    // Same guarantee at the API level, for both the event and the group payloads.
-    const cKey = await keyOf(c.page, groupId);
-    const cEvent = JSON.stringify(await apiEvent(c.page, groupId, eventId, cKey));
-    // C's own phone is its own business; nobody else's may appear.
-    expect(cEvent).not.toContain("+972521111111");
-    expect(cEvent).not.toContain("+972542222222");
-    const cGroup = JSON.stringify(await apiGroup(c.page, groupId, cKey));
-    expect(cGroup).not.toContain("+972521111111");
-    expect(cGroup).not.toContain("+972542222222");
+    await c.page.goto(eventUrl);
+    await expect(c.page.locator(".who")).toContainText(he.family(C.name));
+    const cId = await familyIdOf(c.page, groupId);
+    const cEvent = JSON.stringify(await apiEvent(c.page, groupId, eventId, cId));
+    expect(cEvent).toContain("+972521111111");
+    expect(cEvent).toContain("+972542222222");
+    const cGroup = JSON.stringify(await apiGroup(c.page, groupId, cId));
+    expect(cGroup).toContain("+972521111111");
+    expect(cGroup).toContain("+972542222222");
 
     // --- the kid link opens the kid page; "אני מוכן/ה" works ---
-    const aGroup = await apiGroup(a.page, groupId, await keyOf(a.page, groupId));
-    const kidToken = aGroup.me!.kids[0]!.kidToken;
+    const aGroup = await apiGroup(a.page, groupId, await familyIdOf(a.page, groupId));
+    const kidId = aGroup.me!.kids[0]!.id;
     const kid = await spawn();
-    await kid.page.goto(`/kid/${groupId}/${kidToken}`);
+    // The kid page never asks "מי אתם?".
+    await kid.page.goto(`/g/${groupId}/kid/${kidId}`);
     await expect(kid.page.getByRole("heading", { name: he.kid.hi(A.kid) })).toBeVisible();
     await expect(kid.page.getByText(he.kid.driver(B.name))).toBeVisible();
     await expect(kid.page.getByRole("link", { name: he.kid.callDriver(B.parent) }).first()).toBeVisible();
@@ -141,7 +133,7 @@ test("main flow: two families, live seating, undo, driver phones, privacy, kid p
     // ...and the driver sees it live.
     await expect(b.page.getByText(he.drive.ready)).toBeVisible();
 
-    const finalEvent: EventView = await apiEvent(b.page, groupId, eventId, await keyOf(b.page, groupId));
+    const finalEvent: EventView = await apiEvent(b.page, groupId, eventId, await familyIdOf(b.page, groupId));
     expect(finalEvent.offers.out[0]?.kidIds).toHaveLength(1);
     expect(eventIdFromUrl(a.page.url())).toBe(eventId);
   } finally {

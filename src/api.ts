@@ -15,10 +15,12 @@ import type {
   PublicAction,
   RegisterFamilyResponse,
   UndoResponse,
+  UpdateGroupRequest,
+  UpdateGroupResponse,
   UpdateFamilyResponse,
 } from "../shared/types.ts";
 import { FAMILY_ID_HEADER } from "../shared/types.ts";
-import { getIdentity, removeIdentity } from "./identity.ts";
+import { getIdentity, markGroupDeleted, removeIdentity } from "./identity.ts";
 import type { ClientErrorCode } from "./i18n/he.ts";
 
 export class ApiError extends Error {
@@ -102,9 +104,20 @@ export const api = {
     return configPromise;
   },
 
-  createGroup: (name: string, slug: string) => req<CreateGroupResponse>("/api/groups", { body: { name, slug } }),
+  createGroup: (name: string, slug: string, whatsappUrl?: string) =>
+    req<CreateGroupResponse>("/api/groups", { body: whatsappUrl ? { name, slug, whatsappUrl } : { name, slug } }),
 
-  getGroup: (group: string) => req<GroupResponse>(g(group), { group }),
+  /** A 404 for a group this device has a family in means it was deleted: forget it here. */
+  getGroup: (group: string) =>
+    req<GroupResponse>(g(group), { group }).catch((e: unknown) => {
+      if (e instanceof ApiError && e.status === 404 && getIdentity(group)) markGroupDeleted(group);
+      throw e;
+    }),
+
+  updateGroup: (group: string, patch: UpdateGroupRequest) =>
+    req<UpdateGroupResponse>(g(group), { method: "PATCH", body: patch, group }),
+
+  deleteGroup: (group: string) => req<{ ok: true }>(g(group), { method: "DELETE", group }),
 
   register: (group: string, input: FamilyInput) =>
     req<RegisterFamilyResponse>(`${g(group)}/families`, { body: input }),
@@ -132,10 +145,12 @@ export const api = {
 
   imageUrl: (group: string, imageId: string) => `${g(group)}/images/${encodeURIComponent(imageId)}`,
 
-  getKid: (group: string, kidId: string) => req<KidView>(`${g(group)}/kid/${encodeURIComponent(kidId)}`),
+  /** With `event`, the view holds only that event (`?event=<slug>`). */
+  getKid: (group: string, kidId: string, event?: string) =>
+    req<KidView>(`${g(group)}/kid/${encodeURIComponent(kidId)}${event ? `?event=${encodeURIComponent(event)}` : ""}`),
 
-  kidReady: (group: string, kidId: string, ready = true) =>
-    req<{ ok: true }>(`${g(group)}/kid/${encodeURIComponent(kidId)}/ready`, { body: { ready } }),
+  kidReady: (group: string, kidId: string, ready = true, event?: string) =>
+    req<{ ok: true }>(`${g(group)}/kid/${encodeURIComponent(kidId)}/ready`, { body: event ? { ready, event } : { ready } }),
 
   parseInvite: (group: string, imageId: string) =>
     req<InviteParseResponse>(`${g(group)}/invite/parse`, { body: { imageId }, group }),

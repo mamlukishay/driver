@@ -1,11 +1,13 @@
 import { useState } from "preact/hooks";
 import { isSlug, slugify, suggestGroupSlug } from "../../shared/slug.ts";
+import { normalizeWaGroupUrl } from "../../shared/whatsapp.ts";
 import { Field } from "../components/Field.tsx";
 import { Header } from "../components/Header.tsx";
 import { toast } from "../components/Toast.tsx";
 import { WaButton } from "../components/WaButton.tsx";
 import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
+import { clearGroupDeleted } from "../identity.ts";
 import { appUrl } from "../util.ts";
 
 /** Typing helper: lowercase, spaces → hyphens, drop anything not URL-safe (keeps a trailing hyphen while typing). */
@@ -26,6 +28,8 @@ export function NewGroup() {
   const [err, setErr] = useState<string | null>(null);
   const [slugErr, setSlugErr] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [wa, setWa] = useState("");
+  const [waErr, setWaErr] = useState<string | null>(null);
 
   const onName = (v: string) => {
     setName(v);
@@ -56,9 +60,16 @@ export function NewGroup() {
       document.getElementById("group-slug")?.focus();
       return;
     }
+    const waUrl = normalizeWaGroupUrl(wa);
+    if (waUrl === null) {
+      setWaErr(he.waGroup.invalid);
+      document.getElementById("group-wa")?.focus();
+      return;
+    }
     setBusy(true);
     try {
-      const r = await api.createGroup(name.trim(), slug);
+      const r = await api.createGroup(name.trim(), slug, waUrl || undefined);
+      clearGroupDeleted(r.groupId);
       setCreated({ id: r.groupId, name: name.trim() });
     } catch (x) {
       if (x instanceof ApiError && x.code === "slug_taken") {
@@ -102,7 +113,7 @@ export function NewGroup() {
       <Header title={he.newGroup.title} up="/" />
       <main id="main" class="content">
         <form class="card" onSubmit={submit} noValidate>
-          <Field id="group-name" label={he.newGroup.nameLabel} placeholder={he.newGroup.namePlaceholder} hint={he.newGroup.nameHint} value={name} error={err} onInput={onName} />
+          <Field id="group-name" label={he.newGroup.nameLabel} placeholder={he.newGroup.namePlaceholder} value={name} error={err} onInput={onName} />
           <Field
             id="group-slug"
             label={he.newGroup.slugLabel}
@@ -120,6 +131,20 @@ export function NewGroup() {
               </button>
             )}
           </Field>
+          <Field
+            id="group-wa"
+            label={he.waGroup.label}
+            hint={he.waGroup.hint}
+            value={wa}
+            error={waErr}
+            dir="ltr"
+            autoComplete="off"
+            placeholder="https://chat.whatsapp.com/…"
+            onInput={(v) => {
+              setWa(v);
+              setWaErr(null);
+            }}
+          />
           <button type="submit" class="btn big" disabled={busy}>
             {busy ? he.common.saving : he.newGroup.submit}
           </button>

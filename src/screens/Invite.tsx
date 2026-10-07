@@ -9,7 +9,7 @@ export function Invite({ group, event }: { group: string; event: string }) {
   const ev = res.data;
   return (
     <>
-      <Header title={ev ? `${he.invite.title} · ${ev.title}` : he.invite.title} up={`/g/${group}/e/${event}`} group={group} noChip />
+      <Header title={ev ? `${he.invite.title} · ${ev.title}` : he.invite.title} up={`/g/${group}/e/${event}`} group={group} noChip groupLine />
       <main id="main" class="content">
         {res.error && !ev ? (
           <ErrorState code={res.error} onRetry={res.reload} />

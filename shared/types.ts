@@ -13,7 +13,8 @@ export type ErrorCode =
   | "feature_off"
   | "too_large"
   | "undo_expired"
-  | "slug_taken";
+  | "slug_taken"
+  | "event_cancelled";
 
 export const ERROR_STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
@@ -26,6 +27,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   too_large: 413,
   undo_expired: 409,
   slug_taken: 409,
+  event_cancelled: 409,
 };
 
 /* ---------- families ---------- */
@@ -117,6 +119,8 @@ export interface GroupMeta {
   name: string;
   createdAt: number;
   version: number;
+  /** Linked parents' WhatsApp group (`https://chat.whatsapp.com/<code>`); absent when not set. */
+  whatsappUrl?: string;
 }
 
 /* ---------- events ---------- */
@@ -143,6 +147,8 @@ export interface KidPlan {
 export interface Run {
   startedAt: number;
   picked: string[];
+  /** Kids whose stop the driver reached ("הגעתי") and who are not picked yet. Absent on older runs. */
+  arrived?: string[];
 }
 
 export interface Offer {
@@ -156,6 +162,8 @@ export interface Offer {
   /** Kids who tapped "אני מוכן/ה" (subset of kidIds). */
   ready?: string[];
   run?: Run;
+  /** The event's date or this leg's time changed since the driver set `departAt` ("בדקו שעת יציאה"). Absent when false. */
+  departAtCheck?: true;
 }
 
 /** Stored as `event:{id}`; the materialized result of the action log. */
@@ -167,6 +175,8 @@ export interface EventState extends EventInput {
   version: number;
   kidPlans: Record<string, KidPlan>;
   offers: Record<Leg, Offer[]>;
+  /** Set by `cancelEvent` (rides frozen); absent when not cancelled. */
+  cancelled?: true;
 }
 
 export type EventPatch = Partial<Omit<EventInput, "coverImageId">> & {
@@ -186,13 +196,19 @@ export type PublicAction =
   | { type: "startRun"; offerId: string }
   | { type: "setPicked"; offerId: string; kidId: string; picked: boolean }
   | { type: "setKidReady"; offerId: string; kidId: string; ready: boolean }
-  | { type: "editEvent"; patch: EventPatch };
+  | { type: "setArrived"; offerId: string; kidId: string; arrived: boolean }
+  /** `prev` is filled in for the log (previous values of the changed fields); ignored on input. */
+  | { type: "editEvent"; patch: EventPatch; prev?: EventPatch }
+  | { type: "cancelEvent" }
+  | { type: "restoreEvent" }
+  | { type: "confirmDeparture"; offerId: string };
 
 /** Only produced as inverses; rejected unless applied with `ctx.system`. */
 export type SystemAction =
   | { type: "clearKidPlan"; kidId: string }
   | { type: "restoreOffer"; leg: Leg; offer: Offer }
-  | { type: "setRun"; offerId: string; run: Run | null };
+  | { type: "setRun"; offerId: string; run: Run | null }
+  | { type: "setDepartAtCheck"; offerId: string; check: boolean };
 
 export type Action = PublicAction | SystemAction;
 export type ActionType = Action["type"];
@@ -245,6 +261,11 @@ export interface EventSummary {
   hostFamilyId: string;
   version: number;
   gaps: Gaps;
+  cancelled?: true;
+  /** For the "my kids" chip on the group home. */
+  kidPlans: Record<string, KidPlan>;
+  /** Kid ids seated per leg. */
+  seated: Record<Leg, string[]>;
 }
 
 /** A family inside an event view (everyone sees everything; kid phone/address only when set). */
@@ -273,6 +294,7 @@ export interface EventView extends EventInput {
   waiting: Record<Leg, string[]>;
   log: LogEntryView[];
   me: string | null;
+  cancelled?: true;
 }
 
 export interface KidRide {
@@ -283,7 +305,14 @@ export interface KidRide {
   started: boolean;
   picked: boolean;
   ready: boolean;
+  /** The driver tapped "הגעתי" at this kid's stop (and hasn't picked them up yet). */
+  arrived: boolean;
+  /** Kids at earlier stops in the pickup order who are not picked up yet (0 = this kid is next). */
+  ahead: number;
 }
+
+/** Live status of one leg on the kid page (see `kidLegStatus` in view.ts). */
+export type KidLegStatus = "waiting" | "assigned" | "onTheWay" | "next" | "arrived" | "picked" | "done";
 
 export interface KidLegView {
   needed: boolean;
@@ -301,6 +330,7 @@ export interface KidEventView {
   coverImageId?: string;
   rsvp: Rsvp | null;
   legs: Record<Leg, KidLegView>;
+  cancelled?: true;
 }
 
 export interface KidView {
@@ -321,6 +351,16 @@ export interface CreateGroupRequest {
   name: string;
   /** English URL name (`SLUG_RE`). Omitted → a random one. */
   slug?: string;
+  /** Optional linked WhatsApp group (see `normalizeWaGroupUrl`). */
+  whatsappUrl?: string;
+}
+/** `PATCH /api/g/:group`: at least one field; `whatsappUrl: ""` clears the link. */
+export interface UpdateGroupRequest {
+  name?: string;
+  whatsappUrl?: string;
+}
+export interface UpdateGroupResponse {
+  group: GroupMeta;
 }
 export interface CreateGroupResponse {
   groupId: string;
@@ -376,7 +416,9 @@ export interface PlacesResponse {
 }
 export type WsMessage =
   | { t: "event"; eventId: string; version: number }
-  | { t: "group"; version: number };
+  | { t: "group"; version: number }
+  /** The group was deleted (sent right before its storage is wiped). */
+  | { t: "deleted" };
 
 /** Which family the client acts as. The server only checks that it exists in the group. */
 export const FAMILY_ID_HEADER = "X-Family-Id";

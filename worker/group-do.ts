@@ -14,7 +14,8 @@ import type {
   WsMessage,
 } from "../shared/types.ts";
 import { FAMILY_ID_HEADER, LEGS, MAX_IMAGE_BYTES } from "../shared/types.ts";
-import { applyAction, undo } from "../shared/actions.ts";
+import { applyAction, loggedAction, undo } from "../shared/actions.ts";
+import { shownOnGroupHome } from "../shared/dates.ts";
 import type { ActionCtx } from "../shared/actions.ts";
 import { eventSummary, familyPrivate, familyPublic, kidView, LOG_TAIL, viewFor } from "../shared/view.ts";
 import {
@@ -26,6 +27,7 @@ import {
 } from "../shared/validate.ts";
 import { isId, newId } from "../shared/ids.ts";
 import { eventSlugBase, firstFreeSlug, isSlug, slugify } from "../shared/slug.ts";
+import { normalizeWaGroupUrl } from "../shared/whatsapp.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { createImageStore, IMAGE_MIMES } from "./images.ts";
 import { DEFAULT_INVITE_MODEL, parseInvite, parseInviteWithWorkersAI } from "./invite.ts";
@@ -77,12 +79,14 @@ export class GroupDO extends DurableObject<Env> {
     if (rest[0] === "kid") {
       const kid = rest[1];
       if (!kid || kid.length > 64 || !/^[a-z0-9]+$/.test(kid)) throw new ApiError("not_found");
-      if (rest.length === 2 && m === "GET") return this.kidGet(kid);
+      if (rest.length === 2 && m === "GET") return this.kidGet(kid, url.searchParams.get("event"));
       if (rest.length === 3 && rest[2] === "ready" && m === "POST") return this.kidReady(request, kid);
       throw new ApiError("not_found");
     }
 
     if (rest.length === 0 && m === "GET") return this.groupGet(request);
+    if (rest.length === 0 && m === "PATCH") return this.groupPatch(request);
+    if (rest.length === 0 && m === "DELETE") return this.groupDelete(request);
     if (rest[0] === "families" && rest.length === 1 && m === "POST") return this.registerFamily(request);
     if (rest[0] === "families" && rest[1] === "me" && rest.length === 2 && m === "PUT") return this.updateMe(request);
     if (rest[0] === "events") {
@@ -138,6 +142,9 @@ export class GroupDO extends DurableObject<Env> {
    * in this group. No secret: anyone with the group link may act as any family (guardrails, not auth).
    */
   private async authenticate(request: Request): Promise<Family | null> {
+    // A missing (never created or deleted) group is 404 before any identity check, so a stale family id
+    // for a deleted group reads as "group gone", not "unknown family".
+    await this.meta();
     const header = request.headers.get(FAMILY_ID_HEADER);
     if (header === null || header === "") return null;
     const family = isId(header) ? await this.ctx.storage.get<Family>(`family:${header}`) : undefined;
@@ -176,7 +183,62 @@ export class GroupDO extends DurableObject<Env> {
     const name = isObj(body) ? cleanText(body.name, 60) : null;
     if (!name) throw new ApiError("invalid");
     const meta: GroupMeta = { id, name, createdAt: Date.now(), version: 1 };
+    // Already validated and normalized by the Worker; checked again so the DO never stores junk.
+    const wa = isObj(body) && typeof body.whatsappUrl === "string" ? normalizeWaGroupUrl(body.whatsappUrl) : null;
+    if (wa) meta.whatsappUrl = wa;
     await this.ctx.storage.put("meta", meta);
+    return json({ ok: true });
+  }
+
+  /** `{ name?, whatsappUrl? }`; `whatsappUrl: ""` clears the link. Any family may edit (trust model). */
+  private async groupPatch(request: Request): Promise<Response> {
+    await this.requireFamily(request);
+    const meta = await this.meta();
+    const body = await readJson(request);
+    if (!isObj(body) || (body.name === undefined && body.whatsappUrl === undefined)) throw new ApiError("invalid");
+    if (body.name !== undefined) {
+      const name = cleanText(body.name, 60);
+      if (!name) throw new ApiError("invalid");
+      meta.name = name;
+    }
+    if (body.whatsappUrl !== undefined) {
+      const wa = typeof body.whatsappUrl === "string" ? normalizeWaGroupUrl(body.whatsappUrl) : null;
+      if (wa === null) throw new ApiError("invalid");
+      if (wa) meta.whatsappUrl = wa;
+      else delete meta.whatsappUrl;
+    }
+    await this.bumpGroup(meta);
+    this.broadcast({ t: "group", version: meta.version });
+    return json({ group: meta });
+  }
+
+  /**
+   * Deletes the whole group for everyone: tells open clients, removes its R2 images (`img/{slug}/…`),
+   * then wipes this DO's storage (families, events, log, DO-stored images, meta). Without `meta` the slug
+   * is free again for `POST /api/groups`.
+   */
+  private async groupDelete(request: Request): Promise<Response> {
+    await this.requireFamily(request);
+    const meta = await this.meta();
+    this.broadcast({ t: "deleted" });
+    for (const ws of this.ctx.getWebSockets()) {
+      try {
+        ws.close(1000, "deleted");
+      } catch {
+        /* already closed */
+      }
+    }
+    const bucket = this.env.IMAGES;
+    if (bucket) {
+      const prefix = `img/${meta.id}/`;
+      let cursor: string | undefined;
+      do {
+        const page = await bucket.list({ prefix, cursor, limit: 1000 });
+        if (page.objects.length) await bucket.delete(page.objects.map((o) => o.key));
+        cursor = page.truncated ? page.cursor : undefined;
+      } while (cursor);
+    }
+    await this.ctx.storage.deleteAll();
     return json({ ok: true });
   }
 
@@ -185,7 +247,8 @@ export class GroupDO extends DurableObject<Env> {
     const meta = await this.meta();
     const [families, events] = await Promise.all([this.families(), this.events()]);
     const today = todayIL();
-    const summaries = events.map(eventSummary);
+    // Past events drop off the list 30 days after their date (the data and direct links stay).
+    const summaries = events.filter((e) => shownOnGroupHome(e.date, today)).map(eventSummary);
     const key = (e: { date: string; start: string }) => e.date + e.start;
     const upcoming = summaries.filter((e) => e.date >= today).sort((a, b) => key(a).localeCompare(key(b)));
     const past = summaries.filter((e) => e.date < today).sort((a, b) => key(b).localeCompare(key(a)));
@@ -294,7 +357,7 @@ export class GroupDO extends DurableObject<Env> {
       eventId,
       at: now,
       familyId: family.id,
-      action: action as unknown as Action,
+      action: loggedAction(action as unknown as Action, result.inverse),
       inverse: result.inverse,
     };
     await this.ctx.storage.put({ [`event:${eventId}`]: result.state, [logKey(eventId, entry.id)]: entry });
@@ -349,11 +412,14 @@ export class GroupDO extends DurableObject<Env> {
     throw new ApiError("not_found");
   }
 
-  private async kidGet(kidParam: string): Promise<Response> {
+  /** `?event=<slug>` focuses the view on that one event (any date); 404 when it doesn't exist. */
+  private async kidGet(kidParam: string, eventParam: string | null): Promise<Response> {
     const meta = await this.meta();
     const { kidId } = await this.kidFamily(kidParam);
+    if (eventParam !== null && !isSlug(eventParam)) throw new ApiError("not_found");
     const [families, events] = await Promise.all([this.families(), this.events()]);
-    const view = kidView(meta, families, events, kidId, todayIL());
+    if (eventParam !== null && !events.some((e) => e.id === eventParam)) throw new ApiError("not_found");
+    const view = kidView(meta, families, events, kidId, todayIL(), eventParam ?? undefined);
     if (!view) throw new ApiError("not_found");
     return json(view);
   }
@@ -361,17 +427,20 @@ export class GroupDO extends DurableObject<Env> {
   /**
    * "אני מוכן/ה": marks the kid ready on the next ride they are seated in
    * (earliest upcoming event, outbound before return, skipping rides already picked up).
-   * Optional body `{ ready?: boolean }` (default true).
+   * Optional body `{ ready?: boolean (default true), event?: slug }`; with `event`, only rides in that
+   * event (any date) are considered.
    */
   private async kidReady(request: Request, kidParam: string): Promise<Response> {
     const body = await readJson(request, true);
     const ready = isObj(body) && typeof body.ready === "boolean" ? body.ready : true;
+    const only = isObj(body) && typeof body.event === "string" ? body.event : null;
+    if (only !== null && !isSlug(only)) throw new ApiError("invalid");
     await this.meta();
     const { family, kidId } = await this.kidFamily(kidParam);
     const row = { kidId };
 
     const events = (await this.events())
-      .filter((e) => e.date >= todayIL())
+      .filter((e) => (only !== null ? e.id === only : e.date >= todayIL()))
       .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
     let target: { state: EventState; leg: Leg; offerId: string } | null = null;
     outer: for (const state of events) {
@@ -444,7 +513,11 @@ export class GroupDO extends DurableObject<Env> {
     const mime = (request.headers.get("Content-Type") ?? "").split(";")[0]!.trim().toLowerCase();
     if (!(IMAGE_MIMES as readonly string[]).includes(mime)) throw new ApiError("invalid");
     const declared = Number(request.headers.get("Content-Length") ?? 0);
-    if (declared > MAX_IMAGE_BYTES) throw new ApiError("too_large");
+    if (declared > MAX_IMAGE_BYTES) {
+      // Drain rather than abandon the body: an unread request body makes local dev (miniflare) fail the fetch.
+      await request.arrayBuffer().catch(() => undefined);
+      throw new ApiError("too_large");
+    }
     const bytes = await request.arrayBuffer();
     if (bytes.byteLength > MAX_IMAGE_BYTES) throw new ApiError("too_large");
     if (bytes.byteLength === 0) throw new ApiError("invalid");
@@ -488,5 +561,15 @@ export class GroupDO extends DurableObject<Env> {
     const q = cleanText(url.searchParams.get("q") ?? "", 100);
     if (!q) return json({ suggestions: [] });
     return json(await placesAutocomplete(apiKey, q));
+  }
+
+  /* ---------- feedback fallback storage (RPC; only used when there is no R2 binding) ---------- */
+
+  async feedbackPut(key: string, value: ArrayBuffer | string): Promise<void> {
+    await this.ctx.storage.put(`fb:${key}`, value);
+  }
+
+  async feedbackGet(key: string): Promise<ArrayBuffer | string | null> {
+    return (await this.ctx.storage.get<ArrayBuffer | string>(`fb:${key}`)) ?? null;
   }
 }

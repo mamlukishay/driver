@@ -1,6 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
 import type { EventView, Leg, Offer } from "../../shared/types.ts";
-import { LEGS } from "../../shared/types.ts";
 import { CarCard } from "../components/CarCard.tsx";
 import { Stepper } from "../components/Field.tsx";
 import { GapMeter } from "../components/GapMeter.tsx";
@@ -13,8 +12,9 @@ import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { useSheet } from "../nav.ts";
 import { useEvent } from "../store.ts";
-import { addMinutes, cx, eventIndex, famColor, fmtClock, legTime } from "../util.ts";
-import { askText, EventHead, logLine, runAction } from "./eventCommon.tsx";
+import { addMinutes, cx, eventIndex } from "../util.ts";
+import { askText, runAction } from "./eventCommon.tsx";
+import { EventFrame } from "./EventFrame.tsx";
 
 export function Board({ group, event, leg }: { group: string; event: string; leg: Leg }) {
   const res = useEvent(group, event);
@@ -22,7 +22,7 @@ export function Board({ group, event, leg }: { group: string; event: string; leg
   const ev = res.data;
   return (
     <>
-      <Header title={ev ? `${ev.title} · ${he.legName[leg]}` : he.common.loading} up={`/g/${group}/e/${event}`} group={group} />
+      <Header title={ev ? `${ev.title} · ${he.legName[leg]}` : he.common.loading} up={`/g/${group}/e/${event}`} group={group} groupLine />
       <main id="main" class="content">
         {res.error && !ev ? (
           <ErrorState code={res.error} onRetry={res.reload} />
@@ -53,14 +53,18 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   }, [ev.version, leg]);
 
   const kidMine = (kidId: string) => !!me && idx.kid(kidId)?.family.id === me;
+  // A cancelled event freezes the board: nothing can be seated or offered.
+  const frozen = !!ev.cancelled;
 
   const onChip = (kidId: string) => {
+    if (frozen) return toast.warn(he.errors.event_cancelled);
     if (!me) return toast.warn(he.board.whyViewOnly);
     if (!kidMine(kidId) && !myOffer) return toast.warn(he.board.whyNotMyKid(idx.kidName(kidId)));
     setSel(sel === kidId ? null : kidId);
   };
 
   const onEmpty = (o: Offer) => {
+    if (frozen) return toast.warn(he.errors.event_cancelled);
     if (!me) return toast.warn(he.board.whyViewOnly);
     if (!sel) return toast.warn(waiting.length ? he.board.whyPickFirst : he.board.whyNoWaiting);
     if (!kidMine(sel) && o.familyId !== me) return toast.warn(he.board.whySeatNotAllowed(idx.kidName(sel), idx.famLabel(o.familyId)));
@@ -68,23 +72,16 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   };
 
   const onSeated = (o: Offer, kidId: string) => {
+    if (frozen) return toast.warn(he.errors.event_cancelled);
     if (!me) return toast.warn(he.board.whyViewOnly);
     if (!kidMine(kidId) && o.familyId !== me) return toast.warn(he.board.whyUnseat(idx.kidName(kidId)));
     sheet.open("unseat", { kid: kidId, offer: o.id });
   };
 
-  const log = [...ev.log].reverse().slice(0, 8);
+  const confirmDepart = (o: Offer) => runAction(group, ev, { type: "confirmDeparture", offerId: o.id }, he.manage.toastConfirmed);
 
   return (
-    <>
-      <EventHead group={group} ev={ev} />
-      <nav class="tabs" aria-label={he.board.tabs}>
-        {LEGS.map((l) => (
-          <a href={`/g/${group}/e/${ev.id}/${l}`} aria-current={l === leg ? "page" : undefined}>
-            {he.legName[l]} · <time class="num">{legTime(ev, l)}</time>
-          </a>
-        ))}
-      </nav>
+    <EventFrame group={group} ev={ev} tab={leg}>
 
       <GapMeter gap={ev.gaps[leg]} leg={leg} askText={askText(group, ev, leg)} />
 
@@ -100,7 +97,7 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               {waiting.map((kidId) => {
                 const k = idx.kid(kidId);
                 const chip = <KidChip name={k?.name ?? "?"} color={k?.family.color ?? 0} selected={sel === kidId} onClick={() => onChip(kidId)} />;
-                if (!(myOffer && myFree > 0)) return chip;
+                if (!(myOffer && myFree > 0) || frozen) return chip;
                 return (
                   <div class="row sp take-row">
                     {chip}
@@ -135,6 +132,8 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               color={fam?.color ?? 0}
               mine={mine}
               armed={!!sel && (mine || kidMine(sel))}
+              departCheck={!!o.departAtCheck}
+              onConfirmDepart={mine && !frozen ? () => confirmDepart(o) : undefined}
               kids={o.kidIds.map((id) => {
                 const k = idx.kid(id);
                 return { id, name: k?.name ?? "?", color: k?.family.color ?? 0, ready: o.ready?.includes(id) };
@@ -142,7 +141,7 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               onEmptySeat={() => onEmpty(o)}
               onKid={(kidId) => onSeated(o, kidId)}
               actions={
-                mine ? (
+                mine && !frozen ? (
                   <>
                     <button type="button" class="mini" onClick={() => sheet.open("car", { offer: o.id })}>
                       {he.common.edit}
@@ -156,43 +155,22 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
             />
           );
         })}
-        {me && !myOffer && myFam && myFam.cars.length > 0 && (
+        {me && !frozen && !myOffer && myFam && myFam.cars.length > 0 && (
           <button type="button" class="btn ghost big" onClick={() => sheet.open("car")}>
             {he.board.offer(leg)}
           </button>
         )}
-        {me && !myOffer && myFam && myFam.cars.length === 0 && (
+        {me && !frozen && !myOffer && myFam && myFam.cars.length === 0 && (
           <p class="note small">
             {he.board.noCarInProfile} <a href={`/g/${group}/me`}>{he.board.toProfile}</a>
           </p>
         )}
       </section>
 
-      <section class="card" aria-labelledby="log-h">
-        <h2 class="hs" id="log-h">
-          {he.board.history}
-        </h2>
-        {log.length === 0 ? (
-          <p class="small muted">{he.board.noHistory}</p>
-        ) : (
-          <ul class="logl">
-            {log.map((l) => (
-              <li class={l.undoneBy ? "undone" : ""}>
-                <time class="t num">{fmtClock(l.at)}</time>
-                <span class="fdot" style={{ "--fc": famColor(idx.fam(l.familyId)?.color ?? 0) }} aria-hidden="true" />
-                <span>
-                  {logLine(ev, l)} {l.undoneBy && <small>{he.log.undone}</small>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
       <SeatSheet group={group} ev={ev} leg={leg} onDone={() => setSel(null)} />
       <UnseatSheet group={group} ev={ev} leg={leg} />
       <CarSheet group={group} ev={ev} leg={leg} />
-    </>
+    </EventFrame>
   );
 }
 
@@ -232,7 +210,6 @@ function SeatSheet({ group, ev, leg, onDone }: { group: string; ev: EventView; l
               ? he.seatSheet.partsMine(kid.name, leg, offer.departAt)
               : he.seatSheet.parts(kid.name, famName, leg, offer.departAt)
           }
-          note={mine ? undefined : he.seatSheet.notice}
           confirm={mine ? he.seatSheet.confirmTake : he.seatSheet.confirm}
           onConfirm={confirm}
           onCancel={sheet.close}

@@ -84,10 +84,24 @@ function applyAll(
 
 /* ---------- helpers ---------- */
 
+function cloneRun(r: Run): Run {
+  const c: Run = { ...r, picked: [...r.picked] };
+  if (r.arrived) c.arrived = [...r.arrived];
+  return c;
+}
+
+/** Removes a kid from `run.arrived` (dropping the field when empty); returns whether they were there. */
+function clearArrived(run: Run | undefined, kidId: string): boolean {
+  if (!run?.arrived?.includes(kidId)) return false;
+  run.arrived = run.arrived.filter((k) => k !== kidId);
+  if (run.arrived.length === 0) delete run.arrived;
+  return true;
+}
+
 function cloneOffer(o: Offer): Offer {
   const c: Offer = { ...o, kidIds: [...o.kidIds] };
   if (o.ready) c.ready = [...o.ready];
-  if (o.run) c.run = { ...o.run, picked: [...o.run.picked] };
+  if (o.run) c.run = cloneRun(o.run);
   return c;
 }
 
@@ -119,23 +133,27 @@ function seatedOn(s: EventState, kidId: string, leg: Leg): Offer | undefined {
   return s.offers[leg].find((o) => o.kidIds.includes(kidId));
 }
 
-function removeKidFromOffer(o: Offer, kidId: string): { wasPicked: boolean; wasReady: boolean } {
+type SeatFlags = { wasPicked: boolean; wasReady: boolean; wasArrived: boolean };
+
+function removeKidFromOffer(o: Offer, kidId: string): SeatFlags {
   const wasPicked = !!o.run?.picked.includes(kidId);
   const wasReady = !!o.ready?.includes(kidId);
   o.kidIds = o.kidIds.filter((k) => k !== kidId);
   if (o.run) o.run.picked = o.run.picked.filter((k) => k !== kidId);
+  const wasArrived = clearArrived(o.run, kidId);
   if (o.ready) {
     o.ready = o.ready.filter((k) => k !== kidId);
     if (o.ready.length === 0) delete o.ready;
   }
-  return { wasPicked, wasReady };
+  return { wasPicked, wasReady, wasArrived };
 }
 
-/** Inverse that puts a kid back into an offer with the same picked/ready flags. */
-function reseatInverse(offerId: string, kidId: string, flags: { wasPicked: boolean; wasReady: boolean }): Inverse {
+/** Inverse that puts a kid back into an offer with the same picked/ready/arrived flags. */
+function reseatInverse(offerId: string, kidId: string, flags: SeatFlags): Inverse {
   const inv: Inverse = [{ type: "seatKid", offerId, kidId }];
   if (flags.wasPicked) inv.push({ type: "setPicked", offerId, kidId, picked: true });
   if (flags.wasReady) inv.push({ type: "setKidReady", offerId, kidId, ready: true });
+  if (flags.wasArrived) inv.push({ type: "setArrived", offerId, kidId, arrived: true });
   return inv;
 }
 
@@ -150,6 +168,42 @@ const isSeats = (n: unknown): n is number => Number.isInteger(n) && (n as number
 const isLeg = (l: unknown): l is Leg => l === "out" || l === "back";
 const isStr = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 64;
 
+/** Actions rejected with `event_cancelled` while the event is cancelled. */
+const RIDE_ACTIONS: ReadonlySet<string> = new Set([
+  "setKidPlan",
+  "offerCar",
+  "updateOffer",
+  "removeOffer",
+  "seatKid",
+  "unseatKid",
+  "startRun",
+  "setPicked",
+  "setArrived",
+  "setKidReady",
+  "confirmDeparture",
+]);
+
+/** Which legs' offers need "בדקו שעת יציאה" after an edit touching these fields. */
+function legsTouched(changed: readonly string[]): Leg[] {
+  const legs: Leg[] = [];
+  if (changed.includes("date") || changed.includes("start")) legs.push("out");
+  if (changed.includes("date") || changed.includes("returnTime")) legs.push("back");
+  return legs;
+}
+
+/**
+ * The action as it goes into the log. `editEvent` keeps only the fields that changed and gains
+ * `prev` (their old values), so history and the "עודכן" banner can say "10:00 → 10:30".
+ */
+export function loggedAction(action: Action, inverse: Inverse): Action {
+  if (action.type !== "editEvent") return action;
+  const inv = inverse.find((x): x is Extract<Action, { type: "editEvent" }> => x.type === "editEvent");
+  if (!inv) return action;
+  const patch: EventPatch = {};
+  for (const k of Object.keys(inv.patch) as (keyof EventPatch)[]) (patch as Record<string, unknown>)[k] = action.patch[k];
+  return { type: "editEvent", patch, prev: { ...inv.patch } };
+}
+
 /* ---------- the reducer step (mutates the clone) ---------- */
 
 function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: number): StepResult {
@@ -158,6 +212,8 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
   if (!actorFamily && !sys) return fail("forbidden");
   if (!a || typeof a !== "object") return fail("invalid");
   const ownsKid = (kidId: string) => !!actorFamily?.kids.some((k) => k.id === kidId);
+  // A cancelled event freezes its rides (undo replays run with `system` and stay allowed).
+  if (!sys && s.cancelled && RIDE_ACTIONS.has(a.type)) return fail("event_cancelled");
 
   switch (a.type) {
     case "setKidPlan": {
@@ -219,11 +275,51 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
         inv.seats = offer.seats;
         offer.seats = a.seats;
       }
+      const inverse: Inverse = [inv];
       if (a.departAt !== undefined) {
         inv.departAt = offer.departAt;
         offer.departAt = a.departAt;
+        // The driver looked at the time again: the "בדקו שעת יציאה" flag is done.
+        if (offer.departAtCheck) {
+          delete offer.departAtCheck;
+          inverse.push({ type: "setDepartAtCheck", offerId: offer.id, check: true });
+        }
       }
-      return { ok: true, inverse: [inv] };
+      return { ok: true, inverse };
+    }
+
+    case "confirmDeparture": {
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      if (!sys && offer.familyId !== actor) return fail("forbidden");
+      if (!offer.departAtCheck) return fail("invalid");
+      delete offer.departAtCheck;
+      return { ok: true, inverse: [{ type: "setDepartAtCheck", offerId: offer.id, check: true }] };
+    }
+
+    case "setDepartAtCheck": {
+      if (!sys) return fail("forbidden");
+      if (typeof a.check !== "boolean") return fail("invalid");
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      const was = !!offer.departAtCheck;
+      if (a.check) offer.departAtCheck = true;
+      else delete offer.departAtCheck;
+      return { ok: true, inverse: [{ type: "setDepartAtCheck", offerId: offer.id, check: was }] };
+    }
+
+    case "cancelEvent": {
+      if (s.cancelled) return fail("invalid");
+      s.cancelled = true;
+      return { ok: true, inverse: [{ type: "restoreEvent" }] };
+    }
+
+    case "restoreEvent": {
+      if (!s.cancelled) return fail("invalid");
+      delete s.cancelled;
+      return { ok: true, inverse: [{ type: "cancelEvent" }] };
     }
 
     case "removeOffer": {
@@ -288,10 +384,13 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       const found = findOffer(s, a.offerId);
       if (!found) return fail("not_found");
       const { offer } = found;
-      const prev: Run | null = offer.run ? { ...offer.run, picked: [...offer.run.picked] } : null;
+      const prev: Run | null = offer.run ? cloneRun(offer.run) : null;
       if (a.run) {
         if (typeof a.run.startedAt !== "number" || !Array.isArray(a.run.picked)) return fail("invalid");
+        if (a.run.arrived !== undefined && !Array.isArray(a.run.arrived)) return fail("invalid");
         offer.run = { startedAt: a.run.startedAt, picked: a.run.picked.filter((k) => offer.kidIds.includes(k)) };
+        const arrived = (a.run.arrived ?? []).filter((k) => offer.kidIds.includes(k));
+        if (arrived.length) offer.run.arrived = arrived;
       } else {
         delete offer.run;
       }
@@ -307,9 +406,28 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       if (!offer.kidIds.includes(a.kidId)) return fail("not_found");
       if (!offer.run) return fail("invalid");
       const was = offer.run.picked.includes(a.kidId);
+      // Picking a kid ends their "הגעתי" state.
+      const wasArrived = a.picked ? clearArrived(offer.run, a.kidId) : false;
       if (a.picked && !was) offer.run.picked.push(a.kidId);
       if (!a.picked && was) offer.run.picked = offer.run.picked.filter((k) => k !== a.kidId);
-      return { ok: true, inverse: [{ type: "setPicked", offerId: offer.id, kidId: a.kidId, picked: was }] };
+      const inv: Inverse = [{ type: "setPicked", offerId: offer.id, kidId: a.kidId, picked: was }];
+      if (wasArrived) inv.push({ type: "setArrived", offerId: offer.id, kidId: a.kidId, arrived: true });
+      return { ok: true, inverse: inv };
+    }
+
+    case "setArrived": {
+      if (!isStr(a.kidId) || typeof a.arrived !== "boolean") return fail("invalid");
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      if (!sys && offer.familyId !== actor) return fail("forbidden");
+      if (!offer.kidIds.includes(a.kidId)) return fail("not_found");
+      if (!offer.run) return fail("invalid");
+      if (a.arrived && offer.run.picked.includes(a.kidId)) return fail("invalid");
+      const was = !!offer.run.arrived?.includes(a.kidId);
+      if (a.arrived && !was) offer.run.arrived = [...(offer.run.arrived ?? []), a.kidId];
+      if (!a.arrived && was) clearArrived(offer.run, a.kidId);
+      return { ok: true, inverse: [{ type: "setArrived", offerId: offer.id, kidId: a.kidId, arrived: was }] };
     }
 
     case "setKidReady": {
@@ -329,7 +447,7 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
     }
 
     case "editEvent": {
-      if (!sys && s.hostFamilyId !== actor) return fail("forbidden");
+      // Any family may edit (trust model: logged and undoable). The slug never changes.
       const patch = a.patch;
       if (!patch || typeof patch !== "object") return fail("invalid");
       const keys = Object.keys(patch) as (keyof EventPatch)[];
@@ -343,23 +461,27 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
           case "address": {
             const v = cleanText(value, key === "address" ? 200 : 100);
             if (v === null || (key === "title" && v === "")) return fail("invalid");
+            if (v === s[key]) break;
             inv[key] = s[key];
             s[key] = v;
             break;
           }
           case "date":
             if (!isDate(value)) return fail("invalid");
+            if (value === s.date) break;
             inv.date = s.date;
             s.date = value;
             break;
           case "start":
           case "returnTime":
             if (!isTime(value)) return fail("invalid");
+            if (value === s[key]) break;
             inv[key] = s[key];
             s[key] = value;
             break;
           case "coverImageId":
             if (value !== null && !isStr(value)) return fail("invalid");
+            if ((value ?? undefined) === s.coverImageId) break;
             inv.coverImageId = s.coverImageId ?? null;
             if (value === null) delete s.coverImageId;
             else s.coverImageId = value;
@@ -368,7 +490,18 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
             return fail("invalid");
         }
       }
-      return { ok: true, inverse: [{ type: "editEvent", patch: inv }] };
+      const changed = Object.keys(inv);
+      // Nothing changed: a mistake from a client, but a harmless no-op when replaying an undo.
+      if (changed.length === 0) return sys ? { ok: true, inverse: [] } : fail("invalid");
+      const inverse: Inverse = [{ type: "editEvent", patch: inv }];
+      // Drivers' times don't move on their own; flag every car on a leg whose time may have moved.
+      for (const leg of legsTouched(changed)) {
+        for (const o of s.offers[leg]) {
+          if (!o.departAtCheck) inverse.push({ type: "setDepartAtCheck", offerId: o.id, check: false });
+          o.departAtCheck = true;
+        }
+      }
+      return { ok: true, inverse };
     }
 
     default:
