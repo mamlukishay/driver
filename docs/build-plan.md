@@ -100,6 +100,7 @@ Rules for every call:
 | `seatKid { offerId, kidId }` | Allowed when **kid is mine** (any open offer) **or offer is mine** (any kid who needs that leg). Kid must have rsvp yes and need the leg, not already be seated on this leg, and the car must not be full. |
 | `unseatKid { offerId, kidId }` | Kid's family or offer owner. |
 | `startRun { offerId }` / `setPicked { offerId, kidId, picked }` | Offer owner. |
+| `setKidReady { offerId, kidId, ready }` | Kid's family (the DO runs it for `/api/kid/…/ready` acting as that family). Stored in `Offer.ready`. |
 | `editEvent { … }` | Host family. |
 
 Every applied action:
@@ -178,3 +179,12 @@ Result: `https://trempush.<account>.workers.dev`. No card needed for the base ap
 - Telegram/ntfy
 - Cross-group profile sync (v1 pre-fills the join form from another group's profile on the same device)
 - Optimized pickup order via Routes API (v1.1)
+
+## 9. M1 notes (as built)
+- `Family.name` = family surname for the "משפחת X" chip.
+- Inverses are action lists and may contain system-only actions (`clearKidPlan`, `restoreOffer`, `setRun`), accepted only with `ctx.system` (set by `undo`).
+- Offer limits (second offer per leg, seats below seated / above car) → `invalid`; kid already on that leg → `seat_taken`. `stale` (version mismatch) is the DO's job.
+- `shared/validate.ts`: `validateFamilyInput`, `validateEventInput`, `buildFamily`, `createEventState`. `shared/index.ts` re-exports all.
+- `bun run typecheck` runs `tsc` per tsconfig (TS 7 + reference-only root checks nothing).
+- Dev: after stopping `bun run dev`, vite/workerd may linger — kill them by PID.
+- Images: behind an `ImageStore` interface — R2 when an `IMAGES` bucket binding exists, otherwise the group DO (see workshop-spec §15).

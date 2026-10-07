@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "trempush",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-30",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "GROUP", "class_name": "GroupDO" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GroupDO"] }],
+  "observability": { "enabled": true }
+  // Optional secrets (the app works without them; /api/config reports which are set):
+  //   bunx wrangler secret put GOOGLE_MAPS_API_KEY   -> places autocomplete, geocoding, routes
+  //   bunx wrangler secret put ANTHROPIC_API_KEY     -> invitation image parsing
+  // Locally, put them in .dev.vars (gitignored).
+}

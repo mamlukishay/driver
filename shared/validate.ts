@@ -1,0 +1,154 @@
+import type { Car, EventInput, EventState, Family, FamilyInput, Kid, Parent } from "./types.ts";
+import { normalizePhone } from "./phone.ts";
+
+export const MAX_SEATS = 12;
+export const MAX_KIDS = 12;
+export const MAX_CARS = 5;
+export const MAX_PARENTS = 4;
+
+export type Validated<T> = { ok: true; value: T } | { ok: false; error: "invalid" };
+
+const invalid = { ok: false, error: "invalid" } as const;
+
+export function isDate(v: unknown): v is string {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const [y, m, d] = v.split("-").map(Number) as [number, number, number];
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
+export function isTime(v: unknown): v is string {
+  return typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+}
+
+/** Trims and bounds a free-text field; null when it isn't a string or is too long. */
+export function cleanText(v: unknown, max: number): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim().replace(/\s+/g, " ");
+  return t.length <= max ? t : null;
+}
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+function optStr(v: unknown, max: number): string | undefined | null {
+  if (v === undefined || v === null) return undefined;
+  const t = cleanText(v, max);
+  return t === "" ? undefined : t;
+}
+
+/** Validates and normalizes registration/profile input (phones → `+9725XXXXXXXX`). */
+export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
+  if (!isObj(input)) return invalid;
+  const name = cleanText(input.name, 40);
+  const address = cleanText(input.address ?? "", 200);
+  if (!name || address === null) return invalid;
+  if (!Array.isArray(input.parents) || input.parents.length < 1 || input.parents.length > MAX_PARENTS) return invalid;
+  if (!Array.isArray(input.kids) || input.kids.length > MAX_KIDS) return invalid;
+  if (!Array.isArray(input.cars ?? []) || (input.cars as unknown[] | undefined ?? []).length > MAX_CARS) return invalid;
+
+  const parents: Parent[] = [];
+  for (const p of input.parents) {
+    if (!isObj(p)) return invalid;
+    const pname = cleanText(p.name, 40);
+    const phone = typeof p.phone === "string" ? normalizePhone(p.phone) : null;
+    if (!pname || !phone) return invalid;
+    parents.push({ name: pname, phone });
+  }
+
+  const kids: FamilyInput["kids"] = [];
+  for (const k of input.kids) {
+    if (!isObj(k)) return invalid;
+    const kname = cleanText(k.name, 40);
+    if (!kname) return invalid;
+    const kid: FamilyInput["kids"][number] = { name: kname };
+    if (k.id !== undefined) {
+      if (typeof k.id !== "string" || k.id.length > 64) return invalid;
+      kid.id = k.id;
+    }
+    if (k.phone !== undefined && k.phone !== null && k.phone !== "") {
+      const phone = typeof k.phone === "string" ? normalizePhone(k.phone) : null;
+      if (!phone) return invalid;
+      kid.phone = phone;
+    }
+    kids.push(kid);
+  }
+
+  const cars: FamilyInput["cars"] = [];
+  for (const c of (input.cars as unknown[] | undefined) ?? []) {
+    if (!isObj(c)) return invalid;
+    const label = cleanText(c.label, 40);
+    if (!label || !Number.isInteger(c.seats) || (c.seats as number) < 1 || (c.seats as number) > MAX_SEATS) return invalid;
+    const car: FamilyInput["cars"][number] = { label, seats: c.seats as number };
+    if (c.id !== undefined) {
+      if (typeof c.id !== "string" || c.id.length > 64) return invalid;
+      car.id = c.id;
+    }
+    for (const [key, max] of [["color", 30], ["plate", 10], ["photoId", 64]] as const) {
+      const v = optStr(c[key], max);
+      if (v === null) return invalid;
+      if (v !== undefined) car[key] = v;
+    }
+    cars.push(car);
+  }
+
+  return { ok: true, value: { name, parents, address, kids, cars } };
+}
+
+export interface FamilyBase {
+  id: string;
+  color: number;
+  keyHash: string;
+  createdAt: number;
+}
+
+/**
+ * Builds the stored Family from validated input. Kids/cars whose `id` matches `prev` keep
+ * their id (and kidToken); everything else gets fresh ids.
+ */
+export function buildFamily(
+  input: FamilyInput,
+  base: FamilyBase,
+  prev: Family | null,
+  gen: { id: () => string; kidToken: () => string },
+): Family {
+  const kids: Kid[] = input.kids.map((k) => {
+    const old = k.id ? prev?.kids.find((p) => p.id === k.id) : undefined;
+    const kid: Kid = { id: old?.id ?? gen.id(), name: k.name, kidToken: old?.kidToken ?? gen.kidToken() };
+    if (k.phone) kid.phone = k.phone;
+    return kid;
+  });
+  const cars: Car[] = input.cars.map((c) => {
+    const old = c.id ? prev?.cars.find((p) => p.id === c.id) : undefined;
+    const car: Car = { id: old?.id ?? gen.id(), label: c.label, seats: c.seats };
+    if (c.color) car.color = c.color;
+    if (c.plate) car.plate = c.plate;
+    if (c.photoId) car.photoId = c.photoId;
+    return car;
+  });
+  return { ...base, name: input.name, parents: input.parents.map((p) => ({ ...p })), address: input.address, kids, cars };
+}
+
+export function validateEventInput(input: unknown): Validated<EventInput> {
+  if (!isObj(input)) return invalid;
+  const title = cleanText(input.title, 100);
+  const place = cleanText(input.place ?? "", 100);
+  const address = cleanText(input.address ?? "", 200);
+  if (!title || place === null || address === null) return invalid;
+  if (!isDate(input.date) || !isTime(input.start) || !isTime(input.returnTime)) return invalid;
+  const value: EventInput = { title, date: input.date, start: input.start, returnTime: input.returnTime, place, address };
+  const cover = optStr(input.coverImageId, 64);
+  if (cover === null) return invalid;
+  if (cover) value.coverImageId = cover;
+  return { ok: true, value };
+}
+
+export function createEventState(input: EventInput, meta: { id: string; hostFamilyId: string; now: number }): EventState {
+  return {
+    ...input,
+    id: meta.id,
+    hostFamilyId: meta.hostFamilyId,
+    createdAt: meta.now,
+    version: 1,
+    kidPlans: {},
+    offers: { out: [], back: [] },
+  };
+}
