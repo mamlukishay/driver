@@ -63,7 +63,7 @@ test("a linked WhatsApp group: set on create, opened from home and settings, edi
   await expect(page.getByRole("link", { name: he.waGroup.open })).toHaveCount(0);
 });
 
-test("deleting a group: typed confirmation, live notice for others, slug free again", async ({ browser }) => {
+test("deleting a group: yes/no confirmation, live notice for others, slug free again", async ({ browser }) => {
   const owner = await newUser(browser);
   const other = await newUser(browser);
   users.push(owner, other);
@@ -90,11 +90,7 @@ test("deleting a group: typed confirmation, live notice for others, slug free ag
   const sheet = page.getByRole("dialog", { name: he.settings.deleteTitle });
   await expect(sheet).toContainText(he.settings.deleteBody);
   const yes = sheet.getByRole("button", { name: he.settings.deleteYes, exact: true });
-  await expect(yes).toBeDisabled();
-  await sheet.getByLabel(he.settings.deleteType(name)).fill("קבוצה");
-  await expect(yes).toBeDisabled();
-  await sheet.getByLabel(he.settings.deleteType(name)).fill(name);
-  await expect(yes).toBeEnabled();
+  await expect(sheet.getByRole("button", { name: he.common.cancel })).toBeVisible();
   await yes.click();
 
   await expect.poll(() => path(page)).toBe("/");
