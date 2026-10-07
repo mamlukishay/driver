@@ -1,6 +1,10 @@
 # טרמפוש (Trempush)
 
-A mobile-first, Hebrew (RTL) carpool coordinator for parents' groups. A parent opens a group for a class or club, shares one invite link, and every family registers once (kids, car, phone). For each event, families RSVP their kids, offer cars per leg (there / back), and seat kids on a live board. Every change is logged with a 10-second undo, and phone numbers are only revealed between a driver and the families of the kids in that car. No accounts and no app install: a family is identified by a key stored on the device.
+A mobile-first, Hebrew (RTL) carpool coordinator for parents' groups. A parent opens a group for a class or club, shares one invite link, and every family registers once (kids, car, phone). For each event, families RSVP their kids, offer cars per leg (there / back), and seat kids on a live board. Every change is logged with a 10-second undo. No accounts and no app install: on a new phone you pick your family from the group's list ("מי אתם?"), and the choice is remembered on the device.
+
+**Trust model:** groups are small and trust each other. Anyone with the group link can act as any family and sees every family's phones and addresses; guardrails (identity chip, confirmations, undo, permission rules) prevent mistakes, not malice. Don't store sensitive data.
+
+URLs use friendly English slugs: `/g/class-4b/e/oct-16-birthday`, kid pages at `/g/:group/kid/:kidId`.
 
 ## Stack
 
@@ -30,11 +34,12 @@ Notes:
 
 ```
 shared/     pure TS domain used by both sides: types, action reducer + permissions,
-            viewFor (who may see which phone), gap math, phone validation (+ bun tests)
+            viewFor, familyLabel (same-name disambiguation), slugs, gap math,
+            phone validation (+ bun tests)
 worker/     Cloudflare Worker (/api router) and GroupDO (storage, actions, WebSocket, images);
             optional Google Maps and Claude-vision proxies
 src/        Preact SPA: screens/ (one per route), components/, i18n/he.ts (all UI strings),
-            api.ts, identity.ts (device keys), live.ts (WebSocket), nav.ts (history, sheets, scroll)
+            api.ts, identity.ts (group → chosen family id), live.ts (WebSocket), nav.ts (history, sheets, scroll)
 e2e/        Playwright specs (mobile viewport, Hebrew)
 scripts/    api-smoke.ts
 docs/       build-plan.md (contract), workshop-spec.md (product/architecture decisions), workshop.html

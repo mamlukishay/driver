@@ -9,6 +9,7 @@ Do not include any real names / content from the source chat. All sample data is
 - **Frontend tooling: Bun** (package manager, scripts, test runner) + Vite + Preact.
 - **Language**: Hebrew is display-only; code/URLs/data are English (§13).
 - **Routing data**: Google Maps Platform for address autocomplete, geocoding and driving times (§14).
+- **Identity: family picker, no secrets** (supersedes "Identity without sign-in" below). A new phone picks its family from the group ("מי אתם?", confirm sheet, "רק להסתכל" for read-only); the client sends `X-Family-Id`. Everyone in the group sees all phones and addresses. Settings (`/g/:group/settings`) switches family or logs out; no device magic link. Same-name families get disambiguated labels (kids → parent → street → ordinal). URLs use English slugs (group chosen at creation, events `<mon>-<day>[-word]`, kid page by kid id).
 - Build plan: `docs/build-plan.md`.
 - Sections 4–9 are the workshop record (how we chose); where they mention Netlify, §15 supersedes them.
 

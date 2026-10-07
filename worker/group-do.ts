@@ -444,7 +444,11 @@ export class GroupDO extends DurableObject<Env> {
     const mime = (request.headers.get("Content-Type") ?? "").split(";")[0]!.trim().toLowerCase();
     if (!(IMAGE_MIMES as readonly string[]).includes(mime)) throw new ApiError("invalid");
     const declared = Number(request.headers.get("Content-Length") ?? 0);
-    if (declared > MAX_IMAGE_BYTES) throw new ApiError("too_large");
+    if (declared > MAX_IMAGE_BYTES) {
+      // Drain rather than abandon the body: an unread request body makes local dev (miniflare) fail the fetch.
+      await request.arrayBuffer().catch(() => undefined);
+      throw new ApiError("too_large");
+    }
     const bytes = await request.arrayBuffer();
     if (bytes.byteLength > MAX_IMAGE_BYTES) throw new ApiError("too_large");
     if (bytes.byteLength === 0) throw new ApiError("invalid");
