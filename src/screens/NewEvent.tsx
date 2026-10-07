@@ -195,6 +195,7 @@ export function NewEvent({ group }: { group: string }) {
               id="invite-file"
               variant="drop"
               compact
+              paste
               maxDim={1600}
               onPicked={onPicked}
               sub={<span class="small muted">{he.newEvent.dropHint}</span>}

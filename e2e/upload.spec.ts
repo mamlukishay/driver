@@ -73,3 +73,28 @@ test("a car photo uploaded in the profile renders and persists", async () => {
   await expectImageLoaded(saved);
   expect(await saved.getAttribute("src")).toContain(`/api/g/${groupId}/images/`);
 });
+
+test("the paste button attaches an image from the clipboard", async () => {
+  const { page } = user;
+  // Headless Chromium can't reliably round-trip images through the system clipboard, so stub read().
+  const b64 = makePng(96).toString("base64");
+  await page.addInitScript((data: string) => {
+    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+    const item = new ClipboardItem({ "image/png": new Blob([bytes], { type: "image/png" }) });
+    Object.defineProperty(navigator.clipboard, "read", { configurable: true, value: () => Promise.resolve([item]) });
+  }, b64);
+  await page.goto(`/g/${groupId}/new`);
+  await page.getByRole("button", { name: he.newEvent.paste }).click();
+  await expectImageLoaded(page.getByRole("img", { name: he.newEvent.cover }));
+});
+
+test("the paste button says so when the clipboard has no image", async () => {
+  const { page } = user;
+  await page.addInitScript(() => {
+    const item = new ClipboardItem({ "text/plain": new Blob(["hi"], { type: "text/plain" }) });
+    Object.defineProperty(navigator.clipboard, "read", { configurable: true, value: () => Promise.resolve([item]) });
+  });
+  await page.goto(`/g/${groupId}/new`);
+  await page.getByRole("button", { name: he.newEvent.paste }).click();
+  await expect(page.getByText(he.newEvent.pasteEmpty)).toBeVisible();
+});

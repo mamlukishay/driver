@@ -770,6 +770,34 @@ a.who:hover {
   border-width: 1.5px;
   border-radius: 12px;
 }
+.drop-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.drop-row > label.drop {
+  flex: 1;
+  min-inline-size: 0;
+}
+.drop.paste {
+  flex: none;
+  inline-size: 76px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+}
+.drop.paste:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.drop.paste:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
 .drop-t {
   display: flex;
   flex-direction: column;
