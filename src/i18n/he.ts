@@ -443,7 +443,7 @@ export const he = {
   /* ---------- event tabs, ⋯ menu, editing, cancelling ---------- */
   manage: {
     tabs: "מסכי האירוע",
-    details: "פרטים",
+    details: "הילדים שלי",
     gapLabel: { missing: "חסרים מקומות", unassigned: "ממתינים לשיבוץ", ok: "מסודר", none: "אין צורך" } as Record<"missing" | "unassigned" | "ok" | "none", string>,
     menu: "פעולות לאירוע",
     menuTitle: "האירוע",
