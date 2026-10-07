@@ -395,7 +395,7 @@ button{cursor:pointer}
           <pre id="wa-upd">עדכון: יום הולדת לנועה (יום שישי, 16.10)
 השעה השתנתה מ-10:00 ל-10:30.
 נהגים, בדקו את שעת היציאה שלכם.
-https://trampush.app/g/gan-alon/e/noa-bday</pre>
+https://trempush.mamlukishay.workers.dev/g/class-4b/e/oct-16-birthday</pre>
           <button type="button" class="btn sm wa" data-copy="wa-upd">העתקה</button>
           <span class="cp-ok" role="status"></span>
         </div>
@@ -407,7 +407,7 @@ https://trampush.app/g/gan-alon/e/noa-bday</pre>
         <div class="w-wa">
           <pre id="wa-cxl">יום הולדת לנועה (יום שישי, 16.10) בוטל.
 ההסעות מבוטלות.
-https://trampush.app/g/gan-alon/e/noa-bday</pre>
+https://trempush.mamlukishay.workers.dev/g/class-4b/e/oct-16-birthday</pre>
           <button type="button" class="btn sm wa" data-copy="wa-cxl">העתקה</button>
           <span class="cp-ok" role="status"></span>
         </div>
@@ -681,7 +681,7 @@ https://trampush.app/g/gan-alon/e/noa-bday</pre>
     return h;
   }
   function waText(st, kind) {
-    var e = st.ev, url = "https://trampush.app" + BASE;
+    var e = st.ev, url = "https://trempush.mamlukishay.workers.dev" + BASE;
     if (kind === "wa-cxl") return e.title + " (" + fmtDate(e.date) + ") בוטל.\nההסעות מבוטלות.\n" + url;
     if (kind === "wa-upd" && st.changes) return "עדכון: " + e.title + " (" + fmtDate(e.date) + ")\n" + st.changes.map(function (c) { return c.label + " השתנ" + (c.fem ? "תה" : "ה") + " מ-" + c.from + " ל-" + c.to + "."; }).join("\n") + "\nנהגים, בדקו את שעת היציאה שלכם.\n" + url;
     return "סיכום הסעות: " + e.title + "\n" + fmtDate(e.date) + " · " + e.start + " · " + e.place + "\nהלוך: מסודר ✓\nחזור: 1 ממתינים\n" + url;
