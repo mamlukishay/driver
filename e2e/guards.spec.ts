@@ -5,6 +5,7 @@ import {
   createGroup,
   he,
   identityOf,
+  isoInDays,
   familyIdOf,
   newUser,
   offerCar,
@@ -91,5 +92,32 @@ test("permissions, identity chip and an unknown stored family", async ({ browser
   } finally {
     await a.ctx.close();
     await b.ctx.close();
+  }
+});
+
+test("new event: the date starts empty, a past date is refused, a future date fills 10:00", async ({ browser }) => {
+  const a: User = await newUser(browser);
+  try {
+    const { groupId } = await createGroup(a.page, "קבוצת תאריכים");
+    await a.page.getByRole("link", { name: he.newGroup.continue }).click();
+    await registerFamily(a.page, groupId, A);
+    const page = a.page;
+    await page.getByRole("link", { name: he.group.newEvent }).click();
+    await page.getByRole("button", { name: he.newEvent.manual }).click();
+    const date = page.getByLabel(he.newEvent.fDate, { exact: true });
+    const start = page.getByLabel(he.newEvent.fStart, { exact: true });
+    await expect(date).toHaveValue("");
+    await expect(start).toHaveValue("");
+    await page.getByLabel(he.newEvent.fTitle, { exact: true }).fill("אירוע שעבר");
+    await page.getByLabel(he.newEvent.fPlace, { exact: true }).fill("פארק");
+    await date.fill(isoInDays(-3));
+    await expect(start).toHaveValue("");
+    await start.fill("10:00");
+    await page.getByLabel(he.newEvent.fReturn, { exact: true }).fill("12:00");
+    await page.getByRole("button", { name: he.newEvent.submit }).click();
+    await expect(page.getByText(he.newEvent.datePast)).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/g/${groupId}/new`));
+  } finally {
+    await a.ctx.close();
   }
 });
