@@ -70,7 +70,7 @@ Personas: **Parent** (registers family, RSVPs kids, offers rides, drives) and **
 ### Data model (JSON in Blobs)
 ```
 group/{groupId}.json   { name, inviteCode, families:[…], createdAt }
-family: { id, color, parents:[{name, phone}], address, kids:[{id,name,grade?}], cars:[{id,label,seats}] , keyHash }
+family: { id, color, parents:[{name, phone}], address, kids:[{id,name,phone?,grade?}], cars:[{id,label,seats}] , keyHash }
 event/{groupId}/{eventId}.json
   { id, title, place, address, date, start, returnTime, hostFamilyId,
     rsvp: { kidId: "yes"|"no"|"maybe" },
@@ -163,3 +163,13 @@ Parents usually get a designed invitation image (date, times, venue, address). C
 - **Storage**: client resizes/compresses (canvas → WebP/JPEG ~1600px, ~200–300 KB), uploads to a function that stores it in Netlify Blobs (`invite/{groupId}/{eventId}`); served via a function with cache headers. Still no DB.
 - **Privacy**: the invite image is visible only to the group (unguessable group code in the URL); not indexed.
 - WhatsApp share of the event uses the invite as the preview image (Open Graph via an edge function — v1.1).
+
+## 11. Phone numbers — parents and kids
+- **Parents**: phone required at registration (each parent in the family). **Kids**: phone optional per kid (many 10–14-year-olds have one).
+- Input: Israeli mobile format (`050-1234567`), validated + normalized to `+97250…` for `wa.me` / `tel:`. Pick from contacts isn't available on the web, so the field uses a numeric keypad with a format hint.
+- **Who sees which number** (privacy guardrail): group members see names only. A number shows up only for people who share a car on that leg — the driver sees passengers' parents' and kids' numbers, and passengers' parents see the driver's number. The host sees parents' numbers.
+- **Uses**:
+  - Driver run mode: per stop, "📞 התקשר" and "WhatsApp" to the kid ("אני למטה") **and** to the parent. The default goes to the kid if they have a phone, otherwise to the parent.
+  - The kid link (`/kid/:token`) can be sent straight to the kid's phone on WhatsApp from the family profile.
+  - Kid's "אני מוכן/ה" → the driver gets the kid's name (+ number) in the run-mode list.
+- Data model: `parents:[{name, phone}]`, `kids:[{id, name, phone?}]`.
