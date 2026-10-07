@@ -657,7 +657,8 @@ a.who:hover {
   inline-size: 22px;
   block-size: 22px;
   border-radius: 50%;
-  background: var(--surface);
+  /* Always white: --surface is darker than --line in dark mode, which made an enabled switch read as disabled. */
+  background: #fff;
   box-shadow: 0 1px 2px var(--shadow);
   transition: inset-inline-start 0.15s;
 }
