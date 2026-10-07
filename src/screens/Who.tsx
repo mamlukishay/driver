@@ -6,7 +6,7 @@ import { ConfirmSentence, Sheet } from "../components/Sheet.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { he } from "../i18n/he.ts";
 import { setBrowsing, setIdentity } from "../identity.ts";
-import { useSheet, withQuery } from "../nav.ts";
+import { useLeave, useReplaceLink, useSheet, withQuery } from "../nav.ts";
 import { useGroup } from "../store.ts";
 import { famColor, famLabel } from "../util.ts";
 
@@ -20,7 +20,9 @@ export function safeNext(group: string, next: string | undefined): string {
 export const byCreation = (fams: readonly FamilyPublic[]) => [...fams].sort((a, b) => a.createdAt - b.createdAt);
 
 export function Who({ group }: { group: string }) {
-  const { route, query } = useLocation();
+  const { query } = useLocation();
+  const leave = useLeave();
+  const replaceLink = useReplaceLink();
   const next = safeNext(group, query.next);
   const res = useGroup(group);
   const sheet = useSheet();
@@ -30,11 +32,11 @@ export function Who({ group }: { group: string }) {
   const choose = (f: FamilyPublic) => {
     setIdentity(group, f.id);
     setBrowsing(group, false);
-    route(next, true);
+    leave(next);
   };
   const justLook = () => {
     setBrowsing(group, true);
-    route(next, true);
+    leave(next);
   };
 
   return (
@@ -52,7 +54,7 @@ export function Who({ group }: { group: string }) {
             <ul class="list">
               {byCreation(families).map((f) => (
                 <li>
-                  <button type="button" class="fampick" style={{ "--fc": famColor(f.color) }} onClick={() => sheet.open("confirm", { fam: f.id, next: query.next })}>
+                  <button type="button" class="fampick" style={{ "--fc": famColor(f.color) }} onClick={() => sheet.open("confirm", { fam: f.id })}>
                     <span class="fdot lg" aria-hidden="true" />
                     <span class="grow1">
                       <b>{famLabel(f, families)}</b>
@@ -62,7 +64,7 @@ export function Who({ group }: { group: string }) {
                 </li>
               ))}
             </ul>
-            <a class={families.length ? "btn ghost big" : "btn big"} href={withQuery(`/join/${group}`, { new: "1", next: query.next })}>
+            <a class={families.length ? "btn ghost big" : "btn big"} href={withQuery(`/join/${group}`, { new: "1", next: query.next })} onClick={replaceLink}>
               {he.who.newFamily}
             </a>
             <p class="center">

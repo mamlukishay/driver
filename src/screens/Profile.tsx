@@ -75,7 +75,6 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
           <h2 class="hs" id="kidlinks-h">
             {he.profile.kidLinks}
           </h2>
-          <p class="small muted">{he.profile.kidLinksHint}</p>
           {fam.kids.map((k, i) =>
             k.phone ? (
               <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(kidPath(group, k.id)))}>

@@ -75,7 +75,6 @@ test("feedback with voice + screenshot from the group home", async ({ browser })
 
   // Record → stop → upload; local dev has no Whisper, so the transcript is null and the UI says so.
   await dialog.getByRole("button", { name: he.feedback.micStart }).click();
-  await expect(dialog.getByText(he.feedback.recording)).toBeVisible();
   await expect(dialog.getByText("00:00")).toBeVisible();
   const audioRes = page.waitForResponse((r) => r.url().endsWith("/api/feedback/audio") && r.request().method() === "POST");
   await dialog.getByRole("button", { name: he.feedback.micStop }).click();

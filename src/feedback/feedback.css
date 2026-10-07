@@ -1,10 +1,11 @@
 /* ---------- feedback: floating button + sheet ---------- */
 
-/* A small tab on the start edge (right in RTL), above sticky CTAs and over sheets (.ov is z 30). */
+/* A small tab at the bottom of the start edge (right in RTL), over sheets (.ov is z 30). Low by default so
+   it stays out of mid-screen form fields; lifted just above a sticky primary button when the screen has one. */
 .fb-fab {
   position: fixed;
   inset-inline-start: 0;
-  inset-block-end: calc(92px + env(safe-area-inset-bottom, 0px));
+  inset-block-end: calc(12px + env(safe-area-inset-bottom, 0px));
   z-index: 35;
   display: inline-flex;
   align-items: center;
@@ -33,17 +34,34 @@
 .fb-fab[aria-busy="true"] {
   opacity: 0.5;
 }
+body:has(.sticky-cta) .fb-fab {
+  inset-block-end: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+/* While another sheet is open its buttons sit at the bottom: move the tab up, over the scrim. */
+body:has(.ov) .fb-fab {
+  inset-block-end: auto;
+  inset-block-start: calc(12px + env(safe-area-inset-top, 0px));
+}
+/* Kid page: a small pill at the end of the page, in flow, so it never covers the status cards. */
 .fb-fab.kid {
+  position: static;
+  display: flex;
+  inline-size: fit-content;
+  margin: 0 auto calc(16px + env(safe-area-inset-bottom, 0px));
   min-block-size: 28px;
-  padding: 4px 8px 4px 7px;
+  padding: 4px 10px;
+  border-inline-start: 1px solid var(--line);
+  border-radius: 999px;
   font-size: 12px;
-  inset-block-end: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .fb-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+}
+.fb-form > .note {
+  margin-block: -4px 0;
 }
 .fb-seg {
   display: grid;
@@ -63,18 +81,19 @@
   color: var(--ink-2);
 }
 .fb-seg button.on {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 1px 4px var(--shadow);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 1px 3px var(--shadow);
 }
-.fb-label {
-  font-weight: 700;
-  font-size: 15px;
+/* Textarea with the mic inside, at its inline-end/bottom corner. */
+.fb-box {
+  position: relative;
 }
 .fb-text {
+  display: block;
   inline-size: 100%;
-  min-block-size: 96px;
-  resize: vertical;
+  min-block-size: 112px;
+  resize: none;
   border: 1.5px solid var(--line);
   border-radius: 12px;
   padding: 10px 12px;
@@ -84,22 +103,39 @@
   font-size: 16px;
   line-height: 1.45;
 }
-.fb-mic-row {
+.fb-box.has-mic .fb-text {
+  padding-block-end: 54px;
+}
+.fb-mic-wrap {
+  position: absolute;
+  inset-inline-end: 8px;
+  inset-block-end: 8px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
+  pointer-events: none;
+}
+.fb-mic-wrap > * {
+  pointer-events: auto;
+}
+.fb-mic-status {
+  font-size: 13px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.fb-mic-status:empty {
+  display: none;
 }
 .fb-mic {
   flex: none;
-  inline-size: 72px;
-  block-size: 72px;
+  inline-size: 40px;
+  block-size: 40px;
   border-radius: 50%;
   border: 0;
   display: grid;
   place-items: center;
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: 0 4px 14px var(--shadow);
   cursor: pointer;
 }
 .fb-mic:disabled {
@@ -115,7 +151,7 @@
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--bad) 55%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 18px color-mix(in srgb, var(--bad) 0%, transparent);
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--bad) 0%, transparent);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -123,35 +159,40 @@
     animation: none;
   }
 }
-.fb-mic-status {
-  font-size: 15px;
+/* One compact row: thumbnail, remove link, what gets attached. */
+.fb-meta {
   display: flex;
-  gap: 6px;
-  align-items: baseline;
-  flex-wrap: wrap;
-}
-.fb-shot {
-  display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 10px;
+  min-block-size: 40px;
 }
-.fb-shot img {
-  inline-size: 64px;
-  max-block-size: 120px;
+.fb-meta img {
+  flex: none;
+  inline-size: 56px;
+  block-size: 56px;
   object-fit: cover;
   object-position: top;
   border-radius: 8px;
   border: 1px solid var(--line);
 }
-.fb-shot img.off {
+.fb-meta img.off {
   opacity: 0.3;
   filter: grayscale(1);
 }
-.fb-shot-side {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-start;
+.fb-meta .lnk {
+  flex: none;
+  min-block-size: 40px;
+  color: var(--ink);
+}
+.fb-meta .small {
+  line-height: 1.35;
+}
+/* Disabled send: clearly inactive, still readable. */
+.fb-send:disabled {
+  opacity: 1;
+  background: var(--sunk);
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1.5px var(--line);
 }
 .fb-thanks {
   display: flex;

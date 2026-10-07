@@ -26,7 +26,7 @@ test("every screen has its own URL", async () => {
   const screens: [string, string | RegExp][] = [
     ["/", he.appName],
     ["/new-group", he.newGroup.title],
-    [`/join/${groupId}`, he.join.invited],
+    [`/join/${groupId}`, "קבוצת ניווט"],
     [`/g/${groupId}`, "קבוצת ניווט"],
     [`/g/${groupId}/new`, he.newEvent.title],
     [eventUrl, EVENT_TITLE],

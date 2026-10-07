@@ -140,7 +140,7 @@ export function FamilyForm({ group, initial, submitLabel, places, onSubmit }: Pr
   return (
     <form class="stack-form" onSubmit={submit} noValidate>
       <section class="card">
-        <Field id="fam-name" label={he.form.familyName} hint={he.form.familyNameHint} value={d.name} error={err("fam-name")} autoComplete="family-name" onInput={(v) => up((x) => ({ ...x, name: v }))} />
+        <Field id="fam-name" label={he.form.familyName} hint={d.name.trim() ? he.form.familyNameHint(d.name.trim()) : undefined} value={d.name} error={err("fam-name")} autoComplete="family-name" onInput={(v) => up((x) => ({ ...x, name: v }))} />
       </section>
 
       <section class="card" aria-labelledby="parents-h">
@@ -169,7 +169,7 @@ export function FamilyForm({ group, initial, submitLabel, places, onSubmit }: Pr
 
       <section class="card" aria-labelledby="kids-h">
         <h2 class="hs" id="kids-h">
-          {he.form.kids} <span class="muted small">· {he.form.kidsHint}</span>
+          {he.form.kids}
         </h2>
         {d.kids.map((k, i) => (
           <div class="sub">

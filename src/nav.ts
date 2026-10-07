@@ -20,9 +20,8 @@ try {
 }
 
 let popped = false;
-/** Set right before an in-app replace so the replaced entry keeps its key and `prev`. */
-let pendingReplace: EntryState | null = null;
 let lastUrl = location.pathname + location.search;
+const newKey = () => Math.random().toString(36).slice(2, 10);
 
 const currentUrl = () => location.pathname + location.search;
 const state = (): EntryState | null => {
@@ -39,6 +38,20 @@ export function initHistory(): void {
   addEventListener("popstate", () => {
     popped = true;
   });
+  // The router calls pushState/replaceState(null, …). Stamp entries right there: a push records the
+  // entry it came from (`prev`, so our back button can walk history); a replace (redirects such as
+  // "מי אתם?") inherits the replaced entry's key and `prev`, so a redirect never pretends there is an
+  // in-app entry behind it, and a replaced screen never stays in history.
+  const push = history.pushState.bind(history);
+  const replace = history.replaceState.bind(history);
+  history.pushState = (data: unknown, unused: string, url?: string | URL | null) => {
+    if (data == null) data = { k: newKey(), prev: currentUrl() } satisfies EntryState;
+    push(data, unused, url);
+  };
+  history.replaceState = (data: unknown, unused: string, url?: string | URL | null) => {
+    if (data == null) data = state() ?? { k: newKey() };
+    replace(data, unused, url);
+  };
   let t: ReturnType<typeof setTimeout> | undefined;
   addEventListener(
     "scroll",
@@ -49,7 +62,7 @@ export function initHistory(): void {
     { passive: true },
   );
   addEventListener("pagehide", saveScroll);
-  stamp(false);
+  stamp();
 }
 
 function saveScroll() {
@@ -63,17 +76,9 @@ function saveScroll() {
   }
 }
 
-/** Gives the current entry a key (a state stamp, not a navigation). */
-function stamp(pushed: boolean) {
-  if (state()) return;
-  if (pendingReplace) {
-    history.replaceState(pendingReplace, "", location.href);
-    pendingReplace = null;
-    return;
-  }
-  const s: EntryState = { k: Math.random().toString(36).slice(2, 10) };
-  if (pushed) s.prev = lastUrl;
-  history.replaceState(s, "", location.href);
+/** Gives an entry that has none (the first page load) a key, without a `prev`. */
+function stamp() {
+  if (!state()) history.replaceState({ k: newKey() } satisfies EntryState, "", location.href);
 }
 
 /** Runs on every location change from the app root. */
@@ -82,7 +87,7 @@ export function useHistoryEffects(): void {
   useLayoutEffect(() => {
     const wasPop = popped;
     popped = false;
-    stamp(!wasPop);
+    stamp();
     const prevPath = lastUrl.split("?")[0];
     lastUrl = currentUrl();
     const s = state();
@@ -104,12 +109,46 @@ function restoreScroll(y: number) {
   requestAnimationFrame(go);
 }
 
-/** Back button: go back when the previous entry is ours, otherwise go "up" to the parent screen. */
+/**
+ * Back button: go back when the previous entry is ours, otherwise go "up" to the parent screen. Going
+ * up replaces this entry, so with no in-app history the arrow keeps walking up the hierarchy
+ * (invite → event → group → my groups) instead of bouncing back to where it started.
+ */
 export function useBack(up: string): () => void {
   const { route } = useLocation();
   return () => {
     if (state()?.prev) history.back();
-    else route(up);
+    else route(up, true);
+  };
+}
+
+/**
+ * Leaves a transient screen ("מי אתם?", registration) for `url` without leaving it in history: back
+ * when `url` is the entry we came from, otherwise replace this entry.
+ */
+export function useLeave(): (url: string) => void {
+  const { route } = useLocation();
+  const go = (url: string) => {
+    const prev = state()?.prev;
+    if (prev === url) history.back();
+    else if (prev && prev.split("?")[0] === location.pathname) {
+      // A sheet entry over this screen (e.g. the confirmation): step off it first, then leave.
+      addEventListener("popstate", () => setTimeout(() => go(url)), { once: true });
+      history.back();
+    } else route(url, true);
+  };
+  return go;
+}
+
+/** onClick for a link that should replace the current entry (moving between transient screens). */
+export function useReplaceLink(): (e: MouseEvent) => void {
+  const { route } = useLocation();
+  return (e) => {
+    const a = e.currentTarget as HTMLAnchorElement;
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    e.stopPropagation(); // the router's own link handler would push as well
+    route(a.getAttribute("href")!, true);
   };
 }
 
@@ -120,7 +159,6 @@ export function useBack(up: string): () => void {
 export function useReplace(): (url: string) => void {
   const { route } = useLocation();
   return (url: string) => {
-    pendingReplace = state();
     route(url, true);
   };
 }
@@ -134,23 +172,31 @@ export function withQuery(path: string, q: Record<string, string | undefined>): 
   return s ? `${path}?${s}` : path;
 }
 
+/**
+ * Query keys a sheet may add next to `sheet` (stripped on close). Every other query param belongs to
+ * the screen (e.g. `/join/:g?new=1&next=…`) and is kept while a sheet opens and closes, so opening an
+ * overlay never changes what the screen (or its guards/redirects) sees.
+ */
+const SHEET_PARAMS = ["sheet", "fam", "kid", "offer"];
+
 export function useSheet() {
   const loc = useLocation();
   const name = loc.query.sheet;
+  const screenQuery = () => {
+    const q: Record<string, string> = {};
+    for (const [k, v] of Object.entries(loc.query)) if (!SHEET_PARAMS.includes(k) && typeof v === "string") q[k] = v;
+    return q;
+  };
   const open = (sheet: string, params: Record<string, string | undefined> = {}) =>
-    loc.route(withQuery(loc.path, { sheet, ...params }));
+    loc.route(withQuery(loc.path, { ...screenQuery(), sheet, ...params }));
   const close = () => {
     const s = state();
     if (s?.prev && s.prev.split("?")[0] === loc.path && !new URLSearchParams(s.prev.split("?")[1] ?? "").get("sheet"))
       history.back();
-    else {
-      pendingReplace = s;
-      loc.route(loc.path, true);
-    }
+    else loc.route(withQuery(loc.path, screenQuery()), true);
   };
   /** Replaces the open sheet with another (back then closes it instead of returning to the first). */
   const swap = (sheet: string, params: Record<string, string | undefined> = {}) => {
-    pendingReplace = state();
     loc.route(withQuery(loc.path, { sheet, ...params }), true);
   };
   return { name, query: loc.query, open, close, swap };

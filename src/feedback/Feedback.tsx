@@ -157,68 +157,63 @@ function FeedbackForm({ path, shot, onDone }: { path: string; shot: Shot | "fail
         ))}
       </div>
 
-      <label class="fb-label" for="fb-text">
+      <label class="vh" for="fb-text">
         {he.feedback.textLabel}
       </label>
-      <textarea
-        id="fb-text"
-        class="fb-text"
-        rows={4}
-        maxLength={FEEDBACK_MAX_TEXT}
-        placeholder={kind === "improve" ? he.feedback.placeholderImprove : he.feedback.placeholderKeep}
-        value={text}
-        onInput={(e) => setText((e.target as HTMLTextAreaElement).value)}
-      />
-
-      {!problem && (
-        <div class="fb-mic-row">
-          <button
-            type="button"
-            class={`fb-mic ${recording ? "rec" : ""}`}
-            aria-label={recording ? he.feedback.micStop : he.feedback.micStart}
-            aria-pressed={recording}
-            disabled={transcribing || phase !== "edit"}
-            onClick={rec.toggle}
-          >
-            {recording ? <StopIcon /> : <MicIcon />}
-          </button>
-          <div class="fb-mic-status" aria-live="polite">
-            {recording ? (
-              <>
-                <b>{he.feedback.recording}</b> <time class="num">{fmtClock(rec.seconds)}</time>
-              </>
-            ) : transcribing ? (
-              <b>{he.feedback.transcribing}</b>
-            ) : audioId ? (
-              <span>🎙️ {he.feedback.audioAttached}</span>
-            ) : (
-              <span class="muted">{he.feedback.micHint}</span>
-            )}
+      <div class={`fb-box ${problem ? "" : "has-mic"}`}>
+        <textarea
+          id="fb-text"
+          class="fb-text"
+          rows={4}
+          maxLength={FEEDBACK_MAX_TEXT}
+          placeholder={kind === "improve" ? he.feedback.placeholderImprove : he.feedback.placeholderKeep}
+          value={text}
+          onInput={(e) => setText((e.target as HTMLTextAreaElement).value)}
+        />
+        {!problem && (
+          <div class="fb-mic-wrap">
+            <span class="fb-mic-status" aria-live="polite">
+              {recording ? (
+                <time class="num">{fmtClock(rec.seconds)}</time>
+              ) : transcribing ? (
+                he.feedback.transcribing
+              ) : audioId ? (
+                <>🎙️ {he.feedback.audioAttached}</>
+              ) : null}
+            </span>
+            <button
+              type="button"
+              class={`fb-mic ${recording ? "rec" : ""}`}
+              aria-label={recording ? he.feedback.micStop : he.feedback.micStart}
+              aria-pressed={recording}
+              disabled={transcribing || phase !== "edit"}
+              onClick={rec.toggle}
+            >
+              {recording ? <StopIcon /> : <MicIcon />}
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
       {problem && <p class="note">{problem}</p>}
       {note && <p class="note gap">{note}</p>}
 
-      {shot && shot !== "failed" && (
-        <div class="fb-shot">
-          <img src={shot.url} alt={he.feedback.shotAlt} class={keepShot ? "" : "off"} />
-          <div class="fb-shot-side">
-            {!keepShot && <span class="small muted">{he.feedback.shotRemoved}</span>}
-            <button type="button" class="btn sm ghost" aria-pressed={!keepShot} onClick={() => setKeepShot((v) => !v)}>
+      <div class="fb-meta">
+        {shot && shot !== "failed" && (
+          <>
+            <img src={shot.url} alt={he.feedback.shotAlt} class={keepShot ? "" : "off"} />
+            <button type="button" class="lnk" aria-pressed={!keepShot} onClick={() => setKeepShot((v) => !v)}>
               {keepShot ? he.feedback.shotRemove : he.feedback.shotRestore}
             </button>
-          </div>
-        </div>
-      )}
-
-      <p class="small muted">{he.feedback.contextNote}</p>
+          </>
+        )}
+        <span class="small muted">{shot && shot !== "failed" && !keepShot ? he.feedback.shotRemoved : he.feedback.contextNote}</span>
+      </div>
       {error && (
         <p class="note gap" role="alert">
           {error}
         </p>
       )}
-      <button type="button" class="btn big" disabled={!canSend} onClick={send}>
+      <button type="button" class="btn big fb-send" disabled={!canSend} onClick={send}>
         {phase === "sending" ? he.feedback.sending : he.feedback.send}
       </button>
     </div>
@@ -232,14 +227,14 @@ const ChatIcon = () => (
 );
 
 const MicIcon = () => (
-  <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="9" y="3" width="6" height="11" rx="3" />
     <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
   </svg>
 );
 
 const StopIcon = () => (
-  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
     <rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" />
   </svg>
 );

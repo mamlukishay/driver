@@ -59,6 +59,8 @@ export async function registerFamily(page: Page, groupId: string, f: FamilySpec,
   if (page.url().includes("/who")) await page.getByRole("link", { name: he.who.newFamily }).click();
   await expect(page).toHaveURL(new RegExp(`/join/${groupId}\\?new=1`));
   await page.getByLabel(he.form.familyName, { exact: true }).fill(f.name);
+  // Live preview of how the family will be shown.
+  await expect(page.locator("#fam-name-hint")).toHaveText(he.form.familyNameHint(f.name.trim()));
   await page.getByLabel(he.form.parentName, { exact: true }).fill(f.parent);
   await page.getByLabel(he.form.parentPhone, { exact: true }).fill(f.phone);
   await page.getByLabel(he.form.kidName, { exact: true }).fill(f.kid);
@@ -81,6 +83,13 @@ export async function pickFamily(page: Page, label: string): Promise<void> {
   await sheet.getByRole("button", { name: he.who.confirm }).click();
 }
 
+/** Local date `days` from today as YYYY-MM-DD. */
+export function isoInDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /** Creates an event through the manual form. Returns the event id. */
 export async function createEventManually(page: Page, groupId: string, title: string, place = "פארק הירקון"): Promise<string> {
   await page.getByRole("link", { name: he.group.newEvent }).click();
@@ -88,6 +97,8 @@ export async function createEventManually(page: Page, groupId: string, title: st
   await page.getByRole("button", { name: he.newEvent.manual }).click();
   await page.getByLabel(he.newEvent.fTitle, { exact: true }).fill(title);
   await page.getByLabel(he.newEvent.fPlace, { exact: true }).fill(place);
+  await page.getByLabel(he.newEvent.fDate, { exact: true }).fill(isoInDays(7));
+  await expect(page.getByLabel(he.newEvent.fStart, { exact: true })).toHaveValue("10:00");
   await page.getByRole("button", { name: he.newEvent.submit }).click();
   await expect(page).toHaveURL(new RegExp(`/g/${groupId}/e/[a-z0-9-]+$`));
   return eventIdFromUrl(page.url());

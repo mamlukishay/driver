@@ -57,15 +57,11 @@ function KidBody({ group, token, event, v }: { group: string; token: string; eve
     <>
       <header class="kid-hdr" style={{ "--fc": famColor(v.kid.color) }}>
         <h1 class="display">{he.kid.hi(v.kid.name)}</h1>
-        <p class="muted">{he.kid.lead}</p>
       </header>
       {events.length === 0 && (
-        <>
-          <div class="legc wait">
-            <b>{he.kid.noEvents}</b>
-          </div>
-          <p class="note">{he.kid.tip}</p>
-        </>
+        <div class="legc wait">
+          <b>{he.kid.noEvents}</b>
+        </div>
       )}
       {events.map((e) => (
         <KidEvent group={group} token={token} focused={!!event} e={e} next={next} />
@@ -122,7 +118,6 @@ function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ri
   switch (status) {
     case "waiting":
       main = he.kid.status.waiting;
-      hint = he.kid.searchingHint;
       break;
     case "assigned":
       main = he.kid.driver(ride!.driver.name);
