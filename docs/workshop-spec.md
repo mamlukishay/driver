@@ -70,7 +70,7 @@ Personas: **Parent** (registers family, RSVPs kids, offers rides, drives) and **
 ### Data model (JSON in Blobs)
 ```
 group/{groupId}.json   { name, inviteCode, families:[…], createdAt }
-family: { id, color, parents:[{name, phone}], address, kids:[{id,name,phone?,grade?}], cars:[{id,label,seats}] , keyHash }
+family: { id, color, parents:[{name, phone}], address, kids:[{id,name,phone?,grade?}], cars:[{id,label,seats,color?,plate?,photo?}] , keyHash }
 event/{groupId}/{eventId}.json
   { id, title, place, address, date, start, returnTime, hostFamilyId,
     rsvp: { kidId: "yes"|"no"|"maybe" },
@@ -173,3 +173,8 @@ Parents usually get a designed invitation image (date, times, venue, address). C
   - The kid link (`/kid/:token`) can be sent straight to the kid's phone on WhatsApp from the family profile.
   - Kid's "אני מוכן/ה" → the driver gets the kid's name (+ number) in the run-mode list.
 - Data model: `parents:[{name, phone}]`, `kids:[{id, name, phone?}]`.
+
+## 12. Car photo (optional)
+- In the family profile, each car can have an optional **photo** (and optional color + last 3 plate digits). Add it with "+ תמונת הרכב (רשות)" from the gallery or camera. It's compressed on the phone (~800px, ~100 KB) and stored in Blobs at `car/{familyId}/{carId}`.
+- **Where it shows**: as a thumbnail on the car card in every leg/offer, large on the **kid page** ("חפשי את הרכב הזה" + color + plate digits), and in the passengers' parents' view. When there's no photo, it falls back to a car icon tinted with the family color + the car label.
+- Why: kids (and other parents at pickup) recognize the car at the curb outside a school or event.
