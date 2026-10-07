@@ -58,7 +58,7 @@ export const he = {
   },
 
   settings: {
-    title: "הגדרות",
+    title: "הגדרות הקבוצה",
     meTitle: "המשפחה בטלפון הזה",
     notChosen: "עוד לא בחרתם משפחה בטלפון הזה.",
     choose: "בחירת משפחה",
@@ -66,6 +66,11 @@ export const he = {
     editProfile: "עריכת פרטים",
     logout: "התנתקות מהטלפון הזה",
     logoutDone: "הטלפון הזה כבר לא פועל בתור אף משפחה",
+    nameTitle: "שם הקבוצה",
+    nameLabel: "שם הקבוצה",
+    nameHint: "הקישור לקבוצה לא משתנה.",
+    nameSave: "שמירת השם",
+    nameSaved: "שם הקבוצה עודכן",
     shareTitle: "קישור לקבוצה",
     shareHint: "שלחו רק בקבוצת ההורים.",
     share: "שליחת הקישור ב-WhatsApp",

@@ -7,6 +7,8 @@ import { cx } from "../util.ts";
 interface FieldProps {
   id: string;
   label: string;
+  /** Keep the label for screen readers only (the card heading already says it). */
+  labelHidden?: boolean;
   value: string;
   onInput: (v: string) => void;
   type?: "text" | "date" | "time" | "tel";
@@ -29,7 +31,7 @@ export function Field(p: FieldProps) {
   const hintId = `${p.id}-hint`;
   return (
     <div class={cx("fld", p.highlight && "hl", p.error && "err")}>
-      <label for={p.id}>
+      <label for={p.id} class={p.labelHidden ? "vh" : undefined}>
         {p.label}
         {p.highlight && <i class="auto">{he.newEvent.detected}</i>}
       </label>
