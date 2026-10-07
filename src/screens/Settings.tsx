@@ -47,7 +47,7 @@ export function Settings({ group }: { group: string }) {
 
   return (
     <>
-      <Header title={he.settings.title} up={`/g/${group}`} group={group} groupLine />
+      <Header title={grp.data?.group.name ?? he.common.loading} sub={he.settings.title} up={`/g/${group}`} group={group} noGear titleIsGroup />
       <main id="main" class="content settings">
         <section class="card" aria-labelledby="me-h">
           <h2 class="hs" id="me-h">
@@ -80,6 +80,7 @@ export function Settings({ group }: { group: string }) {
             </>
           )}
         </section>
+        {me && grp.data && <NameSection group={group} data={grp.data} />}
         <section class="card" aria-labelledby="share-h">
           <h2 class="hs" id="share-h">
             {he.settings.shareTitle}
@@ -109,6 +110,54 @@ export function Settings({ group }: { group: string }) {
         {me && grp.data && <DeleteSection group={group} />}
       </main>
     </>
+  );
+}
+
+/** "שם הקבוצה": rename the group (the link / slug never changes). */
+function NameSection({ group, data }: { group: string; data: GroupResponse }) {
+  const current = data.group.name;
+  const [value, setValue] = useState(current);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setValue(current), [current]);
+
+  const save = async () => {
+    const name = value.trim();
+    if (!name || name === current) return;
+    setBusy(true);
+    try {
+      const r = await api.updateGroup(group, { name });
+      setData(keys.group(group), { ...data, group: r.group });
+      setValue(r.group.name);
+      toast.info(he.settings.nameSaved);
+    } catch (x) {
+      toast.error(x);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section class="card" aria-labelledby="name-h">
+      <h2 class="hs" id="name-h">
+        {he.settings.nameTitle}
+      </h2>
+      <p class="small muted">{he.settings.nameHint}</p>
+      <form
+        class="stack-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void save();
+        }}
+        noValidate
+      >
+        <Field id="group-name" label={he.settings.nameLabel} labelHidden value={value} maxLength={60} autoComplete="off" onInput={setValue} />
+        <div class="row set-acts">
+          <button type="submit" class="btn ghost" disabled={busy || !value.trim() || value.trim() === current}>
+            {busy ? he.common.saving : he.settings.nameSave}
+          </button>
+        </div>
+      </form>
+    </section>
   );
 }
 
