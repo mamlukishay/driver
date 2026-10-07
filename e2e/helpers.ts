@@ -156,7 +156,7 @@ export const waitingSection = (page: Page, leg: "out" | "back") => page.getByRol
 export const seatedKid = (page: Page, kid: string) => page.getByRole("button", { name: he.board.seatedKid(kid) });
 
 /** The empty-seat button of a family's car. */
-export const emptySeat = (page: Page, family: string) => page.getByRole("button", { name: he.board.emptySeat(family) }).first();
+export const emptySeat = (page: Page, family: string) => page.getByRole("button", { name: he.board.emptySeat(he.family(family)) }).first();
 
 /** The 10-second undo button in the toast. */
 export const undoButton = (page: Page) => page.getByRole("status").getByRole("button", { name: new RegExp(`^${he.common.undo}`) });
