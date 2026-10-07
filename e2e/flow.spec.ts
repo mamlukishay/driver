@@ -59,16 +59,12 @@ test("main flow: two families, live seating, undo, driver phones, shared contact
     await offerCar(b.page, "out");
     await expect(b.page.getByText(he.toast.offered("out"))).toBeVisible();
 
-    // --- A seats the kid into B's car via the confirm sheet; B sees it live (no reload) ---
+    // --- A seats the kid into B's car with two taps (no confirmation); B sees it live (no reload) ---
     await a.page.goto(`${eventUrl}/out`);
     await waitingSection(a.page, "out").getByRole("button", { name: A.kid }).click();
     await emptySeat(a.page, B.name).click();
-    await expect(a.page).toHaveURL(/sheet=seat/);
-    const sheet = a.page.getByRole("dialog", { name: he.seatSheet.title });
-    await expect(sheet).toContainText(`להושיב את ${A.kid} ברכב של משפחת ${B.name}`);
-    await expect(sheet).toContainText(he.legName.out);
-    await sheet.getByRole("button", { name: he.seatSheet.confirm }).click();
-    await expect(a.page.getByRole("dialog")).toBeHidden();
+    await expect(a.page).not.toHaveURL(/sheet=/);
+    await expect(a.page.getByText(he.toast.seated(A.kid, he.family(B.name)))).toBeVisible();
     await expect(seatedKid(a.page, A.kid)).toBeVisible();
     await expect(seatedKid(b.page, A.kid)).toBeVisible();
     await expect(waitingSection(b.page, "out")).not.toContainText(A.kid);
@@ -91,7 +87,15 @@ test("main flow: two families, live seating, undo, driver phones, shared contact
     // --- A seats again ---
     await waitingSection(a.page, "out").getByRole("button", { name: A.kid }).click();
     await emptySeat(a.page, B.name).click();
-    await a.page.getByRole("dialog").getByRole("button", { name: he.seatSheet.confirm }).click();
+    await expect(seatedKid(a.page, A.kid)).toBeVisible();
+    await expect(seatedKid(b.page, A.kid)).toBeVisible();
+
+    // --- B (the driver) taps the seated kid: off the car at once, back to waiting; then A seats again ---
+    await seatedKid(b.page, A.kid).click();
+    await expect(b.page.getByText(he.toast.unseated(A.kid))).toBeVisible();
+    await expect(waitingSection(a.page, "out").getByRole("button", { name: A.kid })).toBeVisible();
+    await waitingSection(a.page, "out").getByRole("button", { name: A.kid }).click();
+    await emptySeat(a.page, B.name).click();
     await expect(seatedKid(a.page, A.kid)).toBeVisible();
     await expect(seatedKid(b.page, A.kid)).toBeVisible();
 

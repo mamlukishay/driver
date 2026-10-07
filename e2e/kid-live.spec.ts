@@ -60,7 +60,6 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     await a.page.goto(`${eventUrl}/out`);
     await waitingSection(a.page, "out").getByRole("button", { name: A.kid }).click();
     await emptySeat(a.page, B.name).click();
-    await a.page.getByRole("dialog").getByRole("button", { name: he.seatSheet.confirm }).click();
     await expect(seatedKid(a.page, A.kid)).toBeVisible();
 
     // --- The kid has no phone: no sending, only a shortcut to add one (KISS). Add it. ---

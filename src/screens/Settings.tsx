@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { normalizeWaGroupUrl } from "../../shared/whatsapp.ts";
 import { Field } from "../components/Field.tsx";
 import { Header, useMe, whoUrl } from "../components/Header.tsx";
-import { Sheet } from "../components/Sheet.tsx";
+import { ConfirmSentence, Sheet } from "../components/Sheet.tsx";
 import { toast } from "../components/Toast.tsx";
 import { WaButton, WaIcon } from "../components/WaButton.tsx";
 import { api } from "../api.ts";
@@ -106,7 +106,7 @@ export function Settings({ group }: { group: string }) {
           </WaButton>
         </section>
         {grp.data && <WaGroupSection group={group} data={grp.data} canEdit={!!me} />}
-        {me && grp.data && <DeleteSection group={group} name={grp.data.group.name} />}
+        {me && grp.data && <DeleteSection group={group} />}
       </main>
     </>
   );
@@ -191,16 +191,12 @@ function WaGroupSection({ group, data, canEdit }: { group: string; data: GroupRe
   );
 }
 
-/** "מחיקת הקבוצה": a confirm sheet that needs the group's name typed exactly. */
-function DeleteSection({ group, name }: { group: string; name: string }) {
+/** "מחיקת הקבוצה": a simple yes/no confirm sheet. */
+function DeleteSection({ group }: { group: string }) {
   const sheet = useSheet();
   const { route } = useLocation();
   const open = sheet.name === "delete-group";
-  const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    if (open) setTyped("");
-  }, [open]);
 
   const del = async () => {
     setBusy(true);
@@ -225,20 +221,16 @@ function DeleteSection({ group, name }: { group: string; name: string }) {
         {he.settings.deleteOpen}
       </button>
       <Sheet open={open} title={he.settings.deleteTitle} onClose={sheet.close}>
-        <form
-          class="stack-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (typed.trim() === name && !busy) void del();
+        <ConfirmSentence
+          parts={[he.settings.deleteBody]}
+          confirm={he.settings.deleteYes}
+          onConfirm={() => {
+            if (!busy) void del();
           }}
-          noValidate
-        >
-          <p>{he.settings.deleteBody}</p>
-          <Field id="del-name" label={he.settings.deleteType(name)} value={typed} autoComplete="off" onInput={setTyped} />
-          <button type="submit" class="btn big danger" disabled={busy || typed.trim() !== name}>
-            {busy ? he.settings.deleting : he.settings.deleteYes}
-          </button>
-        </form>
+          onCancel={sheet.close}
+          busy={busy}
+          danger
+        />
       </Sheet>
     </section>
   );
