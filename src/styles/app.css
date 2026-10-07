@@ -1130,6 +1130,47 @@ a.who:hover {
   font-weight: 500;
   align-self: flex-start;
 }
+/* My own car: driver mode is the card's main action; "עריכה" stays a small secondary chip. */
+.car-go {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.drive-go {
+  flex: 1;
+  min-inline-size: 0;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 9px 14px;
+  min-block-size: 54px;
+}
+.drive-go svg {
+  flex: none;
+}
+.drive-go-t {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  line-height: 1.2;
+  text-align: start;
+}
+.drive-go-t b {
+  font-size: 16px;
+}
+.drive-go-t small {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+.drive-go-ch {
+  margin-inline-start: auto;
+  font-size: 22px;
+  line-height: 1;
+}
+.car-go .mini {
+  align-self: center;
+  color: var(--ink-2);
+}
 .cth {
   flex: none;
   inline-size: 48px;

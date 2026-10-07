@@ -140,18 +140,8 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               })}
               onEmptySeat={() => onEmpty(o)}
               onKid={(kidId) => onSeated(o, kidId)}
-              actions={
-                mine && !frozen ? (
-                  <>
-                    <button type="button" class="mini" onClick={() => sheet.open("car", { offer: o.id })}>
-                      {he.common.edit}
-                    </button>
-                    <a class="mini" href={`/g/${group}/e/${ev.id}/drive/${leg}`}>
-                      {he.event.driveMode}
-                    </a>
-                  </>
-                ) : undefined
-              }
+              driveHref={mine && !frozen ? `/g/${group}/e/${ev.id}/drive/${leg}` : undefined}
+              onEdit={mine && !frozen ? () => sheet.open("car", { offer: o.id }) : undefined}
             />
           );
         })}

@@ -263,6 +263,7 @@ export const he = {
     legs: "הסעות",
     toBoard: "לשיבוץ",
     driveMode: "מצב נהג",
+    driveModeSub: "רשימת איסוף וניווט",
     share: "שתף סיכום לקבוצה",
     joinToRsvp: "כדי לרשום את הילדים, בחרו את המשפחה שלכם או הירשמו.",
     sendToKid: (kid: string) => `שליחה ל${kid}`,

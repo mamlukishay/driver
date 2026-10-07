@@ -1,4 +1,3 @@
-import type { ComponentChildren } from "preact";
 import type { CarPublic, Offer } from "../../shared/types.ts";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
@@ -12,6 +11,17 @@ export function CarGlyph({ color, size = 24 }: { color: number; size?: number })
         fill="currentColor"
       />
       <path d="M7.5 11l1-2.6h7l1 2.6z" fill="var(--car-glass)" />
+    </svg>
+  );
+}
+
+/** Steering wheel, drawn in the current text color (driver mode). */
+export function SteeringGlyph({ size = 22 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
+      <path d="M3.4 10.5c3 .9 5.6 1.2 8.6 1.2s5.6-.3 8.6-1.2M12 14.2V21" />
     </svg>
   );
 }
@@ -58,14 +68,17 @@ interface Props {
   armed?: boolean;
   onEmptySeat: () => void;
   onKid: (kidId: string) => void;
-  actions?: ComponentChildren;
+  /** My own car: link to driver mode, shown as the card's main action. */
+  driveHref?: string | undefined;
+  /** My own car: "עריכה", a small secondary control next to the driver-mode button. */
+  onEdit?: (() => void) | undefined;
   /** The event's time changed since this departure time was set ("בדקו שעת יציאה"). */
   departCheck?: boolean;
   /** The owner's "אישור שעה" (shown with `departCheck`). */
   onConfirmDepart?: (() => void) | undefined;
 }
 
-export function CarCard({ group, offer, car, familyLabel, color, mine, kids, armed, onEmptySeat, onKid, actions, departCheck, onConfirmDepart }: Props) {
+export function CarCard({ group, offer, car, familyLabel, color, mine, kids, armed, onEmptySeat, onKid, driveHref, onEdit, departCheck, onConfirmDepart }: Props) {
   const empty = Math.max(0, offer.seats - kids.length);
   return (
     <article class={cx("car", mine && "me")} style={{ "--fc": famColor(color) }}>
@@ -113,7 +126,27 @@ export function CarCard({ group, offer, car, familyLabel, color, mine, kids, arm
           </span>
         ))}
       </div>
-      {actions && <div class="row wrap">{actions}</div>}
+      {(driveHref || onEdit) && (
+        <div class="car-go">
+          {driveHref && (
+            <a class="btn drive-go" href={driveHref}>
+              <SteeringGlyph />
+              <span class="drive-go-t">
+                <b>{he.event.driveMode}</b>
+                <small>{he.event.driveModeSub}</small>
+              </span>
+              <span class="drive-go-ch" aria-hidden="true">
+                ‹
+              </span>
+            </a>
+          )}
+          {onEdit && (
+            <button type="button" class="mini" onClick={onEdit}>
+              {he.common.edit}
+            </button>
+          )}
+        </div>
+      )}
     </article>
   );
 }
