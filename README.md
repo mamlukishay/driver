@@ -91,7 +91,7 @@ ANTHROPIC_API_KEY=...
 
 ## Feedback
 
-Every screen (the kid page too) has a small floating **משוב** button. It captures a screenshot of the visible screen, then opens a sheet with a לשיפור/לשימור toggle, a text field and a voice button (recorded audio is transcribed by Workers AI Whisper and appended to the text). Route, group, acting family, app version and device details are attached automatically. The Worker always stores a JSON record (R2 `feedback/…` or the Durable Object fallback); see `docs/build-plan.md` for the API.
+Every screen (the kid page too) has a small floating **משוב** button. It captures a screenshot of the visible screen, then opens a sheet with a לשיפור/לשימור toggle, a text field and a voice button (the recording shows as a small box with play and discard; its Workers AI Whisper transcript goes only into the GitHub issue, never into the form). Route, group, acting family, app version and device details are attached automatically. The Worker always stores a JSON record (R2 `feedback/…` or the Durable Object fallback); see `docs/build-plan.md` for the API.
 
 **GitHub issues (optional).** Create a fine-grained personal access token limited to this repository (`mamlukishay/driver`) with **Issues: read and write** and **Metadata: read**. Save it as the Actions secret `GH_FEEDBACK_TOKEN`; the deploy workflow copies it into the Worker as `GITHUB_FEEDBACK_TOKEN` (also synced when present: `ANTHROPIC_API_KEY`, `GOOGLE_MAPS_API_KEY`). Each feedback then opens an issue titled `[לשיפור] …` / `[לשימור] …` with labels `feedback` + `improve`/`keep`, the transcript, an audio link, the inline screenshot and a context table. `GITHUB_REPO` overrides the target repo. If the repository is public, **feedback issues are public**.
 
