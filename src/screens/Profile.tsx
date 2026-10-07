@@ -33,7 +33,15 @@ export function Profile({ group }: { group: string }) {
         ) : !fam ? (
           <Loading />
         ) : (
-          <ProfileBody group={group} fam={fam} places={places} data={res.data!} />
+          <>
+            <p class="small muted">
+              {he.profile.notYou}{" "}
+              <a class="lnk" href={whoUrl(group, `/g/${group}`)}>
+                {he.profile.switchFamily}
+              </a>
+            </p>
+            <ProfileBody group={group} fam={fam} places={places} data={res.data!} />
+          </>
         )}
       </main>
     </>
@@ -69,7 +77,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
   };
   return (
     <>
-      <FamilyForm group={group} initial={initial} submitLabel={he.common.save} places={places} onSubmit={save} />
+      <FamilyForm group={group} initial={initial} submitLabel={he.common.save} places={places} revealErrors={!initial.name} onSubmit={save} />
       {fam.kids.length > 0 && (
         <section class="card" aria-labelledby="kidlinks-h">
           <h2 class="hs" id="kidlinks-h">

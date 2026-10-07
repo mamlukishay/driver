@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { FamilyInput, FamilyPrivate } from "../../shared/types.ts";
 import { formatPhoneLocal, normalizePhone } from "../../shared/phone.ts";
+import { isJunkName } from "../../shared/validate.ts";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { getIdentity } from "../identity.ts";
@@ -35,15 +36,17 @@ export function emptyDraft(): FamilyDraft {
 }
 
 const local = (p?: string) => (p ? (formatPhoneLocal(p) ?? p) : "");
+/** A stored name for an editable field: legacy junk ("undefined", missing) becomes an empty, required field. */
+const nameField = (v: unknown) => (isJunkName(v) ? "" : (v as string));
 
 export function draftFrom(f: FamilyInput | FamilyPrivate): FamilyDraft {
   return {
-    name: f.name,
-    address: f.address,
-    parents: f.parents.length ? f.parents.map((p) => ({ name: p.name, phone: local(p.phone) })) : [{ name: "", phone: "" }],
+    name: nameField(f.name),
+    address: f.address ?? "",
+    parents: f.parents.length ? f.parents.map((p) => ({ name: nameField(p.name), phone: local(p.phone) })) : [{ name: "", phone: "" }],
     kids: f.kids.map((k) => ({
       ...("id" in k && k.id ? { id: k.id } : {}),
-      name: k.name,
+      name: nameField(k.name),
       phone: local(k.phone),
     })),
     cars: f.cars.map((c) => ({
@@ -121,16 +124,18 @@ interface Props {
   places: boolean;
   /** Kids from another group, shown as unchecked checkboxes; only checked or added kids are submitted. */
   kidChoices?: readonly KidChoice[];
+  /** Show validation errors from the start (e.g. a stored family whose name is missing). */
+  revealErrors?: boolean;
   onSubmit: (d: FamilyDraft) => Promise<void>;
 }
 
-export function FamilyForm({ group, initial, submitLabel, places, kidChoices, onSubmit }: Props) {
+export function FamilyForm({ group, initial, submitLabel, places, kidChoices, revealErrors, onSubmit }: Props) {
   const [d, setD] = useState<FamilyDraft>(initial);
   const choices = kidChoices?.length ? kidChoices : null;
   const [picked, setPicked] = useState<boolean[]>(() => (choices ? choices.map(() => false) : []));
   const pickedCount = choices ? picked.filter(Boolean).length : null;
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [tried, setTried] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>(() => (revealErrors ? validate(initial, pickedCount) : {}));
+  const [tried, setTried] = useState(!!revealErrors);
   const [busy, setBusy] = useState(false);
   const up = (f: (x: FamilyDraft) => FamilyDraft) => setD((x) => f(cloneDraft(x)));
 

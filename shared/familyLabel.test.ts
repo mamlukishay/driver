@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { familyLabel, sameNameFamilies, streetOf, type LabelFamily } from "./familyLabel.ts";
+import { familyDisplayName, familyLabel, sameNameFamilies, streetOf, type LabelFamily } from "./familyLabel.ts";
 
 const fam = (id: string, name: string, kids: string[], parent = "הורה", address = "", createdAt = 0): LabelFamily => ({
   id,
@@ -67,5 +67,37 @@ describe("familyLabel", () => {
     expect(sameNameFamilies("  כהן ", all).map((f) => f.id)).toEqual(["a"]);
     expect(sameNameFamilies("COHEN", all).map((f) => f.id)).toEqual(["c"]);
     expect(sameNameFamilies(" ", all)).toEqual([]);
+  });
+});
+
+describe("missing family names (legacy or corrupt data)", () => {
+  const missing = (id: string, name: unknown, parent = "רונית כהן", kids: string[] = []) => fam(id, name as string, kids, parent);
+
+  test("blank, missing, \"undefined\" or \"null\" → first parent's first name", () => {
+    for (const name of [undefined, null, "", "  ", "undefined", "null", " Undefined "]) {
+      expect(familyDisplayName(missing("a", name))).toBe("רונית");
+      expect(familyLabel(missing("a", name), [missing("a", name)])).toEqual({ name: "רונית" });
+    }
+  });
+
+  test("no usable parent name either → \"?\"", () => {
+    expect(familyDisplayName({ name: "undefined", parents: [] })).toBe("?");
+    expect(familyDisplayName({ name: "", parents: [{ name: "undefined" }] })).toBe("?");
+    expect(familyLabel(missing("a", undefined, " "), [])).toEqual({ name: "?" });
+  });
+
+  test("a real name is kept as stored", () => {
+    expect(familyDisplayName({ name: " כהן ", parents: [] })).toBe(" כהן ");
+  });
+
+  test("other families' missing names don't throw and don't collide with real ones", () => {
+    const a = fam("a", "כהן", ["נועה"]);
+    const b = missing("b", undefined, "דנה", ["undefined", "טל"]);
+    expect(familyLabel(a, [a, b])).toEqual({ name: "כהן" });
+    expect(familyLabel(b, [a, b])).toEqual({ name: "דנה" });
+    // Two nameless families: told apart by kids, ignoring junk kid names.
+    const c = missing("c", "null", "דנה", ["גיל"]);
+    expect(familyLabel(b, [a, b, c])).toEqual({ name: "דנה", extra: ["טל"] });
+    expect(familyLabel(c, [a, b, c])).toEqual({ name: "דנה", extra: ["גיל"] });
   });
 });

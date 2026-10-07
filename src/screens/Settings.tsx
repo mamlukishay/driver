@@ -60,11 +60,11 @@ export function Settings({ group }: { group: string }) {
                 <b>{me.label}</b>
               </p>
               <div class="row">
-                <a class="btn ghost grow1" href={whoUrl(group, here)}>
-                  {he.settings.switchFamily}
-                </a>
                 <a class="btn ghost grow1" href={`/g/${group}/me`}>
                   {he.settings.editProfile}
+                </a>
+                <a class="btn ghost grow1" href={whoUrl(group, here)}>
+                  {he.settings.switchFamily}
                 </a>
               </div>
               <button type="button" class="lnk quiet start" onClick={logout}>

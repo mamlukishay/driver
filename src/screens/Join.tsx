@@ -1,7 +1,7 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useLayoutEffect, useMemo, useState } from "preact/hooks";
 import type { FamilyPrivate, FamilyPublic } from "../../shared/types.ts";
-import { sameNameFamilies } from "../../shared/familyLabel.ts";
+import { familyDisplayName, sameNameFamilies } from "../../shared/familyLabel.ts";
 import { prefillFrom } from "../../shared/myGroups.ts";
 import { formatPhoneLocal } from "../../shared/phone.ts";
 import {
@@ -204,8 +204,8 @@ export function Join({ group }: { group: string }) {
           <>
             <p class="sent">
               {dups.length === 1
-                ? he.join.dupText(he.family(dups[0]!.name.trim()), dups[0]!.kids.map((k) => k.name))
-                : he.join.dupTextMany(dups[0]!.name.trim(), dups.length)}
+                ? he.join.dupText(he.family(familyDisplayName(dups[0]!).trim()), dups[0]!.kids.map((k) => k.name))
+                : he.join.dupTextMany(familyDisplayName(dups[0]!).trim(), dups.length)}
             </p>
             <div class="stack">
               {dups.map((f, i) => (

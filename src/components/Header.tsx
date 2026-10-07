@@ -132,7 +132,7 @@ function IdentityChip({ group }: { group: string }) {
       </div>
     );
   return (
-    <a class="who" href={`/g/${group}/settings`} title={he.identity.chipHint} style={{ "--fc": famColor(me.family?.color ?? 0) }}>
+    <a class="who" href={`/g/${group}/me`} title={he.identity.chipHint} style={{ "--fc": famColor(me.family?.color ?? 0) }}>
       <span class="fdot" aria-hidden="true" />
       <span>
         {he.identity.actingAs} <b>{me.label}</b>
