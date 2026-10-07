@@ -24,7 +24,6 @@ const tomorrow = () => new Date(Date.now() + 86_400_000).toLocaleDateString("en-
 async function createEventTomorrow(page: Page, groupId: string, title: string): Promise<string> {
   await page.getByRole("link", { name: he.group.newEvent }).click();
   await expect(page).toHaveURL(new RegExp(`/g/${groupId}/new$`));
-  await page.getByRole("button", { name: he.newEvent.manual }).click();
   await page.getByLabel(he.newEvent.fTitle, { exact: true }).fill(title);
   await page.getByLabel(he.newEvent.fDate, { exact: true }).fill(tomorrow());
   await page.getByLabel(he.newEvent.fPlace, { exact: true }).fill("פארק הירקון");

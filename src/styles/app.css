@@ -736,6 +736,32 @@ a.who:hover {
 .drop .btn {
   pointer-events: none;
 }
+.drop.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  text-align: start;
+  border-width: 1.5px;
+  border-radius: 12px;
+}
+.drop-t {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+}
+.invite-busy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.scan.sm {
+  inline-size: 54px;
+  block-size: 70px;
+  border-radius: 9px;
+  flex: none;
+}
 .scan {
   position: relative;
   border-radius: 12px;

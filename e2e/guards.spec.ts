@@ -103,7 +103,6 @@ test("new event: the date starts empty, a past date is refused, a future date fi
     await registerFamily(a.page, groupId, A);
     const page = a.page;
     await page.getByRole("link", { name: he.group.newEvent }).click();
-    await page.getByRole("button", { name: he.newEvent.manual }).click();
     const date = page.getByLabel(he.newEvent.fDate, { exact: true });
     const start = page.getByLabel(he.newEvent.fStart, { exact: true });
     await expect(date).toHaveValue("");

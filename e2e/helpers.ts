@@ -94,7 +94,6 @@ export function isoInDays(days: number): string {
 export async function createEventManually(page: Page, groupId: string, title: string, place = "פארק הירקון"): Promise<string> {
   await page.getByRole("link", { name: he.group.newEvent }).click();
   await expect(page).toHaveURL(new RegExp(`/g/${groupId}/new$`));
-  await page.getByRole("button", { name: he.newEvent.manual }).click();
   await page.getByLabel(he.newEvent.fTitle, { exact: true }).fill(title);
   await page.getByLabel(he.newEvent.fPlace, { exact: true }).fill(place);
   await page.getByLabel(he.newEvent.fDate, { exact: true }).fill(isoInDays(7));
