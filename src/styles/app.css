@@ -1446,6 +1446,80 @@ a.who:hover {
 .readybtn:disabled {
   opacity: 0.5;
 }
+.kstat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--sunk);
+}
+.kstat-main {
+  font-family: var(--ff-display);
+  font-size: 26px;
+  line-height: 1.25;
+}
+.kstat-hint {
+  font-size: 17px;
+  color: var(--ink-2);
+}
+.kstat-waiting {
+  background: var(--gap-soft);
+  color: var(--gap);
+}
+.kstat-assigned {
+  background: transparent;
+  padding: 0;
+}
+.kstat-onTheWay,
+.kstat-next {
+  background: var(--accent-soft);
+}
+.kstat-next .kstat-main {
+  font-size: 30px;
+}
+.kstat-arrived {
+  background: var(--accent);
+  color: var(--on-accent);
+  animation: kpulse 1.2s ease-in-out 3;
+}
+.kstat-arrived .kstat-main {
+  font-size: 38px;
+}
+.kstat-arrived .kstat-hint {
+  color: var(--on-accent);
+}
+.kstat-picked {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.kstat-done {
+  background: transparent;
+  padding: 0;
+}
+.kstat-done .kstat-main {
+  font-size: 20px;
+  color: var(--ink-2);
+}
+@keyframes kpulse {
+  50% {
+    transform: scale(1.03);
+  }
+}
+.stop-acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn.on {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.card.hl {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -84,10 +84,24 @@ function applyAll(
 
 /* ---------- helpers ---------- */
 
+function cloneRun(r: Run): Run {
+  const c: Run = { ...r, picked: [...r.picked] };
+  if (r.arrived) c.arrived = [...r.arrived];
+  return c;
+}
+
+/** Removes a kid from `run.arrived` (dropping the field when empty); returns whether they were there. */
+function clearArrived(run: Run | undefined, kidId: string): boolean {
+  if (!run?.arrived?.includes(kidId)) return false;
+  run.arrived = run.arrived.filter((k) => k !== kidId);
+  if (run.arrived.length === 0) delete run.arrived;
+  return true;
+}
+
 function cloneOffer(o: Offer): Offer {
   const c: Offer = { ...o, kidIds: [...o.kidIds] };
   if (o.ready) c.ready = [...o.ready];
-  if (o.run) c.run = { ...o.run, picked: [...o.run.picked] };
+  if (o.run) c.run = cloneRun(o.run);
   return c;
 }
 
@@ -119,23 +133,27 @@ function seatedOn(s: EventState, kidId: string, leg: Leg): Offer | undefined {
   return s.offers[leg].find((o) => o.kidIds.includes(kidId));
 }
 
-function removeKidFromOffer(o: Offer, kidId: string): { wasPicked: boolean; wasReady: boolean } {
+type SeatFlags = { wasPicked: boolean; wasReady: boolean; wasArrived: boolean };
+
+function removeKidFromOffer(o: Offer, kidId: string): SeatFlags {
   const wasPicked = !!o.run?.picked.includes(kidId);
   const wasReady = !!o.ready?.includes(kidId);
   o.kidIds = o.kidIds.filter((k) => k !== kidId);
   if (o.run) o.run.picked = o.run.picked.filter((k) => k !== kidId);
+  const wasArrived = clearArrived(o.run, kidId);
   if (o.ready) {
     o.ready = o.ready.filter((k) => k !== kidId);
     if (o.ready.length === 0) delete o.ready;
   }
-  return { wasPicked, wasReady };
+  return { wasPicked, wasReady, wasArrived };
 }
 
-/** Inverse that puts a kid back into an offer with the same picked/ready flags. */
-function reseatInverse(offerId: string, kidId: string, flags: { wasPicked: boolean; wasReady: boolean }): Inverse {
+/** Inverse that puts a kid back into an offer with the same picked/ready/arrived flags. */
+function reseatInverse(offerId: string, kidId: string, flags: SeatFlags): Inverse {
   const inv: Inverse = [{ type: "seatKid", offerId, kidId }];
   if (flags.wasPicked) inv.push({ type: "setPicked", offerId, kidId, picked: true });
   if (flags.wasReady) inv.push({ type: "setKidReady", offerId, kidId, ready: true });
+  if (flags.wasArrived) inv.push({ type: "setArrived", offerId, kidId, arrived: true });
   return inv;
 }
 
@@ -288,10 +306,13 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       const found = findOffer(s, a.offerId);
       if (!found) return fail("not_found");
       const { offer } = found;
-      const prev: Run | null = offer.run ? { ...offer.run, picked: [...offer.run.picked] } : null;
+      const prev: Run | null = offer.run ? cloneRun(offer.run) : null;
       if (a.run) {
         if (typeof a.run.startedAt !== "number" || !Array.isArray(a.run.picked)) return fail("invalid");
+        if (a.run.arrived !== undefined && !Array.isArray(a.run.arrived)) return fail("invalid");
         offer.run = { startedAt: a.run.startedAt, picked: a.run.picked.filter((k) => offer.kidIds.includes(k)) };
+        const arrived = (a.run.arrived ?? []).filter((k) => offer.kidIds.includes(k));
+        if (arrived.length) offer.run.arrived = arrived;
       } else {
         delete offer.run;
       }
@@ -307,9 +328,28 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       if (!offer.kidIds.includes(a.kidId)) return fail("not_found");
       if (!offer.run) return fail("invalid");
       const was = offer.run.picked.includes(a.kidId);
+      // Picking a kid ends their "הגעתי" state.
+      const wasArrived = a.picked ? clearArrived(offer.run, a.kidId) : false;
       if (a.picked && !was) offer.run.picked.push(a.kidId);
       if (!a.picked && was) offer.run.picked = offer.run.picked.filter((k) => k !== a.kidId);
-      return { ok: true, inverse: [{ type: "setPicked", offerId: offer.id, kidId: a.kidId, picked: was }] };
+      const inv: Inverse = [{ type: "setPicked", offerId: offer.id, kidId: a.kidId, picked: was }];
+      if (wasArrived) inv.push({ type: "setArrived", offerId: offer.id, kidId: a.kidId, arrived: true });
+      return { ok: true, inverse: inv };
+    }
+
+    case "setArrived": {
+      if (!isStr(a.kidId) || typeof a.arrived !== "boolean") return fail("invalid");
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      if (!sys && offer.familyId !== actor) return fail("forbidden");
+      if (!offer.kidIds.includes(a.kidId)) return fail("not_found");
+      if (!offer.run) return fail("invalid");
+      if (a.arrived && offer.run.picked.includes(a.kidId)) return fail("invalid");
+      const was = !!offer.run.arrived?.includes(a.kidId);
+      if (a.arrived && !was) offer.run.arrived = [...(offer.run.arrived ?? []), a.kidId];
+      if (!a.arrived && was) clearArrived(offer.run, a.kidId);
+      return { ok: true, inverse: [{ type: "setArrived", offerId: offer.id, kidId: a.kidId, arrived: was }] };
     }
 
     case "setKidReady": {

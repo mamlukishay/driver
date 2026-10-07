@@ -8,6 +8,7 @@ import type {
   FamilyView,
   GroupMeta,
   KidEventView,
+  KidLegStatus,
   KidLegView,
   KidView,
   Leg,
@@ -91,7 +92,7 @@ export function viewFor(
       ...o,
       kidIds: [...o.kidIds],
       ...(o.ready ? { ready: [...o.ready] } : {}),
-      ...(o.run ? { run: { ...o.run, picked: [...o.run.picked] } } : {}),
+      ...(o.run ? { run: { ...o.run, picked: [...o.run.picked], ...(o.run.arrived ? { arrived: [...o.run.arrived] } : {}) } } : {}),
     }));
 
   const view: EventView = {
@@ -118,8 +119,69 @@ export function viewFor(
 }
 
 /**
+ * The driver's pickup order for one offer, as stops of kid ids. Out: one stop per family (home),
+ * in seating order. Back: everyone boards together at the venue, so one stop. Driver mode and the
+ * kid page both use this.
+ */
+export function pickupStops(leg: Leg, kidIds: readonly string[], familyOf: (kidId: string) => string | undefined): string[][] {
+  if (leg === "back") return kidIds.length ? [[...kidIds]] : [];
+  const stops: { fam: string; kids: string[] }[] = [];
+  for (const kidId of kidIds) {
+    const fam = familyOf(kidId) ?? `?${kidId}`;
+    const stop = stops.find((x) => x.fam === fam);
+    if (stop) stop.kids.push(kidId);
+    else stops.push({ fam, kids: [kidId] });
+  }
+  return stops.map((x) => x.kids);
+}
+
+/** Kids at stops before `kidId`'s stop who are not picked up yet. */
+export function kidsAhead(stops: readonly (readonly string[])[], kidId: string, picked: readonly string[]): number {
+  let n = 0;
+  for (const stop of stops) {
+    if (stop.includes(kidId)) return n;
+    n += stop.filter((k) => !picked.includes(k)).length;
+  }
+  return n;
+}
+
+/** Minutes after the leg's time (out: event start, back: return time) after which the leg counts as over. */
+export const LEG_OVER_AFTER_MIN: Record<Leg, number> = { out: 30, back: 90 };
+
+/**
+ * Whether a leg is over, given the local wall clock `now` as `yyyy-mm-ddTHH:MM` (event times are
+ * local times in the group's zone, so the caller passes its local clock).
+ */
+export function legOver(e: { date: string; start: string; returnTime: string }, leg: Leg, now: string): boolean {
+  const [h, m] = (leg === "out" ? e.start : e.returnTime).split(":").map(Number);
+  const mins = (h ?? 0) * 60 + (m ?? 0) + LEG_OVER_AFTER_MIN[leg];
+  const day = new Date(`${e.date}T00:00:00Z`);
+  if (Number.isNaN(day.getTime())) return false;
+  day.setUTCMinutes(mins);
+  return now >= day.toISOString().slice(0, 16);
+}
+
+/**
+ * The kid page's live status for one leg; null when the kid doesn't need this leg.
+ * done > picked > arrived > next > onTheWay > assigned > waiting. `over` (see `legOver`) makes the
+ * leg "done", except while a started run hasn't picked the kid up yet (a late driver stays live).
+ */
+export function kidLegStatus(l: KidLegView, over: boolean): KidLegStatus | null {
+  if (!l.needed) return null;
+  const r = l.ride;
+  if (over && !(r?.started && !r.picked)) return "done";
+  if (!r) return "waiting";
+  if (r.picked) return "picked";
+  if (!r.started) return "assigned";
+  if (r.arrived) return "arrived";
+  if (r.ahead === 0) return "next";
+  return "onTheWay";
+}
+
+/**
  * The read-only kid page: upcoming events (date >= `today`, `yyyy-mm-dd`) and, per leg,
- * the ride the kid is seated in. Null when the kid id is unknown.
+ * the ride the kid is seated in. With `eventId`, only that event (whatever its date).
+ * Null when the kid id is unknown.
  */
 export function kidView(
   group: GroupMeta,
@@ -127,10 +189,12 @@ export function kidView(
   events: readonly EventState[],
   kidId: string,
   today: string,
+  eventId?: string,
 ): KidView | null {
   const family = families.find((f) => f.kids.some((k) => k.id === kidId));
   const kid = family?.kids.find((k) => k.id === kidId);
   if (!family || !kid) return null;
+  const familyOf = (id: string) => families.find((f) => f.kids.some((k) => k.id === id))?.id;
 
   const legView = (e: EventState, leg: Leg): KidLegView => {
     const plan = e.kidPlans[kid.id];
@@ -139,6 +203,7 @@ export function kidView(
     const driver = offer && families.find((f) => f.id === offer.familyId);
     const car = driver?.cars.find((c) => c.id === offer!.carId);
     if (!offer || !driver || !car) return { needed, ride: null };
+    const picked = offer.run?.picked ?? [];
     return {
       needed,
       ride: {
@@ -147,14 +212,16 @@ export function kidView(
         driver: { familyId: driver.id, name: driver.name, color: driver.color, parents: driver.parents.map((p) => ({ ...p })) },
         car: { ...car },
         started: !!offer.run,
-        picked: !!offer.run?.picked.includes(kid.id),
+        picked: picked.includes(kid.id),
         ready: !!offer.ready?.includes(kid.id),
+        arrived: !!offer.run?.arrived?.includes(kid.id),
+        ahead: kidsAhead(pickupStops(leg, offer.kidIds, familyOf), kid.id, picked),
       },
     };
   };
 
   const upcoming = events
-    .filter((e) => e.date >= today)
+    .filter((e) => (eventId ? e.id === eventId : e.date >= today))
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
     .map((e): KidEventView => {
       const v: KidEventView = {

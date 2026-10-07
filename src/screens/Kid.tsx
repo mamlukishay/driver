@@ -1,7 +1,8 @@
-import { useState } from "preact/hooks";
-import type { KidEventView, KidView, Leg } from "../../shared/types.ts";
+import { useEffect, useState } from "preact/hooks";
+import type { KidEventView, KidLegStatus, KidRide, KidView, Leg } from "../../shared/types.ts";
 import { LEGS } from "../../shared/types.ts";
 import { formatPhoneLocal, telHref } from "../../shared/phone.ts";
+import { kidLegStatus, legOver } from "../../shared/view.ts";
 import { CarPic, Plate } from "../components/CarCard.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
@@ -10,11 +11,21 @@ import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { keys, refetch, useKid } from "../store.ts";
-import { famColor, fmtDate, todayYmd } from "../util.ts";
+import { famColor, fmtDate, kidPath, nowLocal, todayYmd, useForce } from "../util.ts";
 
-export function Kid({ group, kidId: token }: { group: string; kidId: string }) {
-  const res = useKid(group, token);
+/**
+ * The read-only kid page. Without `event`: the next upcoming rides (permanent link). With `event`:
+ * that one event, both legs. Live: refetched on every group update (live.ts).
+ */
+export function Kid({ group, kidId: token, event }: { group: string; kidId: string; event?: string }) {
+  const res = useKid(group, token, event);
   useLive(group);
+  // Statuses depend on the clock ("done"), so re-render once a minute.
+  const force = useForce();
+  useEffect(() => {
+    const t = setInterval(force, 60_000);
+    return () => clearInterval(t);
+  }, []);
   const v = res.data;
   return (
     <main id="main" class="content kidpage">
@@ -23,16 +34,17 @@ export function Kid({ group, kidId: token }: { group: string; kidId: string }) {
       ) : !v ? (
         <Loading />
       ) : (
-        <KidBody group={group} token={token} v={v} />
+        <KidBody group={group} token={token} event={event} v={v} />
       )}
     </main>
   );
 }
 
-function KidBody({ group, token, v }: { group: string; token: string; v: KidView }) {
+function KidBody({ group, token, event, v }: { group: string; token: string; event?: string; v: KidView }) {
   const today = todayYmd();
-  const events = v.events.filter((e) => e.date >= today && e.rsvp === "yes");
-  // The server marks "ready" on the earliest upcoming ride, so only that one gets the button.
+  const events = event ? v.events : v.events.filter((e) => e.date >= today && e.rsvp === "yes");
+  // The server marks "ready" on the earliest unpicked ride (within the event on a per-event page),
+  // so only that one gets the button.
   let next: string | null = null;
   for (const e of events) {
     for (const leg of LEGS) {
@@ -51,13 +63,18 @@ function KidBody({ group, token, v }: { group: string; token: string; v: KidView
         </div>
       )}
       {events.map((e) => (
-        <KidEvent group={group} token={token} e={e} next={next} />
+        <KidEvent group={group} token={token} focused={!!event} e={e} next={next} />
       ))}
+      {event && (
+        <a class="btn ghost" href={kidPath(group, token)}>
+          {he.kid.allRides}
+        </a>
+      )}
     </>
   );
 }
 
-function KidEvent({ group, token, e, next }: { group: string; token: string; e: KidEventView; next: string | null }) {
+function KidEvent({ group, token, focused, e, next }: { group: string; token: string; focused: boolean; e: KidEventView; next: string | null }) {
   return (
     <section class="stack" aria-label={e.title}>
       <div class="evh">
@@ -73,17 +90,79 @@ function KidEvent({ group, token, e, next }: { group: string; token: string; e: 
           </small>
         </div>
       </div>
-      {LEGS.map((leg) => (
-        <KidLeg group={group} token={token} e={e} leg={leg} canReady={next === `${e.id}:${leg}`} />
-      ))}
+      {focused && e.rsvp !== "yes" ? (
+        <div class="legc dim">
+          <span class="muted">{e.rsvp === "no" ? he.kid.notComing : he.kid.noRide}</span>
+        </div>
+      ) : (
+        LEGS.map((leg) => (
+          <KidLeg group={group} token={token} event={focused ? e.id : undefined} e={e} leg={leg} canReady={next === `${e.id}:${leg}`} />
+        ))
+      )}
     </section>
   );
 }
 
-function KidLeg({ group, token, e, leg, canReady }: { group: string; token: string; e: KidEventView; leg: Leg; canReady: boolean }) {
+/** First name of the driver's parent, for "X יצא/ה לדרך" / "X למטה!". */
+const driverName = (r: KidRide) => r.driver.parents[0]?.name || he.family(r.driver.name);
+
+/** The big, glanceable status line of a leg. */
+function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ride: KidRide | null }) {
+  let main: string;
+  let hint: string | null = null;
+  switch (status) {
+    case "waiting":
+      main = he.kid.status.waiting;
+      break;
+    case "assigned":
+      main = he.kid.driver(ride!.driver.name);
+      hint = he.kid.at(ride!.departAt);
+      break;
+    case "onTheWay":
+      main = he.kid.status.onTheWay(driverName(ride!));
+      break;
+    case "next":
+      main = he.kid.status.next;
+      hint = he.kid.status.nextHint;
+      break;
+    case "arrived":
+      main = he.kid.status.arrived(driverName(ride!));
+      hint = he.kid.status.arrivedHint;
+      break;
+    case "picked":
+      main = he.kid.status.picked;
+      break;
+    case "done":
+      main = he.kid.status.done;
+      break;
+  }
+  return (
+    <div class={`kstat kstat-${status}`} role="status" aria-live="polite" aria-label={he.kid.statusLabel(leg)} data-status={status}>
+      <b class="kstat-main">{main}</b>
+      {hint && <span class={status === "assigned" ? "num big-time" : "kstat-hint"}>{hint}</span>}
+    </div>
+  );
+}
+
+function KidLeg({
+  group,
+  token,
+  event,
+  e,
+  leg,
+  canReady,
+}: {
+  group: string;
+  token: string;
+  event?: string;
+  e: KidEventView;
+  leg: Leg;
+  canReady: boolean;
+}) {
   const l = e.legs[leg];
   const [busy, setBusy] = useState(false);
-  if (!l.needed)
+  const status = kidLegStatus(l, legOver(e, leg, nowLocal()));
+  if (!status)
     return (
       <div class="legc dim">
         <span class="k">{he.kid.pickup(leg)}</span>
@@ -91,19 +170,19 @@ function KidLeg({ group, token, e, leg, canReady }: { group: string; token: stri
       </div>
     );
   const r = l.ride;
-  if (!r)
+  if (!r || status === "done")
     return (
-      <div class="legc wait">
+      <div class={`legc ${r ? "dim" : "wait"}`}>
         <span class="k">{he.kid.pickup(leg)}</span>
-        <b class="gapc">{he.kid.searching}</b>
+        <StatusBlock leg={leg} status={status} ride={r} />
       </div>
     );
   const driver = r.driver.parents.find((p) => p.phone);
   const ready = async () => {
     setBusy(true);
     try {
-      await api.kidReady(group, token, true);
-      await refetch(keys.kid(group, token));
+      await api.kidReady(group, token, true, event);
+      await refetch(keys.kid(group, token, event));
     } catch (err) {
       if (err instanceof ApiError && err.code === "not_found") toast.warn(he.kid.noRide);
       else toast.error(err);
@@ -114,10 +193,12 @@ function KidLeg({ group, token, e, leg, canReady }: { group: string; token: stri
   return (
     <div class="legc" style={{ "--fc": famColor(r.driver.color) }}>
       <span class="k">{he.kid.pickup(leg)}</span>
-      <b class="big-t">{he.kid.driver(r.driver.name)}</b>
-      <span class="num big-time">{he.kid.at(r.departAt)}</span>
-      {r.started && !r.picked && <span class="live">{he.kid.onTheWay}</span>}
-      {r.picked && <span class="note ok">{he.kid.pickedUp}</span>}
+      <StatusBlock leg={leg} status={status} ride={r} />
+      {status !== "assigned" && (
+        <span class="small">
+          {he.kid.driver(r.driver.name)} · <span class="num">{he.kid.at(r.departAt)}</span>
+        </span>
+      )}
       <CarPic group={group} car={r.car} color={r.driver.color} big />
       <span class="small muted">{he.kid.findCar}</span>
       <span class="row">

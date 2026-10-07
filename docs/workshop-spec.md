@@ -11,6 +11,7 @@ Do not include any real names / content from the source chat. All sample data is
 - **Routing data**: Google Maps Platform for address autocomplete, geocoding and driving times (§14).
 - **Identity: family picker, no secrets** (supersedes "Identity without sign-in" below). A new phone picks its family from the group ("מי אתם?", confirm sheet, "רק להסתכל" for read-only); the client sends `X-Family-Id`. Everyone in the group sees all phones and addresses. Settings (`/g/:group/settings`) switches family or logs out; no device magic link. Same-name families get disambiguated labels (kids → parent → street → ordinal). URLs use English slugs (group chosen at creation, events `<mon>-<day>[-word]`, kid page by kid id).
 - **In-app feedback** (§16): floating "משוב" button on every screen → screenshot + text/voice → stored record + optional GitHub issue; a Claude Code routine triages issues into one reviewable PR.
+- **Kid links per event + live ride status**: besides the permanent kid link (next rides), each kid has a per-event link (`/g/:group/kid/:kidId/e/:event`), sent by the parent from the event page and by the driver from driver mode ("שיתוף עם הנוסעים"). The kid page shows one big status per leg: מחפשים הסעה → מי אוסף ומתי → יצא/ה לדרך → את/ה הבא/ה בתור → "{driver} למטה!" (driver taps "הגעתי") → עלית לרכב ✓ → הסתיימה, updated live.
 - Build plan: `docs/build-plan.md`.
 - Sections 4–9 are the workshop record (how we chose); where they mention Netlify, §15 supersedes them.
 

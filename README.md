@@ -4,7 +4,10 @@ A mobile-first, Hebrew (RTL) carpool coordinator for parents' groups. A parent o
 
 **Trust model:** groups are small and trust each other. Anyone with the group link can act as any family and sees every family's phones and addresses; guardrails (identity chip, confirmations, undo, permission rules) prevent mistakes, not malice. Don't store sensitive data.
 
-URLs use friendly English slugs: `/g/class-4b/e/oct-16-birthday`, kid pages at `/g/:group/kid/:kidId`.
+URLs use friendly English slugs: `/g/class-4b/e/oct-16-birthday`. Kid pages (read-only, live ride status):
+
+- `/g/:group/kid/:kidId`: permanent link, always shows the next rides (sent from the family profile).
+- `/g/:group/kid/:kidId/e/:event`: one event, both legs (sent from the event page and from driver mode).
 
 ## Stack
 

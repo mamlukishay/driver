@@ -143,6 +143,8 @@ export interface KidPlan {
 export interface Run {
   startedAt: number;
   picked: string[];
+  /** Kids whose stop the driver reached ("הגעתי") and who are not picked yet. Absent on older runs. */
+  arrived?: string[];
 }
 
 export interface Offer {
@@ -186,6 +188,7 @@ export type PublicAction =
   | { type: "startRun"; offerId: string }
   | { type: "setPicked"; offerId: string; kidId: string; picked: boolean }
   | { type: "setKidReady"; offerId: string; kidId: string; ready: boolean }
+  | { type: "setArrived"; offerId: string; kidId: string; arrived: boolean }
   | { type: "editEvent"; patch: EventPatch };
 
 /** Only produced as inverses; rejected unless applied with `ctx.system`. */
@@ -283,7 +286,14 @@ export interface KidRide {
   started: boolean;
   picked: boolean;
   ready: boolean;
+  /** The driver tapped "הגעתי" at this kid's stop (and hasn't picked them up yet). */
+  arrived: boolean;
+  /** Kids at earlier stops in the pickup order who are not picked up yet (0 = this kid is next). */
+  ahead: number;
 }
+
+/** Live status of one leg on the kid page (see `kidLegStatus` in view.ts). */
+export type KidLegStatus = "waiting" | "assigned" | "onTheWay" | "next" | "arrived" | "picked" | "done";
 
 export interface KidLegView {
   needed: boolean;

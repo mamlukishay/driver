@@ -8,7 +8,7 @@ import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { keys, setData, useGroup } from "../store.ts";
 import type { GroupResponse } from "../../shared/types.ts";
-import { appUrl } from "../util.ts";
+import { appUrl, kidPath } from "../util.ts";
 import { useConfig } from "./Join.tsx";
 
 export function Profile({ group }: { group: string }) {
@@ -62,7 +62,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
             {he.profile.kidLinks}
           </h2>
           {fam.kids.map((k) => (
-            <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(`/g/${group}/kid/${k.id}`))}>
+            <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(kidPath(group, k.id)))}>
               {he.profile.sendKidLink(k.name)}
             </WaButton>
           ))}

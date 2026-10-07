@@ -55,12 +55,15 @@ e2e/                    Playwright smoke (mobile viewport, Hebrew)
 | `/g/:group/settings` | Acting as family X · "החלפת משפחה" · "עריכת פרטי המשפחה" · "התנתקות מהטלפון הזה" · group link + WhatsApp. From the header gear and the identity chip. |
 | `/g/:group` | Group home: upcoming events with mini gap meters, "+ אירוע חדש". |
 | `/g/:group/new` | Create event. Invitation image drop zone first, then a prefilled form (or manual). |
-| `/g/:group/e/:event` | Event: header + RSVP for my kids (3 toggles each) + both legs' gap meters + share summary. |
+| `/g/:group/e/:event` | Event: header + RSVP for my kids (3 toggles each; with rsvp yes, a "שליחה ל{kid}" WhatsApp button: event, one line per leg, the per-event kid link) + both legs' gap meters + share summary. |
 | `/g/:group/e/:event/out`, `/back` | The **board** for that leg: waiting kids chips, car cards with seat slots, "+ אני נוהג/ת", history. |
 | `/g/:group/e/:event/invite` | Invitation image full screen. |
-| `/g/:group/e/:event/drive/:leg` | Driver mode: "יצאתי", pickup checklist, call/WhatsApp per kid/parent, Maps/Waze links. |
+| `/g/:group/e/:event/drive/:leg` | Driver mode: "יצאתי", "שיתוף עם הנוסעים" (per kid in the car: WhatsApp with the per-event kid link, to the kid's phone, else the parent's, else the chooser; highlighted and scrolled to after "יצאתי"), pickup checklist in pickup order with "הגעתי" (`setArrived`) and "עלה/תה" per stop, call/WhatsApp ("אני למטה") per kid/parent, Maps/Waze links. |
 | `/g/:group/me` | Family profile: parents + phones, address, kids (+ optional phones, kid links), cars (seats, color, plate, photo). |
-| `/g/:group/kid/:kidId` | Kid view (read-only, never asks "מי אתם?"): per leg who picks me up, when, car photo, call driver, "אני מוכן/ה". Old `/kid/:group/:token` links redirect here. |
+| `/g/:group/kid/:kidId` | Kid view, permanent link (read-only, never asks "מי אתם?"): the next upcoming rides; per leg a big live status, who picks me up, when, car photo, call driver, "אני מוכן/ה". Old `/kid/:group/:token` links redirect here. |
+| `/g/:group/kid/:kidId/e/:event` | Kid view focused on one event (both legs, any date), same live status. Shared from the event page and driver mode. |
+
+**Kid live status** (`kidLegStatus` in `shared/view.ts`, per leg the kid needs): `waiting` (no car) → `assigned` (driver, time, car photo) → `onTheWay` (run started) → `next` (run started and every earlier stop in the pickup order is picked; `KidRide.ahead === 0`) → `arrived` (driver tapped "הגעתי" at this kid's stop) → `picked` → `done`. `done` once the leg is over (`legOver`: 30 min after the start for out, 90 min after the return time for back, on the client's local clock), except while a started run hasn't picked the kid yet. Pickup order (`pickupStops`, also used by driver mode): out = one stop per family in seating order; back = one stop (everyone boards at the venue). Both kid pages subscribe to the group WebSocket and refetch on event updates.
 
 Every `/g/:group/…` route except `who` and `kid`, and `/join/:group`, sends a device with no family for that group (and not in "רק להסתכל" mode) to `/g/:group/who?next=<original URL>` (a replace, so back doesn't bounce).
 
@@ -99,8 +102,8 @@ Rules for every call:
 | `GET /api/g/:group/ws` | – | WebSocket upgrade. The server sends `{ t: "event", eventId, version }` / `{ t: "group", version }` after each change. |
 | `POST /api/g/:group/images` | ✓ | raw image body (`image/jpeg` / `image/webp`, ≤ 400 KB) → `{ imageId }` |
 | `GET /api/g/:group/images/:imageId` | – | → bytes, long cache headers |
-| `GET /api/g/:group/kid/:kidId` | – | → `KidView` (also accepts a legacy kid token) |
-| `POST /api/g/:group/kid/:kidId/ready` | – | → `{ ok: true }` (logs `setKidReady` as the kid's family, broadcasts) |
+| `GET /api/g/:group/kid/:kidId[?event=<slug>]` | – | → `KidView` (also accepts a legacy kid token). Without `event`: upcoming events. With `event`: only that event, any date · 404 when it doesn't exist. Each `KidRide` carries `started`, `picked`, `ready`, `arrived`, `ahead` (unpicked kids at earlier stops). |
+| `POST /api/g/:group/kid/:kidId/ready` | – | `{ ready?: bool, event?: slug }` → `{ ok: true }` (logs `setKidReady` as the kid's family on the earliest unpicked ride, within `event` when given; broadcasts) · 404 when there is none |
 | `POST /api/g/:group/invite/parse` | ✓ | `{ imageId }` → `{ title?, date?, times?: string[], place?, address? }` · 501 `feature_off` |
 | `GET /api/g/:group/places?q=` | ✓ | → `{ suggestions: { text, placeId }[] }` · 501 `feature_off` |
 | `POST /api/feedback/audio` | – | raw audio body (`audio/webm` / `mp4` / `ogg` …, ≤ 3 MB) → `{ audioId, transcript: string \| null }` (Workers AI Whisper `@cf/openai/whisper-large-v3-turbo`, Hebrew; any AI failure → `null`) |
@@ -121,7 +124,8 @@ Feedback endpoints (`worker/feedback.ts`, pure parts in `shared/feedback.ts`) ha
 | `removeOffer { offerId }` | Offer owner. Its kids go back to waiting. |
 | `seatKid { offerId, kidId }` | Allowed when **kid is mine** (any open offer) **or offer is mine** (any kid who needs that leg). Kid must have rsvp yes and need the leg, not already be seated on this leg, and the car must not be full. |
 | `unseatKid { offerId, kidId }` | Kid's family or offer owner. |
-| `startRun { offerId }` / `setPicked { offerId, kidId, picked }` | Offer owner. |
+| `startRun { offerId }` / `setPicked { offerId, kidId, picked }` | Offer owner. Picking a kid also clears their `arrived`. |
+| `setArrived { offerId, kidId, arrived }` | Offer owner; needs a started run; `arrived: true` is invalid for a picked kid. Stored in `Run.arrived: kidId[]` (absent when empty). Inverse: `setArrived` with the previous value. |
 | `setKidReady { offerId, kidId, ready }` | Kid's family (the DO runs it for `/api/g/…/kid/…/ready` acting as that family). Stored in `Offer.ready`. |
 | `editEvent { … }` | Host family. |
 

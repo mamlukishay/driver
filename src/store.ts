@@ -20,7 +20,7 @@ const cache = new Map<string, Entry<unknown>>();
 export const keys = {
   group: (g: string) => `group:${g}`,
   event: (g: string, e: string) => `event:${g}:${e}`,
-  kid: (g: string, t: string) => `kid:${g}:${t}`,
+  kid: (g: string, t: string, e?: string) => (e ? `kid:${g}:${t}:e:${e}` : `kid:${g}:${t}`),
 };
 
 function entry<T>(key: string, fetcher: () => Promise<T>): Entry<T> {
@@ -121,4 +121,5 @@ export function useResource<T>(key: string | null, fetcher: () => Promise<T>): R
 export const useGroup = (g: string) => useResource<GroupResponse>(keys.group(g), () => api.getGroup(g));
 export const useEvent = (g: string, ev: string) =>
   useResource<EventView>(keys.event(g, ev), () => api.getEvent(g, ev));
-export const useKid = (g: string, t: string) => useResource<KidView>(keys.kid(g, t), () => api.getKid(g, t));
+export const useKid = (g: string, t: string, e?: string) =>
+  useResource<KidView>(keys.kid(g, t, e), () => api.getKid(g, t, e));

@@ -10,6 +10,7 @@ import { WaButton } from "../components/WaButton.tsx";
 import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { useEvent } from "../store.ts";
+import { appUrl, eventIndex, fmtDate, kidPath } from "../util.ts";
 import { EventHead, runAction, summaryText } from "./eventCommon.tsx";
 
 export function EventPage({ group, event }: { group: string; event: string }) {
@@ -93,7 +94,7 @@ function KidRsvp({
 }: {
   group: string;
   ev: EventView;
-  kid: { id: string; name: string };
+  kid: { id: string; name: string; phone?: string };
   color: number;
   plan: KidPlan | undefined;
 }) {
@@ -119,6 +120,22 @@ function KidRsvp({
       />
       <Switch label={he.event.out} checked={coming && !!plan?.out} disabled={busy || !coming} onChange={(v) => save({ rsvp: "yes", out: v, back: !!plan?.back })} />
       <Switch label={he.event.back} checked={coming && !!plan?.back} disabled={busy || !coming} onChange={(v) => save({ rsvp: "yes", out: !!plan?.out, back: v })} />
+      {coming && (
+        <WaButton class="btn wa sm" phone={kid.phone} text={kidEventText(group, ev, kid)} label={he.event.sendToKidLabel(kid.name)}>
+          {he.event.sendToKid(kid.name)}
+        </WaButton>
+      )}
     </div>
   );
+}
+
+/** WhatsApp text for a kid: the event, one line per leg they need, and their per-event live link. */
+function kidEventText(group: string, ev: EventView, kid: { id: string; name: string }): string {
+  const idx = eventIndex(ev);
+  const plan = ev.kidPlans[kid.id];
+  const legs = LEGS.filter((leg) => plan?.[leg]).map((leg) => {
+    const o = ev.offers[leg].find((x) => x.kidIds.includes(kid.id));
+    return he.wa.legLine(leg, o ? { family: idx.famLabel(o.familyId), departAt: o.departAt } : null);
+  });
+  return he.wa.kidEvent({ kid: kid.name, title: ev.title, date: fmtDate(ev.date), legs, url: appUrl(kidPath(group, kid.id, ev.id)) });
 }
