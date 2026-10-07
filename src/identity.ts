@@ -53,6 +53,7 @@ export function getIdentity(group: string): string | null {
 }
 
 export function setIdentity(group: string, familyId: string): void {
+  deleted.delete(group);
   touchGroup(group);
   save({ ...allIdentities(), [group]: familyId });
 }
@@ -64,6 +65,39 @@ export function removeIdentity(group: string): void {
   delete all[group];
   save(all);
 }
+
+/* ---------- deleted groups ---------- */
+
+/** Groups seen deleted in this page view (live `{t:"deleted"}` or a 404 for a stored group). */
+const deleted = new Set<string>();
+
+export const isGroupDeleted = (group: string) => deleted.has(group);
+
+/** Forgets everything this device keeps for a group: family, last-used time, "רק להסתכל". */
+export function forgetGroup(group: string): void {
+  if (lastUsedMap()[group] !== undefined) {
+    const { [group]: _gone, ...rest } = lastUsedMap();
+    lastUsed = rest;
+    try {
+      localStorage.setItem(LAST_KEY, JSON.stringify(lastUsed));
+    } catch {
+      /* private mode */
+    }
+  }
+  setBrowsing(group, false);
+  removeIdentity(group);
+}
+
+/** The group is gone for everyone: screens for it show "הקבוצה נמחקה" (they re-render via identity listeners). */
+export function markGroupDeleted(group: string): void {
+  if (deleted.has(group)) return;
+  deleted.add(group);
+  forgetGroup(group);
+  emit();
+}
+
+/** A new group with this slug was just created here. */
+export const clearGroupDeleted = (group: string) => void deleted.delete(group);
 
 /* ---------- last used, per group (for "הקבוצות שלי" order and the join prefill) ---------- */
 

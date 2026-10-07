@@ -119,6 +119,8 @@ export interface GroupMeta {
   name: string;
   createdAt: number;
   version: number;
+  /** Linked parents' WhatsApp group (`https://chat.whatsapp.com/<code>`); absent when not set. */
+  whatsappUrl?: string;
 }
 
 /* ---------- events ---------- */
@@ -349,6 +351,16 @@ export interface CreateGroupRequest {
   name: string;
   /** English URL name (`SLUG_RE`). Omitted → a random one. */
   slug?: string;
+  /** Optional linked WhatsApp group (see `normalizeWaGroupUrl`). */
+  whatsappUrl?: string;
+}
+/** `PATCH /api/g/:group`: at least one field; `whatsappUrl: ""` clears the link. */
+export interface UpdateGroupRequest {
+  name?: string;
+  whatsappUrl?: string;
+}
+export interface UpdateGroupResponse {
+  group: GroupMeta;
 }
 export interface CreateGroupResponse {
   groupId: string;
@@ -404,7 +416,9 @@ export interface PlacesResponse {
 }
 export type WsMessage =
   | { t: "event"; eventId: string; version: number }
-  | { t: "group"; version: number };
+  | { t: "group"; version: number }
+  /** The group was deleted (sent right before its storage is wiped). */
+  | { t: "deleted" };
 
 /** Which family the client acts as. The server only checks that it exists in the group. */
 export const FAMILY_ID_HEADER = "X-Family-Id";

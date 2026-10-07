@@ -27,6 +27,7 @@ import {
 } from "../shared/validate.ts";
 import { isId, newId } from "../shared/ids.ts";
 import { eventSlugBase, firstFreeSlug, isSlug, slugify } from "../shared/slug.ts";
+import { normalizeWaGroupUrl } from "../shared/whatsapp.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { createImageStore, IMAGE_MIMES } from "./images.ts";
 import { DEFAULT_INVITE_MODEL, parseInvite, parseInviteWithWorkersAI } from "./invite.ts";
@@ -84,6 +85,8 @@ export class GroupDO extends DurableObject<Env> {
     }
 
     if (rest.length === 0 && m === "GET") return this.groupGet(request);
+    if (rest.length === 0 && m === "PATCH") return this.groupPatch(request);
+    if (rest.length === 0 && m === "DELETE") return this.groupDelete(request);
     if (rest[0] === "families" && rest.length === 1 && m === "POST") return this.registerFamily(request);
     if (rest[0] === "families" && rest[1] === "me" && rest.length === 2 && m === "PUT") return this.updateMe(request);
     if (rest[0] === "events") {
@@ -177,7 +180,62 @@ export class GroupDO extends DurableObject<Env> {
     const name = isObj(body) ? cleanText(body.name, 60) : null;
     if (!name) throw new ApiError("invalid");
     const meta: GroupMeta = { id, name, createdAt: Date.now(), version: 1 };
+    // Already validated and normalized by the Worker; checked again so the DO never stores junk.
+    const wa = isObj(body) && typeof body.whatsappUrl === "string" ? normalizeWaGroupUrl(body.whatsappUrl) : null;
+    if (wa) meta.whatsappUrl = wa;
     await this.ctx.storage.put("meta", meta);
+    return json({ ok: true });
+  }
+
+  /** `{ name?, whatsappUrl? }`; `whatsappUrl: ""` clears the link. Any family may edit (trust model). */
+  private async groupPatch(request: Request): Promise<Response> {
+    await this.requireFamily(request);
+    const meta = await this.meta();
+    const body = await readJson(request);
+    if (!isObj(body) || (body.name === undefined && body.whatsappUrl === undefined)) throw new ApiError("invalid");
+    if (body.name !== undefined) {
+      const name = cleanText(body.name, 60);
+      if (!name) throw new ApiError("invalid");
+      meta.name = name;
+    }
+    if (body.whatsappUrl !== undefined) {
+      const wa = typeof body.whatsappUrl === "string" ? normalizeWaGroupUrl(body.whatsappUrl) : null;
+      if (wa === null) throw new ApiError("invalid");
+      if (wa) meta.whatsappUrl = wa;
+      else delete meta.whatsappUrl;
+    }
+    await this.bumpGroup(meta);
+    this.broadcast({ t: "group", version: meta.version });
+    return json({ group: meta });
+  }
+
+  /**
+   * Deletes the whole group for everyone: tells open clients, removes its R2 images (`img/{slug}/…`),
+   * then wipes this DO's storage (families, events, log, DO-stored images, meta). Without `meta` the slug
+   * is free again for `POST /api/groups`.
+   */
+  private async groupDelete(request: Request): Promise<Response> {
+    await this.requireFamily(request);
+    const meta = await this.meta();
+    this.broadcast({ t: "deleted" });
+    for (const ws of this.ctx.getWebSockets()) {
+      try {
+        ws.close(1000, "deleted");
+      } catch {
+        /* already closed */
+      }
+    }
+    const bucket = this.env.IMAGES;
+    if (bucket) {
+      const prefix = `img/${meta.id}/`;
+      let cursor: string | undefined;
+      do {
+        const page = await bucket.list({ prefix, cursor, limit: 1000 });
+        if (page.objects.length) await bucket.delete(page.objects.map((o) => o.key));
+        cursor = page.truncated ? page.cursor : undefined;
+      } while (cursor);
+    }
+    await this.ctx.storage.deleteAll();
     return json({ ok: true });
   }
 

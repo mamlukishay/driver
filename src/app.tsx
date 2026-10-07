@@ -5,12 +5,13 @@ import type { Leg } from "../shared/types.ts";
 import { he } from "./i18n/he.ts";
 import { useIdentity, whoUrl } from "./components/Header.tsx";
 import { ToastHost } from "./components/Toast.tsx";
-import { isBrowsing } from "./identity.ts";
+import { isBrowsing, isGroupDeleted } from "./identity.ts";
 import { FeedbackHost } from "./feedback/Feedback.tsx";
 import { useHistoryEffects } from "./nav.ts";
 import { Board } from "./screens/Board.tsx";
 import { Drive } from "./screens/Drive.tsx";
 import { EventPage } from "./screens/EventPage.tsx";
+import { GroupGone } from "./screens/GroupGone.tsx";
 import { GroupHome } from "./screens/GroupHome.tsx";
 import { Home } from "./screens/Home.tsx";
 import { Invite } from "./screens/Invite.tsx";
@@ -41,7 +42,15 @@ function NeedsFamily({ group, children }: { group: string; children: ComponentCh
   return ok ? <>{children}</> : null;
 }
 
-const guarded = (render: (x: P) => ComponentChildren) => (x: P) => <NeedsFamily group={p(x, "group")}>{render(x)}</NeedsFamily>;
+/** A group deleted while this page was open (or found gone): "הקבוצה נמחקה" instead of the screen. */
+function GroupGate({ group, children }: { group: string; children: ComponentChildren }) {
+  useIdentity(group); // re-renders when the group is marked deleted (identity listeners)
+  return isGroupDeleted(group) ? <GroupGone /> : <>{children}</>;
+}
+
+const gated = (render: (x: P) => ComponentChildren) => (x: P) => <GroupGate group={p(x, "group")}>{render(x)}</GroupGate>;
+const guarded = (render: (x: P) => ComponentChildren) =>
+  gated((x) => <NeedsFamily group={p(x, "group")}>{render(x)}</NeedsFamily>);
 
 /** Old kid links (`/kid/:group/:token`) → `/g/:group/kid/:token` (the API still accepts old tokens). */
 function LegacyKid(x: P) {
@@ -53,8 +62,8 @@ function LegacyKid(x: P) {
 const routes = {
   home: () => <Home />,
   newGroup: () => <NewGroup />,
-  join: (x: P) => <Join group={p(x, "group")} />,
-  who: (x: P) => <Who group={p(x, "group")} />,
+  join: gated((x) => <Join group={p(x, "group")} />),
+  who: gated((x) => <Who group={p(x, "group")} />),
   group: guarded((x) => <GroupHome group={p(x, "group")} />),
   newEvent: guarded((x) => <NewEvent group={p(x, "group")} />),
   event: guarded((x) => <EventPage group={p(x, "group")} event={p(x, "event")} />),
@@ -64,8 +73,8 @@ const routes = {
   drive: guarded((x) => <Drive group={p(x, "group")} event={p(x, "event")} leg={p(x, "leg") as Leg} />),
   me: guarded((x) => <Profile group={p(x, "group")} />),
   settings: guarded((x) => <Settings group={p(x, "group")} />),
-  kid: (x: P) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} />,
-  kidEvent: (x: P) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} event={p(x, "event")} />,
+  kid: gated((x) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} />),
+  kidEvent: gated((x) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} event={p(x, "event")} />),
 };
 
 function Shell() {

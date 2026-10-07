@@ -3,6 +3,7 @@ import type { ConfigResponse, CreateGroupResponse, SlugTakenResponse } from "../
 import { groupId } from "../shared/ids.ts";
 import { firstFreeSlugAsync, isSlug } from "../shared/slug.ts";
 import { cleanText } from "../shared/validate.ts";
+import { normalizeWaGroupUrl } from "../shared/whatsapp.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { handleFeedback } from "./feedback.ts";
 
@@ -27,12 +28,18 @@ async function createGroup(request: Request, env: Env, url: URL): Promise<Respon
   const name = isObj(body) ? cleanText(body.name, 60) : null;
   if (!name || !isObj(body)) throw new ApiError("invalid");
   if (body.slug !== undefined && !isSlug(body.slug)) throw new ApiError("invalid");
+  let whatsappUrl: string | undefined;
+  if (body.whatsappUrl !== undefined) {
+    const w = typeof body.whatsappUrl === "string" ? normalizeWaGroupUrl(body.whatsappUrl) : null;
+    if (w === null) throw new ApiError("invalid");
+    whatsappUrl = w || undefined;
+  }
   const slug = (body.slug as string | undefined) ?? groupId();
   const init = await groupStub(env, slug).fetch(
     new Request(new URL(`/api/g/${slug}/__init`, url), {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(whatsappUrl ? { name, whatsappUrl } : { name }),
     }),
   );
   if (init.status === 409) {

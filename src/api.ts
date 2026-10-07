@@ -15,10 +15,12 @@ import type {
   PublicAction,
   RegisterFamilyResponse,
   UndoResponse,
+  UpdateGroupRequest,
+  UpdateGroupResponse,
   UpdateFamilyResponse,
 } from "../shared/types.ts";
 import { FAMILY_ID_HEADER } from "../shared/types.ts";
-import { getIdentity, removeIdentity } from "./identity.ts";
+import { getIdentity, markGroupDeleted, removeIdentity } from "./identity.ts";
 import type { ClientErrorCode } from "./i18n/he.ts";
 
 export class ApiError extends Error {
@@ -102,9 +104,20 @@ export const api = {
     return configPromise;
   },
 
-  createGroup: (name: string, slug: string) => req<CreateGroupResponse>("/api/groups", { body: { name, slug } }),
+  createGroup: (name: string, slug: string, whatsappUrl?: string) =>
+    req<CreateGroupResponse>("/api/groups", { body: whatsappUrl ? { name, slug, whatsappUrl } : { name, slug } }),
 
-  getGroup: (group: string) => req<GroupResponse>(g(group), { group }),
+  /** A 404 for a group this device has a family in means it was deleted: forget it here. */
+  getGroup: (group: string) =>
+    req<GroupResponse>(g(group), { group }).catch((e: unknown) => {
+      if (e instanceof ApiError && e.status === 404 && getIdentity(group)) markGroupDeleted(group);
+      throw e;
+    }),
+
+  updateGroup: (group: string, patch: UpdateGroupRequest) =>
+    req<UpdateGroupResponse>(g(group), { method: "PATCH", body: patch, group }),
+
+  deleteGroup: (group: string) => req<{ ok: true }>(g(group), { method: "DELETE", group }),
 
   register: (group: string, input: FamilyInput) =>
     req<RegisterFamilyResponse>(`${g(group)}/families`, { body: input }),
