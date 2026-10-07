@@ -93,7 +93,7 @@ test("back and forward move between group, event tabs and drive mode", async () 
   await expect.poll(path).toBe(`${eventUrl}/drive/out`);
   await expect(page.getByRole("heading", { level: 1, name: he.drive.title("out") })).toBeVisible();
 
-  // The in-app back arrow always goes up: drive → event פרטים → group. The entry behind each is the
+  // The in-app back arrow always goes up: drive → event הילדים שלי → group. The entry behind each is the
   // board, not the parent, so each step replaces the entry instead of walking history.
   await page.getByRole("button", { name: he.common.back }).click();
   await expect.poll(path).toBe(eventUrl);
