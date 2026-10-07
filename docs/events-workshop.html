@@ -131,7 +131,7 @@ button{cursor:pointer}
 .bk,.gear,.dots{border:0;background:transparent;inline-size:40px;block-size:40px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--ink-2)}
 .bk{margin-inline-start:-8px;color:var(--ink)}
 .gear{margin-inline-end:-8px}
-.dots{font-size:22px;font-weight:700;color:var(--ink);line-height:1}
+.dots{color:var(--ink);background:var(--sunk)}
 .dots[aria-expanded="true"]{background:var(--sunk)}
 .bk:hover,.gear:hover,.dots:hover{background:var(--sunk)}
 .who{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);border:1.5px solid var(--fc,var(--line));border-radius:20px;padding:2px 12px;background:var(--surface);align-self:flex-start;max-inline-size:100%;min-block-size:28px}
@@ -568,7 +568,7 @@ https://trempush.mamlukishay.workers.dev/g/class-4b/e/oct-16-birthday</pre>
     h += '<button type="button" class="bk" data-act="up" aria-label="חזרה">' + ICON_BACK + "</button>";
     h += '<h1 class="attl">' + esc(title) + "</h1>";
     if (st.cancelled && opts.event) h += '<span class="tag bad">בוטל</span>';
-    if (opts.dots) h += '<button type="button" class="dots" data-act="menu" aria-haspopup="true" aria-expanded="' + st.menu + '" aria-label="פעולות לאירוע">⋯</button>';
+    if (opts.dots) h += '<button type="button" class="dots" data-act="menu" aria-haspopup="true" aria-expanded="' + st.menu + '" aria-label="פעולות לאירוע"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="19" cy="12" r="2.2" fill="currentColor"/></svg></button>';
     h += '<span class="gear" aria-hidden="true">' + ICON_GEAR + "</span>";
     h += "</div>";
     h += '<span class="who" style="--fc:' + FAM[ME].c + '"><span class="fdot" aria-hidden="true"></span><span>פועל/ת בתור: <b>' + FAM[ME].name + "</b></span></span>";
