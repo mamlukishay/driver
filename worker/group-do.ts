@@ -493,4 +493,14 @@ export class GroupDO extends DurableObject<Env> {
     if (!q) return json({ suggestions: [] });
     return json(await placesAutocomplete(apiKey, q));
   }
+
+  /* ---------- feedback fallback storage (RPC; only used when there is no R2 binding) ---------- */
+
+  async feedbackPut(key: string, value: ArrayBuffer | string): Promise<void> {
+    await this.ctx.storage.put(`fb:${key}`, value);
+  }
+
+  async feedbackGet(key: string): Promise<ArrayBuffer | string | null> {
+    return (await this.ctx.storage.get<ArrayBuffer | string>(`fb:${key}`)) ?? null;
+  }
 }

@@ -32,3 +32,21 @@ jobs:
       - name: Deploy skipped
         if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
         run: echo "::warning::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets to deploy."
+      - name: Sync optional Worker secrets
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        env:
+          GH_FEEDBACK_TOKEN: ${{ secrets.GH_FEEDBACK_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          # Only secrets present in the repo are pushed; values go through stdin, never argv or logs.
+          put() {
+            if [ -n "$2" ]; then
+              printf '%s' "$2" | bunx wrangler secret put "$1" >/dev/null && echo "Synced $1"
+            else
+              echo "Skipping $1 (no repository secret)"
+            fi
+          }
+          put GITHUB_FEEDBACK_TOKEN "$GH_FEEDBACK_TOKEN"
+          put ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
+          put GOOGLE_MAPS_API_KEY "$GOOGLE_MAPS_API_KEY"

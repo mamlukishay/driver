@@ -4,6 +4,7 @@ import { groupId } from "../shared/ids.ts";
 import { firstFreeSlugAsync, isSlug } from "../shared/slug.ts";
 import { cleanText } from "../shared/validate.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
+import { handleFeedback } from "./feedback.ts";
 
 export { GroupDO } from "./group-do.ts";
 
@@ -52,6 +53,8 @@ async function route(request: Request, env: Env): Promise<Response> {
 
   if (seg[1] === "config" && seg.length === 2 && method === "GET") return json(configFor(env));
   if (seg[1] === "groups" && seg.length === 2 && method === "POST") return createGroup(request, env, url);
+
+  if (seg[1] === "feedback") return handleFeedback(request, env, seg, url);
 
   // /api/g/:group/...
   if (seg[1] === "g" && seg.length >= 3) {

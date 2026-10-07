@@ -6,6 +6,7 @@ import { he } from "./i18n/he.ts";
 import { useIdentity, whoUrl } from "./components/Header.tsx";
 import { ToastHost } from "./components/Toast.tsx";
 import { isBrowsing } from "./identity.ts";
+import { FeedbackHost } from "./feedback/Feedback.tsx";
 import { useHistoryEffects } from "./nav.ts";
 import { Board } from "./screens/Board.tsx";
 import { Drive } from "./screens/Drive.tsx";
@@ -92,6 +93,7 @@ function Shell() {
         <Route default component={NotFound} />
       </Router>
       <ToastHost />
+      <FeedbackHost />
     </>
   );
 }

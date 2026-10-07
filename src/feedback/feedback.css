@@ -1,0 +1,175 @@
+/* ---------- feedback: floating button + sheet ---------- */
+
+/* A small tab on the start edge (right in RTL), above sticky CTAs and over sheets (.ov is z 30). */
+.fb-fab {
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-end: calc(92px + env(safe-area-inset-bottom, 0px));
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-block-size: 34px;
+  padding: 6px 10px 6px 9px;
+  border: 1px solid var(--line);
+  border-inline-start: 0;
+  border-start-end-radius: 999px;
+  border-end-end-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px var(--shadow);
+  opacity: 0.88;
+  cursor: pointer;
+}
+.fb-fab:hover,
+.fb-fab:focus-visible {
+  opacity: 1;
+  color: var(--ink);
+}
+.fb-fab[aria-busy="true"] {
+  opacity: 0.5;
+}
+.fb-fab.kid {
+  min-block-size: 28px;
+  padding: 4px 8px 4px 7px;
+  font-size: 12px;
+  inset-block-end: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.fb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fb-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--sunk);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+}
+.fb-seg button {
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  min-block-size: 40px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.fb-seg button.on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.fb-label {
+  font-weight: 700;
+  font-size: 15px;
+}
+.fb-text {
+  inline-size: 100%;
+  min-block-size: 96px;
+  resize: vertical;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.fb-mic-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.fb-mic {
+  flex: none;
+  inline-size: 72px;
+  block-size: 72px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 4px 14px var(--shadow);
+  cursor: pointer;
+}
+.fb-mic:disabled {
+  opacity: 0.5;
+}
+.fb-mic.rec {
+  background: var(--bad);
+  color: var(--surface);
+  animation: fb-pulse 1.4s ease-out infinite;
+}
+@keyframes fb-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--bad) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 18px color-mix(in srgb, var(--bad) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fb-mic.rec {
+    animation: none;
+  }
+}
+.fb-mic-status {
+  font-size: 15px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.fb-shot {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.fb-shot img {
+  inline-size: 64px;
+  max-block-size: 120px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+.fb-shot img.off {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+.fb-shot-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.fb-thanks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-block: 28px;
+  font-size: 18px;
+  text-align: center;
+}
+.fb-check {
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 30px;
+  font-weight: 700;
+}

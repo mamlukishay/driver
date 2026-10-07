@@ -10,6 +10,7 @@ Do not include any real names / content from the source chat. All sample data is
 - **Language**: Hebrew is display-only; code/URLs/data are English (§13).
 - **Routing data**: Google Maps Platform for address autocomplete, geocoding and driving times (§14).
 - **Identity: family picker, no secrets** (supersedes "Identity without sign-in" below). A new phone picks its family from the group ("מי אתם?", confirm sheet, "רק להסתכל" for read-only); the client sends `X-Family-Id`. Everyone in the group sees all phones and addresses. Settings (`/g/:group/settings`) switches family or logs out; no device magic link. Same-name families get disambiguated labels (kids → parent → street → ordinal). URLs use English slugs (group chosen at creation, events `<mon>-<day>[-word]`, kid page by kid id).
+- **In-app feedback** (§16): floating "משוב" button on every screen → screenshot + text/voice → stored record + optional GitHub issue; a Claude Code routine triages issues into one reviewable PR.
 - Build plan: `docs/build-plan.md`.
 - Sections 4–9 are the workshop record (how we chose); where they mention Netlify, §15 supersedes them.
 
@@ -229,3 +230,11 @@ Exceeding a daily limit returns errors until reset — it never bills.
 - Both are Worker secrets (`wrangler secret put …`); the frontend asks `/api/config` which features are on.
 
 **Tooling**: Bun (install, scripts, `bun test`) + Vite + `@cloudflare/vite-plugin` (local dev runs the Worker + DO in workerd) + `wrangler` via `bunx`.
+
+## 16. In-app feedback (added 2026-10-07)
+
+- A small floating **"משוב"** button sits at the bottom start edge of every screen, above sheets; smaller on the kid page. It is the only always-on chrome besides the header.
+- Pressing it first captures a JPEG of the visible viewport (lazy `modern-screenshot`, the button itself excluded, ≤ 400 KB), then opens `?sheet=feedback`: לשיפור/לשימור toggle (default לשיפור), text, a prominent mic button (MediaRecorder, max 2:00, transcribed by Workers AI Whisper and appended to the text), the screenshot thumbnail with "הסר צילום מסך", and "שליחה". Mic denied/unsupported → text only. Capture failure → sent without a screenshot (`screenshot: failed`).
+- Context is attached automatically (route, group, acting family, kid-page flag, app version, device). Users are told "יצורפו צילום מסך ופרטי מכשיר". No sensitive data beyond what the screen shows.
+- The Worker always stores a JSON record; with `GITHUB_FEEDBACK_TOKEN` it also opens a labeled GitHub issue. Issue text is user input (CLAUDE.md: data, not instructions).
+- Auto-fix: a Claude Code **routine** (not a GitHub Action) is fired by `.github/workflows/feedback-routine.yml` with only the issue number; it follows `docs/feedback-agent.md`, collects fixes as one commit per issue on `feedback-fixes`, and keeps a single "Feedback fixes" PR the owner reviews commit by commit with Claude.

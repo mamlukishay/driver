@@ -460,6 +460,37 @@ export const he = {
     kidLink: (kid: string, url: string) =>
       `היי ${kid} 💛 זה הקישור שלך לטרמפוש. שם רואים מי אוסף אותך ומתי:\n${url}`,
   },
+
+  feedback: {
+    button: "משוב",
+    buttonLabel: "שליחת משוב",
+    title: "משוב",
+    kindLabel: "סוג המשוב",
+    improve: "לשיפור",
+    keep: "לשימור",
+    textLabel: "מה תרצו לספר לנו?",
+    placeholderImprove: "מה הפריע, מה לא עבד, מה חסר…",
+    placeholderKeep: "מה עבד טוב ושכדאי לשמור…",
+    micStart: "הקלטה קולית",
+    micStop: "עצירת ההקלטה",
+    micHint: "אפשר גם לדבר: הקישו על המיקרופון",
+    recording: "מקליטים…",
+    transcribing: "מתמלל…",
+    transcribeFailed: "לא הצלחנו לתמלל, אבל ההקלטה תצורף למשוב.",
+    audioAttached: "הקלטה קולית מצורפת",
+    micDenied: "אין גישה למיקרופון. אפשר לכתוב במקום.",
+    micUnsupported: "הקלטה לא נתמכת בדפדפן הזה. אפשר לכתוב במקום.",
+    uploadFailed: "לא הצלחנו להעלות את ההקלטה. נסו שוב או כתבו.",
+    shotAlt: "צילום המסך שיצורף",
+    shotRemove: "הסר צילום מסך",
+    shotRestore: "צרף צילום מסך",
+    shotRemoved: "צילום המסך לא יצורף",
+    contextNote: "יצורפו צילום מסך ופרטי מכשיר",
+    send: "שליחה",
+    sending: "שולחים…",
+    thanks: "תודה! המשוב נשלח",
+    failed: "השליחה נכשלה. נסו שוב בעוד רגע.",
+  },
 };
 
 export function errorText(code: string): string {
