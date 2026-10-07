@@ -119,6 +119,7 @@ export const he = {
 
   home: {
     title: "הקבוצות שלי",
+    tagline: "מי מסיע את מי, בלי מאה הודעות בקבוצה.",
     emptyHint: "קיבלתם קישור מהורה אחר? פתחו אותו.",
     create: "צור קבוצה חדשה",
     nextEvent: (date: string) => `האירוע הבא: ${date}`,

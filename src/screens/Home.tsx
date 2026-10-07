@@ -1,6 +1,7 @@
 import { nextEventDate } from "../../shared/myGroups.ts";
 import { useEffect } from "preact/hooks";
 import { Header } from "../components/Header.tsx";
+import { Logo } from "../components/Logo.tsx";
 import { he } from "../i18n/he.ts";
 import { allIdentities, myGroupsByLastUsed, onIdentityChange } from "../identity.ts";
 import { useGroup } from "../store.ts";
@@ -39,11 +40,12 @@ export function Home() {
       <main id="main" class="content">
         {groups.length === 0 ? (
           <section class="hero-empty">
-            <div class="lane" aria-hidden="true" />
+            <Logo class="hero-logo" size={112} />
+            <p class="hero-tag">{he.home.tagline}</p>
             <a class="btn big" href="/new-group">
               {he.home.create}
             </a>
-            <p class="small muted">{he.home.emptyHint}</p>
+            <p class="small muted center">{he.home.emptyHint}</p>
           </section>
         ) : (
           <>
