@@ -7,6 +7,8 @@ import { cx, fmtDmy } from "../util.ts";
 interface FieldProps {
   id: string;
   label: string;
+  /** Keep the label for screen readers only (the card heading already says it). */
+  labelHidden?: boolean;
   value: string;
   onInput: (v: string) => void;
   type?: "text" | "date" | "time" | "tel";
@@ -22,6 +24,8 @@ interface FieldProps {
   autoComplete?: string;
   dir?: "ltr" | "rtl";
   onBlur?: () => void;
+  /** Shows a small spinner inside the input (its left edge: busy fields are `dir="ltr"`, text aligned right). */
+  busy?: boolean;
   children?: ComponentChildren;
 }
 
@@ -41,6 +45,7 @@ export function Field(p: FieldProps) {
       autoComplete={p.autoComplete}
       dir={p.dir}
       aria-invalid={p.error ? true : undefined}
+      aria-busy={p.busy || undefined}
       aria-describedby={p.error || p.hint ? hintId : undefined}
       onInput={(e) => p.onInput((e.currentTarget as HTMLInputElement).value)}
       onBlur={p.onBlur}
@@ -48,7 +53,7 @@ export function Field(p: FieldProps) {
   );
   return (
     <div class={cx("fld", p.highlight && "hl", p.error && "err")}>
-      <label for={p.id}>
+      <label for={p.id} class={p.labelHidden ? "vh" : undefined}>
         {p.label}
         {p.highlight && <i class="auto">{he.newEvent.detected}</i>}
       </label>
@@ -60,8 +65,13 @@ export function Field(p: FieldProps) {
             {dmy ? <bdi dir="ltr">{dmy}</bdi> : he.common.datePlaceholder}
           </span>
         </div>
-      ) : (
+      ) : p.busy === undefined ? (
         input
+      ) : (
+        <span class={cx("inwrap", p.busy && "busy")}>
+          {input}
+          {p.busy && <i class="spin" aria-hidden="true" />}
+        </span>
       )}
       {(p.error || p.hint) && (
         <span class="hint" id={hintId}>

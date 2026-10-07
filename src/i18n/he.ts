@@ -59,7 +59,7 @@ export const he = {
   },
 
   settings: {
-    title: "הגדרות",
+    title: "הגדרות הקבוצה",
     meTitle: "המשפחה בטלפון הזה",
     notChosen: "עוד לא בחרתם משפחה בטלפון הזה.",
     choose: "בחירת משפחה",
@@ -67,6 +67,11 @@ export const he = {
     editProfile: "עריכת פרטים",
     logout: "התנתקות מהטלפון הזה",
     logoutDone: "הטלפון הזה כבר לא פועל בתור אף משפחה",
+    nameTitle: "שם הקבוצה",
+    nameLabel: "שם הקבוצה",
+    nameHint: "הקישור לקבוצה לא משתנה.",
+    nameSave: "שמירת השם",
+    nameSaved: "שם הקבוצה עודכן",
     shareTitle: "קישור לקבוצה",
     shareHint: "שלחו רק בקבוצת ההורים.",
     share: "שליחת הקישור ב-WhatsApp",
@@ -82,9 +87,7 @@ export const he = {
     deleteTitle: "מחיקת הקבוצה",
     deleteOpen: "מחיקת הקבוצה",
     deleteBody: "כל המשפחות, האירועים והתמונות יימחקו לכולם.",
-    deleteType: (name: string) => `לאישור, הקלידו את שם הקבוצה: ${name}`,
-    deleteYes: "מחיקה",
-    deleting: "מוחקים…",
+    deleteYes: "כן, למחוק",
     deleted: "הקבוצה נמחקה",
   },
 
@@ -136,6 +139,7 @@ export const he = {
     slugTaken: (suggestion?: string) =>
       suggestion ? `הכתובת הזאת כבר תפוסה. אולי ${suggestion}?` : "הכתובת הזאת כבר תפוסה. נסו שם אחר.",
     useSuggestion: (s: string) => `להשתמש ב-${s}`,
+    suggestingSlug: "מציע שם…",
     submit: "יצירת הקבוצה",
     createdTitle: "הקבוצה מוכנה!",
     createdBody: "שלחו את הקישור בקבוצת ההורים.",
@@ -294,7 +298,7 @@ export const he = {
     departs: (t: string) => `יציאה ${t}`,
     seatCount: (used: number, total: number) => `${used}/${total}`,
     emptySeat: (family: string) => `מושב פנוי ברכב של ${family}`,
-    seatedKid: (kid: string) => `${kid}, לחצו לאפשרויות`,
+    seatedKid: (kid: string) => `${kid}, לחצו להורדה מהרכב`,
     // friendly refusals
     whyViewOnly: "כדי לשבץ צריך לבחור את המשפחה שלכם (או להירשם).",
     whyNotMyKid: (kid: string) =>
@@ -304,24 +308,6 @@ export const he = {
     whyPickFirst: "בחרו קודם ילד/ה מהממתינים, ואז לחצו על מושב פנוי.",
     whyNoWaiting: "אין ילדים שממתינים בכיוון הזה.",
     whyUnseat: (kid: string) => `רק הנהג/ת או המשפחה של ${kid} יכולים להוריד אותו/ה מהרכב.`,
-  },
-
-  seatSheet: {
-    title: "אישור הושבה",
-    /** Sentence parts; `{ b }` parts are highlighted. */
-    parts: (kid: string, family: string, leg: Leg, time: string): (string | { b: string })[] =>
-      ["להושיב את ", { b: kid }, " ברכב של ", { b: family }, `, ${legName[leg]}, `, { b: time }, "?"],
-    partsMine: (kid: string, leg: Leg, time: string): (string | { b: string })[] =>
-      ["לקחת את ", { b: kid }, ` ברכב שלך, ${legName[leg]}, `, { b: time }, "?"],
-    confirm: "כן, להושיב",
-    confirmTake: "כן, אני לוקח/ת",
-  },
-
-  unseatSheet: {
-    title: "הורדה מהרכב",
-    sentence: (kid: string, family: string, leg: Leg) =>
-      `להוריד את ${kid} מהרכב של ${family} ב${legName[leg]}? ${kid} יחזור/תחזור לממתינים.`,
-    confirm: "כן, להוריד",
   },
 
   carSheet: {
@@ -458,7 +444,7 @@ export const he = {
   /* ---------- event tabs, ⋯ menu, editing, cancelling ---------- */
   manage: {
     tabs: "מסכי האירוע",
-    details: "פרטים",
+    details: "הילדים שלי",
     gapLabel: { missing: "חסרים מקומות", unassigned: "ממתינים לשיבוץ", ok: "מסודר", none: "אין צורך" } as Record<"missing" | "unassigned" | "ok" | "none", string>,
     menu: "פעולות לאירוע",
     menuTitle: "האירוע",
