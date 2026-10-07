@@ -245,6 +245,9 @@ section{padding-block:44px 8px}
 .fld .hint{color:var(--ink-2);font-size:11.5px}
 .fld.err input{border-color:var(--bad)}.fld.err .hint{color:var(--bad)}.fld.okv .hint{color:var(--ok)}
 .fld input[dir="ltr"]{text-align:right}
+.sug{display:flex;flex-direction:column;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);overflow:hidden;font-size:12.5px;color:var(--ink)}
+.sug div{padding:6px 9px;border-bottom:1px solid var(--line)}
+.sug .sg{font-size:10.5px;color:var(--ink-2);background:var(--sunk);border-bottom:0}
 .btn.sm{padding:5px 9px;font-size:12px;border-radius:9px}
 .ctc{display:flex;flex-direction:column;gap:5px;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px}
 .step{display:flex;align-items:center;gap:8px}
@@ -591,9 +594,9 @@ footer{padding-block:40px 0;color:var(--ink-3);font-size:13px}
         <div class="long"><dt>הוגנות</dt><dd>מונה לכל משפחה, "הסעת 3 פעמים החודש". האפליקציה מעדיפה מי שהסיע פחות.</dd></div>
         <div><dt>התראות</dt><dd>Web Push (PWA מותקן; ב-iOS 16.4+ רק אחרי הוספה למסך הבית) + Scheduled Function: ערב לפני, 30 דק׳ לפני. "יצאתי" שולח Push לכל הורה של נוסע. WhatsApp כגיבוי.</dd></div>
         <div><dt>אירועים חוזרים</dt><dd>תבניות שבועיות (חוג כל יום ג׳) עם רוטציה. מתאים כי הסדרן כבר מאזן תורות.</dd></div>
-        <div class="long"><dt>חלקים טכניים</dt><dd>פונקציות + Blobs + Scheduled Function + מפתחות VAPID + <code>web-push</code> + מנויי Push לכל משפחה. geocoding של כתובות פעם אחת בהרשמה (Nominatim).</dd></div>
+        <div class="long"><dt>חלקים טכניים</dt><dd>פונקציות + Blobs + Scheduled Function + מפתחות VAPID + <code>web-push</code> + מנויי Push לכל משפחה. השלמת כתובות + geocoding + מטריצת זמני נסיעה ב-Google Routes API.</dd></div>
       </dl>
-      <div class="pc"><div class="p"><h4>בעד</h4><ul><li>הכי מעט עבודה להורים</li><li>הוגן</li><li>תזכורות אוטומטיות</li></ul></div><div class="c"><h4>נגד</h4><ul><li>"למה הילד שלי שם?"</li><li>חיכוך בהתקנת PWA באייפון</li><li>הרבה חלקים זזים</li><li>איכות geocoding לכתובות בעברית</li></ul></div></div>
+      <div class="pc"><div class="p"><h4>בעד</h4><ul><li>הכי מעט עבודה להורים</li><li>הוגן</li><li>תזכורות אוטומטיות</li></ul></div><div class="c"><h4>נגד</h4><ul><li>"למה הילד שלי שם?"</li><li>חיכוך בהתקנת PWA באייפון</li><li>הרבה חלקים זזים</li><li>עלות/מכסה של Google Maps Platform (חשבון חיוב)</li></ul></div></div>
     </article>
     <article class="alt" data-alt="c">
       <div class="alt-h"><span class="L">C</span><h3>בקשות והצעות</h3><span class="eff">מאמץ בנייה <b>M</b></span></div>
@@ -690,6 +693,17 @@ footer{padding-block:40px 0;color:var(--ink-3);font-size:13px}
       </ul>
     </div>
     <div class="fblk">
+      <h3>זמני נסיעה אמיתיים, לא מרחק אווירי</h3>
+      <p>נהר או כביש חד-סטרי הופכים קרוב באוויר לנסיעה של 12 דקות, ולכן שואלים שירות מפות ולא כותבים ניתוב בעצמנו. הקריאות רצות מ-Netlify Function, והמפתח במשתני סביבה.</p>
+      <ul>
+        <li><b>4 קריאות</b>: השלמת כתובות בהרשמה, geocoding פעם אחת לכתובת, מטריצת זמני נסיעה בין הבתים והמקום, וסדר איסוף אופטימלי עם זמני הגעה.</li>
+        <li><b>עלות</b>: אירוע בגודל כיתה הוא ~10–15 נקודות, כ-100–200 תאי מטריצה לתוכנית. יש מכסה חינמית חודשית, אבל נדרש חשבון חיוב.</li>
+        <li><b>Cache</b> ב-Blobs תחת <code>route/{a}-{b}/{weekday-hour}</code>: זמני בית לבית כמעט לא משתנים. חישוב מחדש רק למשפחה או מקום חדשים, ותנועה חיה רק ביום ההסעה.</li>
+        <li><b>ניווט</b> נשאר קישור עומק חינמי ל-Maps עם הסדר המותאם (עד 8 עצירות) ול-Waze לעצירה הבאה.</li>
+        <li><b>איפה זה נוחת</b>: ב-v1 השלמת כתובות + geocoding; ב-v1.1 סדר איסוף וזמני הגעה; B משתמשת במטריצה לשיבוץ.</li>
+      </ul>
+    </div>
+    <div class="fblk">
       <h3>עברית לתצוגה, אנגלית לקוד</h3>
       <p>כל מה שהמשתמש/ת רואה הוא בעברית ובכיוון RTL. הקוד, המזהים, אובייקטי הנתונים ומפתחות ה-JSON, הכתובות והנתיבים, מפתחות ה-Blobs וה-API הם באנגלית בלבד.</p>
       <ul>
@@ -732,7 +746,7 @@ Offer: { id, familyId, carId, seats, departAt, kids:[kidId],
           <li><code>wa.me/&lt;number&gt;?text=</code> ממלא מראש לאדם; אי אפשר לכוון לקבוצה, <code>wa.me/?text=</code> פותח בחירה.</li>
           <li>Web Push ב-iOS: 16.4+, רק ממסך הבית, הרשאה מלחיצה.</li>
           <li>Google Maps עם כמה עצירות: לתכנן עד 8 עצירות ביניים. Waze: יעד אחד, לכן "נווט לעצירה הבאה".</li>
-          <li>Nominatim (רק B): בקשה אחת בשנייה, לשמור ב-cache, מספרי בתים בעברית חלקיים, גיבוי "שתפו מיקום".</li>
+          <li>Google Maps Platform: מכסת שימוש חינמית חודשית לכל API (משנת 2025; לאמת לפני בנייה), דורש חשבון חיוב. חלופות עם שכבה חינמית: Mapbox, OpenRouteService. אסור לצייר את התוצאות על מפה שאינה של Google — ב-v1 אין מפה.</li>
           <li><code>.ics</code> פותח "הוסף ליומן" ב-iOS; <code>navigator.share()</code> עובד ב-Safari מלחיצה.</li>
         </ul>
       </details>
@@ -758,7 +772,7 @@ Offer: { id, familyId, carId, seats, departAt, kids:[kidId],
       <tr><th scope="row">מאמץ למארגן/ת</th><td data-col="a">בינוני (הושבה)</td><td data-col="b">הכי נמוך</td><td data-col="c">נמוך</td></tr>
       <tr><th scope="row">עקומת למידה</th><td data-col="a">נמוכה</td><td data-col="b">בינונית (אמון באלגוריתם)</td><td data-col="c">הכי נמוכה</td></tr>
       <tr><th scope="row">התראות אוטומטיות</th><td data-col="a">לא (לחיצה לשליחה)</td><td data-col="b">כן (Web Push + cron)</td><td data-col="c">רשות (Telegram/ntfy)</td></tr>
-      <tr><th scope="row">חלקי backend</th><td data-col="a">3 פונקציות + Blobs</td><td data-col="b">פונקציות + Blobs + cron + מפתחות Push + geocoding</td><td data-col="c">פונקציות + Blobs (יומן)</td></tr>
+      <tr><th scope="row">חלקי backend</th><td data-col="a">3 פונקציות + Blobs</td><td data-col="b">פונקציות + Blobs + cron + מפתחות Push + Google Routes</td><td data-col="c">פונקציות + Blobs (יומן)</td></tr>
       <tr><th scope="row">מקביליות</th><td data-col="a">ETag ונסיון חוזר</td><td data-col="b">ETag ונסיון חוזר</td><td data-col="c">לא צריך (append-only)</td></tr>
       <tr><th scope="row">אירועים חוזרים</th><td data-col="a">שכפול</td><td data-col="b">רוטציה שבועית</td><td data-col="c">חזרה לפי בקשה</td></tr>
       <tr><th scope="row">מאמץ בנייה</th><td data-col="a" class="mono">S</td><td data-col="b" class="mono">M–L</td><td data-col="c" class="mono">M</td></tr>
@@ -776,8 +790,8 @@ Offer: { id, familyId, carId, seats, departAt, kids:[kidId],
       <p>התראות בגרסה 1: WhatsApp בלחיצה ומצב נהג. בגרסה 2: תזכורות מתוזמנות ו-Web Push מ-B למשפחות שמתקינות את ה-PWA, ואז אירועים חוזרים עם רוטציה.</p>
     </div>
     <ol class="road">
-      <li><span class="v">v1</span><span class="vt">MVP</span><p>הרשמת משפחה, קישור הזמנה לקבוצה, יצירת אירוע (מתמונת ההזמנה, ידני כגיבוי), RSVP וצורך לכל כיוון, הצעת רכב, הושבה, מד חוסרים, סיכום ו"יצאתי" ב-WhatsApp, קישור ילד/ה, היסטוריה וביטול.</p></li>
-      <li><span class="v">v1.1</span><span class="vt">יום ההסעה</span><p>מצב נהג עם מסלול ב-Maps/Waze, ‎.ics, שכפול אירוע, ההזמנה כתמונת תצוגה בשיתוף (Open Graph).</p></li>
+      <li><span class="v">v1</span><span class="vt">MVP</span><p>הרשמת משפחה עם השלמת כתובות (Google Places), קישור הזמנה לקבוצה, יצירת אירוע (מתמונת ההזמנה, ידני כגיבוי), RSVP וצורך לכל כיוון, הצעת רכב, הושבה, מד חוסרים, סיכום ו"יצאתי" ב-WhatsApp, קישור ילד/ה, היסטוריה וביטול.</p></li>
+      <li><span class="v">v1.1</span><span class="vt">יום ההסעה</span><p>מצב נהג עם מסלול ב-Maps/Waze, סדר איסוף אופטימלי וזמני הגעה (Routes API), ‎.ics, שכפול אירוע, ההזמנה כתמונת תצוגה בשיתוף (Open Graph).</p></li>
       <li><span class="v">v2</span><span class="vt">אוטומציה</span><p>Push מ-PWA ותזכורות מתוזמנות, אירועים חוזרים עם רוטציה, מונה הוגנות.</p></li>
       <li><span class="v">v3</span><span class="vt">אולי</span><p>שיבוץ מוצע (הסדרן של B) ככפתור אופציונלי "הצע שיבוץ".</p></li>
     </ol>
@@ -813,7 +827,8 @@ var FAM={cohen:{n:'כהן',c:'f1',p:'050-0000001',a:'רח׳ האלון 7',par:'�
   avraham:{n:'אברהם',c:'f5',p:'050-0000005',a:'רח׳ הזית 12',par:'מיכל אברהם',car:'יונדאי',cc:'green'}};
 var KIDS={noa:{n:'נועה',f:'cohen',fem:1},itai:{n:'איתי',f:'cohen'},maya:{n:'מאיה',f:'levi',fem:1},yonatan:{n:'יונתן',f:'mizrahi'},tamar:{n:'תמר',f:'mizrahi',fem:1},ori:{n:'אורי',f:'peretz'},shira:{n:'שירה',f:'avraham',fem:1},daniel:{n:'דניאל',f:'avraham'}};
 var LEG={out:'הלוך',back:'חזור'};
-var POS={cohen:[0,0],levi:[.6,.2],mizrahi:[2,1],peretz:[1.8,-.4],avraham:[.4,-.5]};
+/* דקות נסיעה (מדומה; במערכת אמיתית: Google Routes API computeRouteMatrix). סימטרי, 'venue' = מקום האירוע */
+var DRIVE={'cohen-levi':4,'cohen-avraham':6/* קרוב באוויר, אבל צריך לעקוף את הנחל */,'cohen-peretz':9,'cohen-mizrahi':14,'levi-avraham':5,'levi-peretz':7,'levi-mizrahi':11,'peretz-avraham':8,'peretz-mizrahi':6,'mizrahi-avraham':13,'cohen-venue':14,'levi-venue':12,'avraham-venue':16,'peretz-venue':18,'mizrahi-venue':15};
 var FAIR={cohen:1,levi:2,peretz:3,avraham:0,mizrahi:0};
 var DEFEV={title:'יום הולדת 12 לתמר',date:'שישי 16.10',start:'10:00',ret:'12:30',place:'פארק הירקון',addr:'שדרות רוקח, תל אביב',slots:'10:00 עד 12:30',cover:'sample'};
 var SAMPLE={title:'יום הולדת 12 לנועה',date:'שישי 16.10.2026',start:'10:30',ret:'14:00',place:'פארק הירקון',addr:'שדרות רוקח, תל אביב',slots:'10:30 מתכנסים · 12:30 פיקניק'};
@@ -858,7 +873,7 @@ function vPhone(v,req){var d=String(v||'').replace(/[\s\-().]/g,'');
   return {ok:true,n:'+972'+m[1],msg:'✓ יישמר כ-+972'+m[1]};}
 function contacts(k){var f=KIDS[k].f,kp=KPH[k],L=(kp?[['kid',kn(k),kp]]:[]).concat([['par',FAM[f].par,FAM[f].p]]);
   return '<div class="ctc">'+(kp?'':'<span class="small muted">ל'+kn(k)+' אין טלפון, ברירת המחדל היא ההורה</span>')+L.map(function(x,i){return '<div class="row"><span class="grow1 small"><b>'+x[1]+'</b>'+(i===0?' <span class="tag me">ברירת מחדל</span>':'')+'</span><button class="btn ghost sm" data-act="call" data-arg="'+k+':'+x[0]+'">'+PHI+'התקשר</button><button class="btn wa sm" data-act="down" data-arg="'+k+':'+x[0]+'">WhatsApp</button></div>'}).join('')+'</div>'}
-function dist(a,b){var p=POS[a],q=POS[b];return Math.round(Math.hypot(p[0]-q[0],p[1]-q[1])*10)/10}
+function drv(a,b){return a===b?0:(DRIVE[a+'-'+b]||DRIVE[b+'-'+a]||0)}
 
 function seed(m,alt){
   var s={m:m,alt:alt,ev:Object.assign({},DEFEV),E:G+'/e/bday12',
@@ -950,14 +965,15 @@ SCR.join=function(p){return {t:'הצטרפות',b:
   '<button class="btn big" data-act="startreg">התחלת הרשמה</button></div>'+
   '<button class="lnk" data-act="otherdev" style="align-self:flex-start">כבר נרשמתי בטלפון אחר</button>'}};
 SCR.me=function(p){var s=p.s,f=s.form,id=p.id;function fld(k,l,v,t){return '<label class="fld" for="'+id+'-'+k+'"><span>'+l+'</span><input id="'+id+'-'+k+'" data-k="'+k+'" type="'+(t||'text')+'" value="'+esc(f[k]!=null?f[k]:v)+'"></label>'}
+  var sug='<div class="sug"><div>רח׳ האלון 7, גבעתיים</div><div>רח׳ האלון 7א, גבעתיים</div><div class="sg">כתובות מ-Google Places</div></div>';
   var extra='';
-  if(p.alt==='b')extra='<div class="note"><b>מיקום הבית אותר במפה ✓</b> (Nominatim, פעם אחת) · <button class="lnk" data-act="flash" data-arg="pin">לא מדויק? סמנו נקודה</button></div><button class="sw" role="switch" aria-checked="'+s.optPush+'" data-act="opt" data-arg="optPush"><span>התראות Push<br><small class="muted">דורש הוספה למסך הבית באייפון</small></span><i></i></button>';
+  if(p.alt==='b')extra='<div class="note"><b>מיקום הבית אותר במפה ✓</b> (Google Geocoding, פעם אחת) · <button class="lnk" data-act="flash" data-arg="pin">לא מדויק? סמנו נקודה</button></div><button class="sw" role="switch" aria-checked="'+s.optPush+'" data-act="opt" data-arg="optPush"><span>התראות Push<br><small class="muted">דורש הוספה למסך הבית באייפון</small></span><i></i></button>';
   if(p.alt==='c')extra='<button class="sw" role="switch" aria-checked="'+s.optTg+'" data-act="opt" data-arg="optTg"><span>התראות אוטומטיות ב-Telegram או ntfy<br><small class="muted">רשות. בלי זה: WhatsApp בלחיצה</small></span><i></i></button>';
   function ph(k,l,v,req){var val=f[k]!=null?f[k]:v,r=vPhone(val,req),show=val||s.tried;return '<label class="fld'+(show&&!r.ok?' err':show&&r.n?' okv':'')+'" for="'+id+'-'+k+'"><span>'+l+'</span><input id="'+id+'-'+k+'" data-k="'+k+'" data-ph="'+(req?'req':'opt')+'" type="tel" inputmode="tel" autocomplete="tel" placeholder="050-1234567" dir="ltr" value="'+esc(val)+'"><span class="hint" data-msg="1">'+(show?r.msg:(req?'חובה · לדוגמה 050-1234567':'רשות · לדוגמה 050-1234567'))+'</span></label>'}
   var kv=f.k_noa!=null?f.k_noa:'050-0000011',kok=vPhone(kv,false);
   return {t:'המשפחה שלי',b:'<div class="card"><div class="hs">הורים</div>'+fld('pname','שם הורה','רונית כהן')+ph('phone','טלפון נייד','050-0000001',true)+
     (s.p2?fld('pname2','שם הורה נוסף','דנה כהן')+ph('phone2','טלפון נייד','',true):'<button class="mini" data-act="p2" style="align-self:flex-start">+ הורה נוסף</button>')+'</div>'+
-  '<div class="card">'+fld('addr','כתובת','רח׳ האלון 7, גבעתיים')+'</div>'+
+  '<div class="card">'+fld('addr','כתובת','רח׳ האלון 7, גבעתיים')+sug+'</div>'+
   '<div class="card"><div class="hs">ילדים · טלפון לילד/ה הוא רשות</div><div class="row">'+av('noa')+'<b>נועה</b></div>'+ph('k_noa','הטלפון של נועה','050-0000011',false)+
     (kok.ok&&kok.n?'<button class="mini" data-act="kidlink" style="align-self:flex-start">שליחת הקישור האישי לנועה ב-WhatsApp</button>':'')+
     '<div class="row">'+av('itai')+'<b>איתי</b></div>'+ph('k_itai','הטלפון של איתי','',false)+'<button class="mini" data-act="flash" data-arg="kid" style="align-self:flex-start">+ ילד/ה</button></div>'+
@@ -1014,22 +1030,22 @@ SCR.run=function(p){var s=p.s,cr=s.cars.out.filter(function(x){return x.f===ME})
     if(p.alt==='b')after='<div class="card"><div class="hs">עדכון להורים</div>'+fams.map(function(f){return f==='peretz'?'<div class="row sp">'+dot(f)+'<span class="grow1">משפחת '+fn(f)+' <small class="muted">· לא הפעילו Push</small></span><button class="btn wa" data-act="notify" data-arg="'+f+'">WhatsApp</button></div>':'<div class="row">'+dot(f)+'<span class="grow1">משפחת '+fn(f)+'</span><span class="tag off">Push נשלח ✓</span></div>'}).join('')+'</div>';
     else after='<div class="card"><div class="hs">הודיעו להורים שיצאת</div>'+fams.map(function(f){return '<div class="row sp">'+dot(f)+'<span class="grow1">משפחת '+fn(f)+' <small class="muted">· '+cr.kids.filter(function(k){return KIDS[k].f===f}).map(kn).join(', ')+'</small></span><button class="btn wa" data-act="notify" data-arg="'+f+'">WhatsApp</button></div>'}).join('')+'</div>';
   }
-  var order=['noa','shira','ori'];
+  var order=['noa','shira','ori'],tm=0,pv=ME,eta=order.map(function(k){tm+=drv(pv,KIDS[k].f);pv=KIDS[k].f;return tm});
   return {t:'מצב נהג · הלוך',b:'<div class="card"><div class="row sp"><b>'+cr.label+' · '+cr.kids.length+' ילדים</b><span class="num muted">יציאה '+cr.dep+'</span></div><div class="small muted">יעד: '+esc(s.ev.place)+' · '+esc(s.ev.start)+'</div></div>'+
   (s.left?'<div class="live">בדרך · עדכון אחרון 09:41</div>':'<button class="btn big" data-act="left">יצאתי</button>')+after+
-  '<div class="hs">רשימת איסוף</div>'+order.map(function(k,i){var on=!!s.picked[k];return '<div class="card" style="padding:8px"><button class="chk" style="border:0;padding:2px" role="checkbox" aria-checked="'+on+'" data-act="pk" data-arg="'+k+'"><span class="bx">'+(on?'✓':'')+'</span>'+av(k)+'<span class="grow1"><b>'+kn(k)+'</b>'+(k==='shira'?' <span class="tag off">'+(KPH[k]?'מוכנה ✓ ':'')+'</span>':'')+'<small>'+(KIDS[k].f===ME?'מהבית':FAM[KIDS[k].f].a)+' · '+addMin(cr.dep,i*6)+'</small></span></button>'+(KIDS[k].f===ME?'':contacts(k))+'</div>'}).join('')+
+  '<div class="hs">רשימת איסוף</div>'+order.map(function(k,i){var on=!!s.picked[k];return '<div class="card" style="padding:8px"><button class="chk" style="border:0;padding:2px" role="checkbox" aria-checked="'+on+'" data-act="pk" data-arg="'+k+'"><span class="bx">'+(on?'✓':'')+'</span>'+av(k)+'<span class="grow1"><b>'+kn(k)+'</b>'+(k==='shira'?' <span class="tag off">'+(KPH[k]?'מוכנה ✓ ':'')+'</span>':'')+'<small>'+(KIDS[k].f===ME?'מהבית':FAM[KIDS[k].f].a)+' · '+addMin(cr.dep,eta[i])+'</small></span></button>'+(KIDS[k].f===ME?'':contacts(k))+'</div>'}).join('')+
   '<div class="row"><button class="btn ghost grow1" data-act="maps">Google Maps · כל העצירות</button><button class="btn ghost" data-act="waze">Waze</button></div>'}};
 
 /* B */
 function bNeed(s,k,leg){if(k==='noa'&&s.m==='signup'){if(s.b.come!==true)return false;return !!s.b[leg]}return s.need[k][leg]&&s.rsvp[k]==='yes'}
 function bPlan(s){var plan={};['out','back'].forEach(function(leg){
-  var drv=[leg==='out'?{f:'levi',seats:4,dep:'09:30',kids:[]}:{f:'peretz',seats:3,dep:'12:30',kids:[]}];
-  var d=s.b.drive;if(d===leg||d==='both')drv.push({f:'cohen',seats:s.b.seats,dep:leg==='out'?'09:40':'12:30',kids:[]});
+  var dv=[leg==='out'?{f:'levi',seats:4,dep:'09:30',kids:[]}:{f:'peretz',seats:3,dep:'12:30',kids:[]}];
+  var d=s.b.drive;if(d===leg||d==='both')dv.push({f:'cohen',seats:s.b.seats,dep:leg==='out'?'09:40':'12:30',kids:[]});
   var kids=Object.keys(s.need).filter(function(k){return bNeed(s,k,leg)}),left=[],un=[];
-  kids.forEach(function(k){var own=drv.filter(function(x){return x.f===KIDS[k].f&&x.kids.length<x.seats})[0];if(own)own.kids.push({k:k,why:'הילד/ה של הנהג/ת'});else left.push(k)});
-  left.forEach(function(k){var fr=drv.filter(function(x){return x.kids.length<x.seats});if(!fr.length){un.push(k);return}
-    fr.sort(function(a,b){return dist(KIDS[k].f,a.f)-dist(KIDS[k].f,b.f)||FAIR[a.f]-FAIR[b.f]});fr[0].kids.push({k:k,why:'קרוב לבית · '+dist(KIDS[k].f,fr[0].f)+' ק״מ'})});
-  plan[leg]={drv:drv,un:un}});return plan}
+  kids.forEach(function(k){var own=dv.filter(function(x){return x.f===KIDS[k].f&&x.kids.length<x.seats})[0];if(own)own.kids.push({k:k,why:'הילד/ה של הנהג/ת'});else left.push(k)});
+  left.forEach(function(k){var fr=dv.filter(function(x){return x.kids.length<x.seats});if(!fr.length){un.push(k);return}
+    fr.sort(function(a,b){return drv(KIDS[k].f,a.f)-drv(KIDS[k].f,b.f)||FAIR[a.f]-FAIR[b.f]});fr[0].kids.push({k:k,why:drv(KIDS[k].f,fr[0].f)+' דק׳ נסיעה'})});
+  plan[leg]={drv:dv,un:un}});return plan}
 SCR.b_q=function(p,c){var s=p.s,q=c.q,b=s.b,body='';
   if(q===1)body='<h4>נועה מגיעה ל'+esc(s.ev.title)+'?</h4><div class="yn"><button data-act="q1" data-arg="yes">כן</button><button data-act="q1" data-arg="no">לא</button></div><div class="small muted">איתי: סומן "לא מגיע (בחו״ל)" ✓</div>';
   if(q===2)body='<h4>נועה צריכה הסעה?</h4><div class="pills"><button class="pill" aria-pressed="'+(!!b.out)+'" data-act="q2" data-arg="out">הלוך · '+esc(s.ev.start)+'</button><button class="pill" aria-pressed="'+(!!b.back)+'" data-act="q2" data-arg="back">חזור · '+esc(s.ev.ret)+'</button></div><button class="btn big" data-act="q2next">המשך</button>';
@@ -1045,13 +1061,14 @@ SCR.b_plan=function(p){var s=p.s,pl=bPlan(s),h='';
   return {t:'הצעת שיבוץ',b:'<div class="note">האפליקציה הציעה לפי קרבה לבית, הכיוון שכל אחד ביקש, והוגנות. אפשר לשנות לפני אישור.</div>'+h+
     (s.b.ok?'<div class="note ok"><b>השיבוץ אושר ונשלח ✓</b></div>':'<button class="btn big" data-act="planok">אשר ושלח</button>')}};
 SCR.b_drive=function(p){var s=p.s,cr=s.cars.back.filter(function(x){return x.f===ME})[0];
-  var st=[['12:30','יציאה מ'+esc(s.ev.place),'']].concat(cr.kids.map(function(k,i){return [addMin('12:44',i*5),kn(k),KIDS[k].f===ME?'הביתה':FAM[KIDS[k].f].a]}));
+  var tm=0,pv='venue',st=[['12:30','יציאה מ'+esc(s.ev.place),'']].concat(cr.kids.map(function(k){tm+=drv(pv,KIDS[k].f);pv=KIDS[k].f;return [addMin('12:30',tm),kn(k),KIDS[k].f===ME?'הביתה':FAM[KIDS[k].f].a]}));
   return {t:'את/ה מסיע/ה בחזור',b:
   '<div class="pushb" style="position:static;animation:none"><span class="ic">ט</span><div><b>טרמפוש</b><span>מחר את/ה מסיע/ה 3 ילדים בחזור, יציאה 12:30</span><small>תזכורת ערב לפני · Scheduled Function</small></div></div>'+
   '<div class="card"><div class="row sp"><b>'+cr.label+'</b><span class="num muted">'+cr.kids.length+'/'+cr.seats+' מקומות</span></div><div class="chips">'+cr.kids.map(function(k){return '<span class="kchip ro">'+av(k)+kn(k)+'</span>'}).join('')+'</div></div>'+
   '<div class="hs">סדר איסוף משוער</div><ol class="route">'+st.map(function(x){return '<li><span class="t">'+x[0]+'</span><span class="pin"></span><span><b>'+x[1]+'</b>'+(x[2]?' <small class="muted">· '+x[2]+'</small>':'')+'</span></li>'}).join('')+'</ol>'+
+  '<small class="muted">זמנים ממסלול אמיתי (Google Routes API, כולל עומסי תנועה), לא מרחק אווירי</small>'+
   '<button class="sw" role="switch" aria-checked="'+s.b.why+'" data-act="why"><span>למה השיבוץ הזה?</span><i></i></button>'+
-  (s.b.why?'<div class="note">'+cr.kids.map(function(k){return kn(k)+': '+(KIDS[k].f===ME?'הילדה שלך':'גרים '+dist(KIDS[k].f,ME)+' ק״מ ממך')}).join(' · ')+'. משפחת כהן הסיעה פעם אחת החודש, פחות מהממוצע.</div>':'')+
+  (s.b.why?'<div class="note">'+cr.kids.map(function(k){return kn(k)+': '+(KIDS[k].f===ME?'הילדה שלך':drv(KIDS[k].f,ME)+' דק׳ נסיעה ממך')}).join(' · ')+'. משפחת כהן הסיעה פעם אחת החודש, פחות מהממוצע.</div>':'')+
   '<div class="row"><button class="btn ghost grow1" data-act="ics">הוספה ליומן</button><button class="btn ghost grow1" data-act="maps">מסלול</button></div>'+
   '<button class="lnk" data-act="plan" style="align-self:flex-start">לכל הצעת השיבוץ</button>'}};
 
@@ -1289,13 +1306,13 @@ var DG={
    {x:560,y:30,w:180,h:96,t:'הטלפון של ההורה',s:['PWA במסך הבית','מקבל Push'],k:'acc'},
    {x:290,y:30,w:200,h:96,t:'Netlify Functions',pills:['group','event','action','push']},
    {x:20,y:30,w:200,h:96,t:'Netlify Blobs',s:['אירועים · משפחות','מנויי Push למשפחה']},
-   {x:20,y:190,w:200,h:80,t:'OSM Nominatim',s:['כתובת ← נ״צ, פעם אחת','בקשה בשנייה · cache'],k:'ext new'},
+   {x:20,y:190,w:200,h:80,t:'Google Routes API',s:['זמני נסיעה · סדר איסוף','השלמת כתובות · geocoding'],k:'ext new'},
    {x:290,y:190,w:200,h:80,t:'Scheduled Function',s:['cron · ערב לפני, 30 דק׳ לפני'],k:'new'},
    {x:560,y:190,w:180,h:80,t:'Web Push',s:['VAPID · web-push'],k:'new'},
    {x:20,y:330,w:200,h:80,t:'Vision Function',s:['Claude vision → JSON','Blobs: invite/{group}/{event}'],k:'ext'},
    {x:290,y:330,w:200,h:80,t:'Netlify CDN',s:['/* → /index.html 200']},
    {x:560,y:330,w:180,h:80,t:'WhatsApp',s:['גיבוי למי שלא התקין/ה'],k:'ext'}],
-  edges:[[560,62,490,62,'fetch + מפתח',525,54],[490,104,560,104,'polling',525,120],[290,78,220,78,'כתיבה מותנית',255,70],[300,126,190,190,'בהרשמה',250,136,1],[300,190,200,126,'קורא אירועים',300,176],[490,230,560,230,'שולח',525,222],[470,126,590,190,'"יצאתי"',548,150],[650,190,650,126,'התראה',650,160],[310,126,150,330,'תמונת הזמנה',262,290,1],[730,126,730,330,'',0,0,1]]},
+  edges:[[560,62,490,62,'fetch + מפתח',525,54],[490,104,560,104,'polling',525,120],[290,78,220,78,'כתיבה מותנית',255,70],[300,126,190,190,'מטריצת זמנים',250,136,1],[300,190,200,126,'קורא אירועים',300,176],[490,230,560,230,'שולח',525,222],[470,126,590,190,'"יצאתי"',548,150],[650,190,650,126,'התראה',650,160],[310,126,150,330,'תמונת הזמנה',262,290,1],[730,126,730,330,'',0,0,1]]},
  c:{h:410,label:'ארכיטקטורה של חלופה C',nodes:[
    {x:560,y:30,w:180,h:96,t:'הטלפון של ההורה',s:['SPA · פיד בקשות והצעות','מצב = replay של היומן'],k:'acc'},
    {x:290,y:30,w:200,h:96,t:'Netlify Functions',pills:['group','event','action']},
