@@ -73,7 +73,7 @@ test("feedback with voice + screenshot from the group home", async ({ browser })
   await keep.click();
   await expect(keep).toHaveAttribute("aria-checked", "true");
 
-  // Record → stop → upload; local dev has no Whisper, so the transcript is null and the UI says so.
+  // Record → stop → upload in the background; the form shows a recording box (no transcript, text untouched).
   await dialog.getByRole("button", { name: he.feedback.micStart }).click();
   await expect(dialog.getByText("00:00")).toBeVisible();
   const audioRes = page.waitForResponse((r) => r.url().endsWith("/api/feedback/audio") && r.request().method() === "POST");
@@ -81,8 +81,14 @@ test("feedback with voice + screenshot from the group home", async ({ browser })
   const audio = (await (await audioRes).json()) as FeedbackAudioResponse;
   expect(audio.audioId).toMatch(/^[a-z0-9]+$/);
   expect(audio.transcript).toBeNull();
-  await expect(dialog.getByText(he.feedback.transcribeFailed)).toBeVisible();
-  await expect(dialog.getByText(he.feedback.audioAttached)).toBeVisible();
+  const clip = dialog.getByRole("group", { name: he.feedback.recording });
+  await expect(clip).toBeVisible();
+  await expect(clip.getByRole("button", { name: he.feedback.playRecording })).toBeVisible();
+  await expect(clip.getByRole("button", { name: he.feedback.discardRecording })).toBeVisible();
+  await expect(clip.getByText("00:00")).toBeVisible();
+  await expect(dialog.getByLabel(he.feedback.textLabel)).toHaveValue("");
+  // One recording at a time: the mic hides until the recording is discarded.
+  await expect(dialog.getByRole("button", { name: he.feedback.micStart })).toBeHidden();
   // Audio alone is enough to send.
   await expect(send).toBeEnabled();
 
@@ -124,6 +130,39 @@ test("feedback with voice + screenshot from the group home", async ({ browser })
   const rec = await page.request.get(`/api/feedback/audio/${audio.audioId}`);
   expect(rec.ok()).toBe(true);
   expect(rec.headers()["content-type"]).toBe("audio/webm");
+});
+
+test("discarding the recording restores the mic and sends no audio", async ({ browser }) => {
+  user = await newUser(browser);
+  const page = user.page;
+  await mockMic(page);
+  await page.goto("/");
+  await fab(page).click();
+  const dialog = page.getByRole("dialog", { name: he.feedback.title });
+  await expect(dialog).toBeVisible();
+
+  const audioRes = page.waitForResponse((r) => r.url().endsWith("/api/feedback/audio") && r.request().method() === "POST");
+  await dialog.getByRole("button", { name: he.feedback.micStart }).click();
+  await dialog.getByRole("button", { name: he.feedback.micStop }).click();
+  const clip = dialog.getByRole("group", { name: he.feedback.recording });
+  await expect(clip).toBeVisible();
+  await audioRes;
+  const send = dialog.getByRole("button", { name: he.feedback.send });
+  await expect(send).toBeEnabled();
+
+  await clip.getByRole("button", { name: he.feedback.discardRecording }).click();
+  await expect(clip).toBeHidden();
+  await expect(dialog.getByRole("button", { name: he.feedback.micStart })).toBeVisible();
+  await expect(send).toBeDisabled();
+
+  await dialog.getByLabel(he.feedback.textLabel).fill("רק טקסט");
+  const sent = page.waitForRequest((r) => r.url().endsWith("/api/feedback") && r.method() === "POST");
+  await send.click();
+  const payload = (await sent).postDataJSON() as FeedbackInput;
+  expect(payload.text).toBe("רק טקסט");
+  expect(payload.audioId).toBeUndefined();
+  expect(payload.transcript).toBeUndefined();
+  await expect(page.getByText(he.feedback.thanks)).toBeVisible();
 });
 
 test("mic denied falls back to text; removing the screenshot; back closes the sheet", async ({ browser }) => {

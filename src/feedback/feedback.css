@@ -159,6 +159,57 @@ body:has(.ov) .fb-fab {
     animation: none;
   }
 }
+/* The recorded clip: play/pause at the start, label + length, discard at the end. */
+.fb-clip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--sunk);
+}
+.fb-clip-play,
+.fb-clip-x {
+  flex: none;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font: inherit;
+}
+.fb-clip-play {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.fb-clip-x {
+  background: transparent;
+  color: var(--ink-2);
+}
+.fb-clip-x:disabled {
+  opacity: 0.5;
+}
+.fb-clip-label {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.fb-clip-label svg {
+  flex: none;
+  color: var(--ink-2);
+}
+.fb-clip-label time {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
 /* One compact row: thumbnail, remove link, what gets attached. */
 .fb-meta {
   display: flex;
