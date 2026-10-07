@@ -57,10 +57,16 @@ interface Props {
   groupLine?: boolean;
   /** A small link line above the title instead (the group home: "הקבוצות שלי"). */
   crumb?: { href: string; label: string };
+  /** A small muted line under the title saying what the screen is (settings: "הגדרות הקבוצה", with a gear). */
+  sub?: string;
+  /** Hide the header gear (the settings screen itself). */
+  noGear?: boolean;
+  /** The title is the group's name: the identity chip drops its "· group" suffix (group home, settings). */
+  titleIsGroup?: boolean;
   children?: ComponentChildren;
 }
 
-export function Header({ title, up, group, noChip, groupLine, crumb, children }: Props) {
+export function Header({ title, up, group, noChip, groupLine, crumb, sub, noGear, titleIsGroup, children }: Props) {
   const back = useBack(up ?? "/");
   useEffect(() => {
     if (group) touchGroup(group);
@@ -77,37 +83,49 @@ export function Header({ title, up, group, noChip, groupLine, crumb, children }:
         ) : (
           <Logo class="brand" size={30} />
         )}
-        {crumb || (groupLine && group) ? (
+        {crumb || (groupLine && group) || sub ? (
           <div class="attl-w">
             {crumb ? (
               <a class="hdr-grp" href={crumb.href}>
                 {crumb.label}
               </a>
-            ) : (
-              <GroupLine group={group!} />
-            )}
+            ) : groupLine && group ? (
+              <GroupLine group={group} />
+            ) : null}
             <h1 class="attl">{title}</h1>
+            {sub && (
+              <p class="hdr-sub">
+                <GearIcon size={14} />
+                {sub}
+              </p>
+            )}
           </div>
         ) : (
           <h1 class="attl">{title}</h1>
         )}
         {children}
-        {group && (
+        {group && !noGear && (
           <a class="gear" href={`/g/${group}/settings`} aria-label={he.identity.settings} title={he.identity.settings}>
-            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linejoin="round"
-                d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zm7.4-3.2c0-.5 0-.9-.1-1.3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-2.2-1.3L14.3 3h-4l-.4 2.4a7.6 7.6 0 00-2.2 1.3l-2.4-1-2 3.4 2 1.6a7.9 7.9 0 000 2.6l-2 1.6 2 3.4 2.4-1c.7.6 1.4 1 2.2 1.3l.4 2.4h4l.4-2.4c.8-.3 1.5-.7 2.2-1.3l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.3z"
-              />
-            </svg>
+            <GearIcon size={22} />
           </a>
         )}
       </div>
-      {group && !noChip && <IdentityChip group={group} />}
+      {group && !noChip && <IdentityChip group={group} noGroupName={titleIsGroup} />}
     </header>
+  );
+}
+
+function GearIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linejoin="round"
+        d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zm7.4-3.2c0-.5 0-.9-.1-1.3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-2.2-1.3L14.3 3h-4l-.4 2.4a7.6 7.6 0 00-2.2 1.3l-2.4-1-2 3.4 2 1.6a7.9 7.9 0 000 2.6l-2 1.6 2 3.4 2.4-1c.7.6 1.4 1 2.2 1.3l.4 2.4h4l.4-2.4c.8-.3 1.5-.7 2.2-1.3l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.3z"
+      />
+    </svg>
   );
 }
 
@@ -120,7 +138,7 @@ function GroupLine({ group }: { group: string }) {
   ) : null;
 }
 
-function IdentityChip({ group }: { group: string }) {
+function IdentityChip({ group, noGroupName }: { group: string; noGroupName?: boolean }) {
   const me = useMe(group);
   if (!me)
     return (
@@ -136,7 +154,7 @@ function IdentityChip({ group }: { group: string }) {
       <span class="fdot" aria-hidden="true" />
       <span>
         {he.identity.actingAs} <b>{me.label}</b>
-        {me.groupName && <span class="who-grp"> · {me.groupName}</span>}
+        {me.groupName && !noGroupName && <span class="who-grp"> · {me.groupName}</span>}
       </span>
     </a>
   );

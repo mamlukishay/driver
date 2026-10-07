@@ -23,7 +23,7 @@ export function GroupHome({ group }: { group: string }) {
 
   return (
     <>
-      <Header title={data?.group.name ?? he.common.loading} up="/" group={group} crumb={{ href: "/", label: he.home.title }} />
+      <Header title={data?.group.name ?? he.common.loading} up="/" group={group} crumb={{ href: "/", label: he.home.title }} titleIsGroup />
       <main id="main" class="content">
         {res.error && !data ? (
           <ErrorState code={res.error} onRetry={res.reload} />

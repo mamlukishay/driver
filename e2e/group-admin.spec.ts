@@ -120,6 +120,52 @@ test("deleting a group: typed confirmation, live notice for others, slug free ag
   expect(fresh.events).toHaveLength(0);
 });
 
+test("renaming a group in settings: new name everywhere, live for others, the slug stays", async ({ browser }) => {
+  const owner = await newUser(browser);
+  const other = await newUser(browser);
+  users.push(owner, other);
+  const name = "קבוצה לשינוי שם";
+  const renamed = "בר מצווה לתוני";
+  const slug = uniqueSlug("ren");
+  await createGroup(owner.page, name, slug);
+  await owner.page.getByRole("link", { name: he.newGroup.continue }).click();
+  await registerFamily(owner.page, slug, FAMILY);
+
+  // A second phone keeps the group home open.
+  await other.page.goto(`/join/${slug}`);
+  await registerFamily(other.page, slug, { name: "לוי", parent: "דנה", phone: "052-333-4444", kid: "איתי" });
+  await expect(other.page.getByRole("heading", { level: 1, name })).toBeVisible();
+
+  const page = owner.page;
+  await page.goto(`/g/${slug}/settings`);
+  const card = page.getByRole("region", { name: he.settings.nameTitle });
+  await expect(card).toContainText(he.settings.nameHint);
+  const field = card.locator("#group-name");
+  const save = card.getByRole("button", { name: he.settings.nameSave });
+  await expect(field).toHaveValue(name);
+  await expect(save).toBeDisabled();
+  await field.fill("   ");
+  await expect(save).toBeDisabled();
+  await field.fill(renamed);
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect(page.getByText(he.settings.nameSaved)).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(renamed);
+  await expect(save).toBeDisabled();
+  expect(path(page)).toBe(`/g/${slug}/settings`);
+
+  // The other phone's open group home updates live.
+  await expect(other.page.getByRole("heading", { level: 1 })).toHaveText(renamed);
+
+  // Group home and my groups show the new name; the URL is the same slug.
+  await page.goto(`/g/${slug}`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(renamed);
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: new RegExp(renamed) })).toBeVisible();
+  await page.getByRole("link", { name: new RegExp(renamed) }).click();
+  await expect.poll(() => path(page)).toBe(`/g/${slug}`);
+});
+
 test("a stored group that 404s is dropped from my groups and shows the deleted screen", async ({ browser }) => {
   const owner = await newUser(browser);
   users.push(owner);
@@ -159,9 +205,14 @@ test("header arrow and group-name link walk up from a board to my groups, withou
   await expect.poll(() => path(page)).toBe("/");
   await expect(page.getByRole("heading", { name: he.home.title })).toBeVisible();
 
-  // The group-name line is on settings, too; and from the group home the arrow goes to my groups.
+  // Settings is titled with the group's name ("הגדרות הקבוצה" under it, no gear, no group name in the chip);
+  // its arrow goes to the group home, and from there the arrow goes to my groups.
   await page.goto(`${g}/settings`);
-  await banner.getByRole("link", { name: "קבוצת כותרת", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("קבוצת כותרת");
+  await expect(banner.getByText(he.settings.title, { exact: true })).toBeVisible();
+  await expect(banner.getByRole("link", { name: he.identity.settings })).toHaveCount(0);
+  await expect(banner.locator(".who-grp")).toHaveCount(0);
+  await banner.getByRole("button", { name: he.common.back }).click();
   await expect.poll(() => path(page)).toBe(g);
   await banner.getByRole("button", { name: he.common.back }).click();
   await expect.poll(() => path(page)).toBe("/");
