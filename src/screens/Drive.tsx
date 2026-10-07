@@ -196,15 +196,17 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
         {!maps && !next ? (
           <p class="small muted">{he.drive.noAddress}</p>
         ) : (
-          <div class="row wrap">
+          <div class="navs">
             {maps && (
-              <a class="btn ghost grow1" href={maps} target="_blank" rel="noopener noreferrer">
-                {he.drive.maps}
+              <a class="btn ghost" href={maps} target="_blank" rel="noopener noreferrer">
+                <b>{he.drive.maps}</b>
+                <span class="small muted">{he.drive.mapsSub}</span>
               </a>
             )}
             {next && (
               <a class="btn ghost" href={wazeUrl(next)} target="_blank" rel="noopener noreferrer">
-                {he.drive.waze}
+                <b>{he.drive.waze}</b>
+                <span class="small muted">{he.drive.wazeSub}</span>
               </a>
             )}
           </div>

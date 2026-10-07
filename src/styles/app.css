@@ -536,9 +536,18 @@ a.who:hover {
 .fld input[dir="ltr"] {
   text-align: end;
 }
+/* iOS Safari gives native date/time inputs an intrinsic min width that ignores min-inline-size, so they overflow
+   narrow containers (the car sheet's departure time). Dropping the native appearance lets them shrink to 100%. */
 .fld input[type="date"],
 .fld input[type="time"] {
   font-variant-numeric: tabular-nums;
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+}
+.fld input[type="date"]::-webkit-date-and-time-value,
+.fld input[type="time"]::-webkit-date-and-time-value {
+  min-inline-size: 0;
 }
 .fld.hl {
   background: var(--accent-soft);
@@ -1621,6 +1630,20 @@ a.who:hover {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+.navs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+}
+.navs .btn {
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 10px;
+}
+.navs .btn .small {
+  font-weight: 500;
 }
 .btn.on {
   background: var(--accent);
