@@ -1,11 +1,12 @@
 import { nextEventDate } from "../../shared/myGroups.ts";
+import { useEffect } from "preact/hooks";
 import { Header } from "../components/Header.tsx";
 import { he } from "../i18n/he.ts";
-import { allIdentities, myGroupsByLastUsed } from "../identity.ts";
+import { allIdentities, myGroupsByLastUsed, onIdentityChange } from "../identity.ts";
 import { useGroup } from "../store.ts";
-import { famColor, famLabel, fmtDate, todayYmd } from "../util.ts";
+import { famColor, famLabel, fmtDate, todayYmd, useForce } from "../util.ts";
 
-/** One "my groups" row: the group name, my kids there and the next event (only the family id is stored). */
+/** One "my groups" row (a group that 404s is forgotten by api.getGroup, and the list re-renders without it): the group name, my kids there and the next event (only the family id is stored). */
 function GroupRow({ group, familyId }: { group: string; familyId: string }) {
   const res = useGroup(group);
   const families = res.data?.families ?? [];
@@ -25,6 +26,11 @@ function GroupRow({ group, familyId }: { group: string; familyId: string }) {
 }
 
 export function Home() {
+  const force = useForce();
+  useEffect(() => {
+    const off = onIdentityChange(force);
+    return () => void off();
+  }, []);
   const ids = allIdentities();
   const groups = myGroupsByLastUsed();
   return (

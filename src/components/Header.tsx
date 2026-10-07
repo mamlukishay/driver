@@ -47,17 +47,19 @@ export function useGroupName(group: string | undefined): string | undefined {
 
 interface Props {
   title: string;
-  /** Parent screen for the back button when there is no in-app history. Omit on root screens. */
+  /** Parent screen: the back arrow always goes up to it (see useBack). Omit on root screens. */
   up?: string;
   group?: string;
   /** Hide the identity chip (home, kid page). */
   noChip?: boolean;
-  /** A small muted group-name line above the title (event tabs, boards, driver mode). */
+  /** A small muted group-name line above the title, linking to the group home (group-scoped screens). */
   groupLine?: boolean;
+  /** A small link line above the title instead (the group home: "הקבוצות שלי"). */
+  crumb?: { href: string; label: string };
   children?: ComponentChildren;
 }
 
-export function Header({ title, up, group, noChip, groupLine, children }: Props) {
+export function Header({ title, up, group, noChip, groupLine, crumb, children }: Props) {
   const back = useBack(up ?? "/");
   useEffect(() => {
     if (group) touchGroup(group);
@@ -74,9 +76,15 @@ export function Header({ title, up, group, noChip, groupLine, children }: Props)
         ) : (
           <span class="brand-dot" aria-hidden="true" />
         )}
-        {groupLine && group ? (
+        {crumb || (groupLine && group) ? (
           <div class="attl-w">
-            <GroupLine group={group} />
+            {crumb ? (
+              <a class="hdr-grp" href={crumb.href}>
+                {crumb.label}
+              </a>
+            ) : (
+              <GroupLine group={group!} />
+            )}
             <h1 class="attl">{title}</h1>
           </div>
         ) : (
@@ -104,7 +112,11 @@ export function Header({ title, up, group, noChip, groupLine, children }: Props)
 
 function GroupLine({ group }: { group: string }) {
   const name = useGroupName(group);
-  return name ? <span class="hdr-grp">{name}</span> : null;
+  return name ? (
+    <a class="hdr-grp" href={`/g/${group}`}>
+      {name}
+    </a>
+  ) : null;
 }
 
 function IdentityChip({ group }: { group: string }) {

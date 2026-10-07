@@ -142,6 +142,9 @@ export class GroupDO extends DurableObject<Env> {
    * in this group. No secret: anyone with the group link may act as any family (guardrails, not auth).
    */
   private async authenticate(request: Request): Promise<Family | null> {
+    // A missing (never created or deleted) group is 404 before any identity check, so a stale family id
+    // for a deleted group reads as "group gone", not "unknown family".
+    await this.meta();
     const header = request.headers.get(FAMILY_ID_HEADER);
     if (header === null || header === "") return null;
     const family = isId(header) ? await this.ctx.storage.get<Family>(`family:${header}`) : undefined;

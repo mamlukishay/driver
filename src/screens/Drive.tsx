@@ -20,7 +20,7 @@ export function Drive({ group, event, leg }: { group: string; event: string; leg
   const valid = leg === "out" || leg === "back";
   return (
     <>
-      <Header title={he.drive.title(valid ? leg : "out")} up={`/g/${group}/e/${event}/${valid ? leg : "out"}`} group={group} groupLine />
+      <Header title={he.drive.title(valid ? leg : "out")} up={`/g/${group}/e/${event}`} group={group} groupLine />
       <main id="main" class="content">
         {!valid ? (
           <ErrorState code="not_found" />

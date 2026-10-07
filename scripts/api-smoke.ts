@@ -253,6 +253,43 @@ async function main() {
   const kvb2 = (await call<KidView>("GET", `/api/g/${g}/kid/${kidB.id}?event=${e}`)).data.events[0]!.legs.out.ride;
   check("next kid now has nobody ahead", kvb2?.ahead === 0, kvb2);
 
+  // group settings: PATCH { name?, whatsappUrl? }
+  const waCode = "AbCdEf1234567890";
+  check("patch group without family -> 403", (await call("PATCH", `/api/g/${g}`, { body: { name: "x" } })).status === 403);
+  check("patch group empty -> 400", (await call("PATCH", `/api/g/${g}`, { key: A.key, body: {} })).status === 400);
+  check("patch group bad whatsappUrl -> 400", (await call("PATCH", `/api/g/${g}`, { key: A.key, body: { whatsappUrl: "https://wa.me/123" } })).status === 400);
+  messages.length = 0;
+  const pa = await call<{ group: GroupResponse["group"] }>("PATCH", `/api/g/${g}`, { key: A.key, body: { name: "קבוצה חדשה", whatsappUrl: `chat.whatsapp.com/${waCode}?mode=x` } });
+  check("patch group normalizes whatsappUrl", pa.status === 200 && pa.data.group.whatsappUrl === `https://chat.whatsapp.com/${waCode}` && pa.data.group.name === "קבוצה חדשה", pa.data);
+  await Bun.sleep(300);
+  check("ws receives group broadcast for patch", messages.some((m) => m.t === "group"), messages);
+  const pc = await call<{ group: GroupResponse["group"] }>("PATCH", `/api/g/${g}`, { key: A.key, body: { whatsappUrl: "" } });
+  check("patch group clears whatsappUrl", pc.status === 200 && pc.data.group.whatsappUrl === undefined, pc.data);
+
+  // create with whatsappUrl
+  const waSlug = `smoke-wa-${Date.now().toString(36)}`;
+  check("create group bad whatsappUrl -> 400", (await call("POST", "/api/groups", { body: { name: "וואטסאפ", slug: waSlug, whatsappUrl: "nope" } })).status === 400);
+  check("create group with whatsappUrl", (await call("POST", "/api/groups", { body: { name: "וואטסאפ", slug: waSlug, whatsappUrl: `https://chat.whatsapp.com/${waCode}` } })).status === 200);
+  check("group meta has whatsappUrl", (await call<GroupResponse>("GET", `/api/g/${waSlug}`)).data.group.whatsappUrl === `https://chat.whatsapp.com/${waCode}`);
+
+  // DELETE the group: broadcast, images and storage gone, slug free again
+  check("delete group without family -> 403", (await call("DELETE", `/api/g/${g}`)).status === 403);
+  messages.length = 0;
+  const del = await call("DELETE", `/api/g/${g}`, { key: B.key });
+  check("delete group -> ok", del.status === 200 && (del.data as any).ok === true, del.data);
+  await Bun.sleep(300);
+  check("ws receives deleted", messages.some((m) => m.t === "deleted"), messages);
+  const gone = await call("GET", `/api/g/${g}`);
+  check("deleted group -> 404 not_found", gone.status === 404 && (gone.data as any).error === "not_found", gone.data);
+  check("deleted group image -> 404", (await fetch(`${base}/api/g/${g}/images/${up.data.imageId}`)).status === 404);
+  check("deleted group events -> 404", (await call("GET", `/api/g/${g}/events/${e}`)).status === 404);
+  check("deleted group with a stale family id -> 404", (await call("GET", `/api/g/${g}`, { key: B.key })).status === 404);
+  check("delete again -> 404", (await call("DELETE", `/api/g/${g}`, { key: B.key })).status === 404);
+  const again = await call<{ groupId: string }>("POST", "/api/groups", { body: { name: "שוב", slug: g } });
+  check("deleted slug can be created again", again.status === 200 && again.data.groupId === g, again.data);
+  const fresh = await call<GroupResponse>("GET", `/api/g/${g}`);
+  check("re-created group is empty", fresh.status === 200 && fresh.data.families.length === 0 && fresh.data.events.length === 0 && fresh.data.group.name === "שוב", fresh.data);
+
   ws.close();
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed ? 1 : 0);

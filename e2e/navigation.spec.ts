@@ -93,9 +93,30 @@ test("back and forward move between group, event tabs and drive mode", async () 
   await expect.poll(path).toBe(`${eventUrl}/drive/out`);
   await expect(page.getByRole("heading", { level: 1, name: he.drive.title("out") })).toBeVisible();
 
-  // The in-app back button walks history too (same result as the browser's back).
+  // The in-app back arrow always goes up: drive → event פרטים → group. The entry behind each is the
+  // board, not the parent, so each step replaces the entry instead of walking history.
   await page.getByRole("button", { name: he.common.back }).click();
+  await expect.poll(path).toBe(eventUrl);
+  await page.getByRole("button", { name: he.common.back }).click();
+  await expect.poll(path).toBe(`/g/${groupId}`);
+  // Browser back still works: the board entry is still behind.
+  await page.goBack();
   await expect.poll(path).toBe(`${eventUrl}/out`);
+});
+
+test("the back arrow steps back when the previous entry is the parent", async () => {
+  const { page } = user;
+  const { eventUrl, groupId } = scene;
+  const path = () => new URL(page.url()).pathname;
+  await page.goto("/");
+  await page.goto(`/g/${groupId}`);
+  await page.getByRole("link", { name: new RegExp(EVENT_TITLE) }).click();
+  await expect.poll(path).toBe(eventUrl);
+  await page.getByRole("button", { name: he.common.back }).click();
+  await expect.poll(path).toBe(`/g/${groupId}`);
+  // It was a history step: forward returns to the event.
+  await page.goForward();
+  await expect.poll(path).toBe(eventUrl);
 });
 
 test("the header back arrow goes up the hierarchy without in-app history", async () => {
@@ -108,7 +129,12 @@ test("the header back arrow goes up the hierarchy without in-app history", async
     [eventUrl, `/g/${groupId}`],
     [`${eventUrl}/back`, eventUrl],
     [`${eventUrl}/invite`, eventUrl],
+    [`${eventUrl}/drive/out`, eventUrl],
     [`/g/${groupId}`, "/"],
+    [`/g/${groupId}/settings`, `/g/${groupId}`],
+    [`/g/${groupId}/me`, `/g/${groupId}`],
+    [`/g/${groupId}/new`, `/g/${groupId}`],
+    [`/g/${groupId}/who`, `/g/${groupId}`],
   ] as const) {
     await page.goto(from);
     await page.getByRole("button", { name: he.common.back }).click();

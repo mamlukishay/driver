@@ -84,7 +84,8 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     expect(href.startsWith("https://wa.me/972531111111?text=")).toBe(true);
     const text = new URL(href).searchParams.get("text")!;
     expect(text).toContain(title);
-    expect(text).toContain(he.wa.legLine("out", { family: he.family(B.name), departAt: "" }).replace(/ $/, ""));
+    expect(text).toContain(he.legName.out);
+    expect(text).toContain(he.family(B.name));
     expect(text).toContain(he.wa.legLine("back", null));
     const aGroup = await apiGroup(a.page, groupId, await familyIdOf(a.page, groupId));
     const kidId = aGroup.me!.kids[0]!.id;

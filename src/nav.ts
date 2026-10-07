@@ -110,14 +110,15 @@ function restoreScroll(y: number) {
 }
 
 /**
- * Back button: go back when the previous entry is ours, otherwise go "up" to the parent screen. Going
- * up replaces this entry, so with no in-app history the arrow keeps walking up the hierarchy
- * (invite → event → group → my groups) instead of bouncing back to where it started.
+ * The header back arrow always goes "up" to `up`, the screen's parent (board/drive/invite → event,
+ * event → group, group → my groups): when the previous in-app entry IS the parent it steps back
+ * (so history and the browser's back agree); otherwise it replaces this entry with the parent, so
+ * the arrow keeps walking up the hierarchy and never returns to where it started.
  */
 export function useBack(up: string): () => void {
   const { route } = useLocation();
   return () => {
-    if (state()?.prev) history.back();
+    if (state()?.prev === up) history.back();
     else route(up, true);
   };
 }

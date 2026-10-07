@@ -120,6 +120,7 @@ Things the automated suite cannot cover; run on a real phone against a deployed 
 
 - [ ] iOS Safari: swipe-back from the left edge moves board -> event -> group; with a sheet open (`?sheet=`), swipe-back closes the sheet and stays on the board. Scroll position is restored.
 - [ ] WhatsApp links (`wa.me`): invite, "share summary", "ask the group", "I left" and "I'm downstairs" open WhatsApp with the Hebrew text prefilled; the shared group link opens the app (not a blank page).
+- [ ] "פתיחת קבוצת הוואטסאפ" (settings, group home) opens the linked parents' group in the WhatsApp app.
 - [ ] `tel:` links: driver mode and the kid page start a call to the right person.
 - [ ] Dark mode: switch the OS theme; all screens (board, sheets, toast, kid page) stay readable, with family colors distinguishable.
 - [ ] Add to home screen (iOS and Android): the icon and name look right, it opens full screen, and the device identity is still there after reopening. Check the kid link too.

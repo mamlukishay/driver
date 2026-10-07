@@ -5,7 +5,7 @@ import { Header } from "../components/Header.tsx";
 import { ConfirmSentence, Sheet } from "../components/Sheet.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { he } from "../i18n/he.ts";
-import { setBrowsing, setIdentity } from "../identity.ts";
+import { getIdentity, setBrowsing, setIdentity } from "../identity.ts";
 import { useLeave, useReplaceLink, useSheet, withQuery } from "../nav.ts";
 import { useGroup } from "../store.ts";
 import { famColor, famLabel } from "../util.ts";
@@ -41,7 +41,8 @@ export function Who({ group }: { group: string }) {
 
   return (
     <>
-      <Header title={res.data?.group.name ?? he.who.title} up={next} group={group} noChip />
+      {/* Up is the group home; a phone with no family there would only bounce back here, so it goes to my groups. */}
+      <Header title={res.data?.group.name ?? he.who.title} up={getIdentity(group) ? `/g/${group}` : "/"} group={group} noChip />
       <main id="main" class="content">
         {res.error && !res.data ? (
           <ErrorState code={res.error} onRetry={res.reload} />

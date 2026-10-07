@@ -42,7 +42,7 @@ export function NewEvent({ group }: { group: string }) {
   if (!me) {
     return (
       <>
-        <Header title={he.newEvent.title} up={`/g/${group}`} group={group} />
+        <Header title={he.newEvent.title} up={`/g/${group}`} group={group} groupLine />
         <main id="main" class="content">
           <p class="note">{he.group.viewOnlyNote}</p>
           <a class="btn big" href={whoUrl(group, location.pathname + location.search)}>
@@ -142,7 +142,7 @@ export function NewEvent({ group }: { group: string }) {
 
   return (
     <>
-      <Header title={he.newEvent.title} up={`/g/${group}`} group={group} />
+      <Header title={he.newEvent.title} up={`/g/${group}`} group={group} groupLine />
       <main id="main" class="content">
         {step === "pick" && (
           <>

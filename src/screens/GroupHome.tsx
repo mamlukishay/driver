@@ -1,7 +1,7 @@
 import { MiniGap } from "../components/GapMeter.tsx";
 import { Header, useIdentity, whoUrl } from "../components/Header.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
-import { WaButton } from "../components/WaButton.tsx";
+import { WaButton, WaIcon } from "../components/WaButton.tsx";
 import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { useGroup } from "../store.ts";
@@ -23,7 +23,7 @@ export function GroupHome({ group }: { group: string }) {
 
   return (
     <>
-      <Header title={data?.group.name ?? he.common.loading} up="/" group={group} />
+      <Header title={data?.group.name ?? he.common.loading} up="/" group={group} crumb={{ href: "/", label: he.home.title }} />
       <main id="main" class="content">
         {res.error && !data ? (
           <ErrorState code={res.error} onRetry={res.reload} />
@@ -74,6 +74,12 @@ export function GroupHome({ group }: { group: string }) {
               <WaButton class="lnk-wa" text={he.wa.groupInvite(data.group.name, appUrl(`/join/${group}`))}>
                 {he.group.invite}
               </WaButton>
+              {data.group.whatsappUrl && (
+                <a class="lnk-wa" href={data.group.whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <WaIcon />
+                  {he.waGroup.open}
+                </a>
+              )}
             </nav>
             <p class="small muted center">{he.group.familiesCount(data.families.length)}</p>
           </>

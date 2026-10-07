@@ -70,6 +70,32 @@ export const he = {
     shareHint: "שלחו רק בקבוצת ההורים.",
     share: "שליחת הקישור ב-WhatsApp",
     linkLabel: "קישור ההזמנה לקבוצה",
+    waTitle: "קבוצת הוואטסאפ",
+    waSave: "שמירת הקישור",
+    waRemove: "הסרת הקישור",
+    waSaved: "הקישור נשמר",
+    waRemoved: "הקישור הוסר",
+    deleteTitle: "מחיקת הקבוצה",
+    deleteOpen: "מחיקת הקבוצה",
+    deleteBody: "כל המשפחות, האירועים והתמונות יימחקו לכולם.",
+    deleteType: (name: string) => `לאישור, הקלידו את שם הקבוצה: ${name}`,
+    deleteYes: "מחיקה",
+    deleting: "מוחקים…",
+    deleted: "הקבוצה נמחקה",
+  },
+
+  /** The optional linked WhatsApp group (create form, settings, group home). */
+  waGroup: {
+    label: "קישור לקבוצת הוואטסאפ (לא חובה)",
+    hint: "קישור הזמנה מהגדרות הקבוצה בוואטסאפ",
+    invalid: "זה לא קישור לקבוצת וואטסאפ. הוא מתחיל ב-chat.whatsapp.com/",
+    open: "פתיחת קבוצת הוואטסאפ",
+  },
+
+  groupGone: {
+    title: "הקבוצה נמחקה",
+    body: "המשפחות, האירועים והתמונות שלה נמחקו לכולם.",
+    home: "לקבוצות שלי",
   },
 
   errors: {
@@ -466,8 +492,8 @@ export const he = {
     kidCancelled: "האירוע בוטל",
     myKid: (kid: string, out: string, back: string) => `${kid}: הלוך ${out} · חזור ${back}`,
     waUpdate: (p: { title: string; date: string; lines: string[]; url: string }) =>
-      `עדכון: ${p.title} (${p.date})\n${p.lines.map((l) => `${l}.`).join("\n")}\nנהגים, בדקו את שעת היציאה שלכם.\n${p.url}`,
-    waCancel: (p: { title: string; date: string; url: string }) => `${p.title} (${p.date}) בוטל.\nההסעות מבוטלות.\n${p.url}`,
+      `עדכון ל${p.title} (${p.date}): ${p.lines.join(". ")}.\nנהגים, בדקו את שעת היציאה.\n${p.url}`,
+    waCancel: (p: { title: string; date: string; url: string }) => `בוטל: ${p.title} (${p.date}). ההסעות מבוטלות.\n${p.url}`,
   },
 
   notFound: {
@@ -484,10 +510,10 @@ export const he = {
 
   /* ---------- WhatsApp templates ---------- */
   wa: {
-    groupInvite: (group: string, url: string) =>
-      `היי לכולם 👋\nפתחתי קבוצה בטרמפוש לתיאום הסעות של ${group}.\nלהרשמה:\n${url}`,
+    groupInvite: (group: string, url: string) => `תיאום הסעות ל${group} בטרמפוש 🚗\nנרשמים כאן פעם אחת:\n${url}`,
     ask: (title: string, date: string, missing: number, leg: Leg, url: string) =>
-      `היי לכולם 👋\nל${title} (${date}) ${missing > 0 ? missingText(missing, leg) : `חסר נהג ל${legName[leg]}`}.\nמי יכול/ה להסיע? נרשמים כאן:\n${url}`,
+      `${title} (${date}): ${missing > 0 ? missingText(missing, leg) : `חסר נהג ל${legName[leg]}`}. מי יכול/ה להסיע?\n${url}`,
+    /** Title line, one line per leg ("הלוך 09:30: לוי (מאיה, נועה) · חסר מקום אחד"), link. Legs with nothing to say are left out. */
     summary: (p: {
       title: string;
       date: string;
@@ -495,26 +521,27 @@ export const he = {
       legs: { leg: Leg; time: string; cars: { family: string; departAt: string; kids: string[] }[]; missing: number }[];
       url: string;
     }) => {
-      let t = `🎈 ${p.title} · ${p.date}\n📍 ${p.place}\n`;
+      const lines = [`🎈 ${p.title} · ${p.date} · ${p.place}`];
       for (const l of p.legs) {
-        t += `\n${legName[l.leg]} (${l.time}):\n`;
-        if (l.cars.length === 0) t += "עוד אין רכבים\n";
-        for (const c of l.cars) t += `🚗 ${c.family} ${c.departAt}: ${c.kids.length ? c.kids.join(", ") : "עוד אין ילדים"}\n`;
-        if (l.missing > 0) t += `⚠️ ${missingText(l.missing, l.leg)}\n`;
+        const parts = l.cars.map(
+          (c) =>
+            `${c.family.replace(/^משפחת /, "")}${c.departAt && c.departAt !== l.time ? ` ${c.departAt}` : ""}${c.kids.length ? ` (${c.kids.join(", ")})` : ""}`,
+        );
+        if (l.missing > 0) parts.push(l.missing === 1 ? "חסר מקום אחד" : `חסרים ${l.missing} מקומות`);
+        if (parts.length) lines.push(`${legName[l.leg]} ${l.time}: ${parts.join(" · ")}`);
       }
-      return `${t}\nפרטים והרשמה: ${p.url}`;
+      return `${lines.join("\n")}\n${p.url}`;
     },
-    leftHome: (kids: string[]) => `היי, יצאתי 🚗 אגיע לאסוף את ${joinNames(kids)} בעוד ~10 דק׳`,
-    downstairs: (kid: string) => `היי ${kid}, אני למטה 🚗`,
-    downstairsParent: (kid: string) => `היי, אני למטה עם הרכב, מחכה ל${kid} 🚗`,
+    leftHome: (kids: string[]) => `יצאתי 🚗 אגיע לאסוף את ${joinNames(kids)} בעוד כ-10 דק׳`,
+    downstairs: (kid: string) => `${kid}, אני למטה 🚗`,
+    downstairsParent: (kid: string) => `אני למטה, מחכה ל${kid} 🚗`,
     /** Per-event message to a kid: event, one line per leg, and the live kid link. */
     kidEvent: (p: { kid: string; title: string; date: string; legs: string[]; url: string }) =>
-      `היי ${p.kid} 💛\n🎈 ${p.title} · ${p.date}\n${p.legs.join("\n")}\nעוקבים אחרי ההסעה כאן:\n${p.url}`,
+      `היי ${p.kid} 💛 ${p.title} · ${p.date}\n${p.legs.join("\n")}\n${p.url}`,
     legLine: (leg: Leg, ride: { family: string; departAt: string } | null) =>
-      ride ? `${legName[leg]}: ${ride.family}, יציאה ${ride.departAt}` : `${legName[leg]}: עוד מחפשים הסעה`,
-    trackRide: (url: string) => `אני בדרך לאסוף אותך! עוקבים כאן: ${url}`,
-    kidLink: (kid: string, url: string) =>
-      `היי ${kid} 💛 כאן רואים מי אוסף אותך ומתי:\n${url}`,
+      ride ? `${legName[leg]} ${ride.departAt}: ${ride.family}` : `${legName[leg]}: עוד מחפשים הסעה`,
+    trackRide: (url: string) => `אני בדרך לאסוף אותך 🚗 רואים כאן איפה אני:\n${url}`,
+    kidLink: (kid: string, url: string) => `היי ${kid} 💛 כאן רואים מי אוסף אותך ומתי:\n${url}`,
   },
 
   feedback: {

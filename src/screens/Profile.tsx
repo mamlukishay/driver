@@ -19,7 +19,7 @@ export function Profile({ group }: { group: string }) {
   const fam = res.data?.me;
   return (
     <>
-      <Header title={he.profile.title} up={`/g/${group}`} group={group} />
+      <Header title={he.profile.title} up={`/g/${group}`} group={group} groupLine />
       <main id="main" class="content">
         {!me ? (
           <>
