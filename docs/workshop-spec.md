@@ -151,3 +151,15 @@ Build **A as v1**, steal two things from C: the **append-only action log** (no c
 - **Google Maps multi-stop URL**: plan for ≤ 8 intermediate stops. **Waze** deep link: single destination only → "navigate to next stop".
 - **Nominatim** (B only): 1 req/s, cache, Hebrew house numbers spotty → fallback "share my location" pin.
 - **.ics** download opens iOS "Add to Calendar" ✓; `navigator.share()` works on iOS Safari from a tap ✓.
+
+## 10. Feature: create an event by dropping the invitation image (applies to all 3 alternatives)
+Parents usually get a designed invitation image (date, times, venue, address). Creating an event should start from it.
+- **UX**: on `/g/:group/new` the first thing is a big drop zone / "בחר/י הזמנה מהגלריה" (on iPhone: opens Photos; works with the share sheet later). Then a **prefilled form** with the extracted fields highlighted ("זיהינו מההזמנה — בדקו"): title, date, start time, return time (end of the last item), place name, address. Every field editable; nothing saved until "צור אירוע". The image becomes the event's cover and is viewable full-screen on the event page (`/g/:group/e/:event/invite`).
+- Multiple time slots on the invite (e.g. ceremony 10:30 then meal 12:30 at the same address) → start = first, suggested return = later slot + typical duration, with a hint.
+- **Extraction options**:
+  1. **Vision LLM via a Netlify Function** (Claude, e.g. Haiku 4.5 for cost / Sonnet 5.5 for accuracy): image → JSON `{title, date, times[], place, address}`. Best for decorative Hebrew fonts. Cost ≈ a fraction of a cent per invite; needs an API key in Netlify env vars. **Recommended.**
+  2. **Tesseract.js in the browser** (Hebrew `heb` model, free, no server) + regex for dates/times. Free but weak on stylized fonts; ~10–20 MB model download on first use.
+  3. Manual only (image attached as cover, no extraction) — the always-available fallback if extraction fails.
+- **Storage**: client resizes/compresses (canvas → WebP/JPEG ~1600px, ~200–300 KB), uploads to a function that stores it in Netlify Blobs (`invite/{groupId}/{eventId}`); served via a function with cache headers. Still no DB.
+- **Privacy**: the invite image is visible only to the group (unguessable group code in the URL); not indexed.
+- WhatsApp share of the event uses the invite as the preview image (Open Graph via an edge function — v1.1).
