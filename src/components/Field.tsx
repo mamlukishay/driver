@@ -2,7 +2,7 @@ import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import { normalizePhone } from "../../shared/phone.ts";
 import { he } from "../i18n/he.ts";
-import { cx } from "../util.ts";
+import { cx, fmtDmy } from "../util.ts";
 
 interface FieldProps {
   id: string;
@@ -31,6 +31,7 @@ interface FieldProps {
 
 export function Field(p: FieldProps) {
   const hintId = `${p.id}-hint`;
+  const dmy = p.type === "date" ? fmtDmy(p.value) : "";
   const input = (
     <input
       id={p.id}
@@ -56,7 +57,15 @@ export function Field(p: FieldProps) {
         {p.label}
         {p.highlight && <i class="auto">{he.newEvent.detected}</i>}
       </label>
-      {p.busy === undefined ? (
+      {p.type === "date" ? (
+        // Native picker underneath; the visible text is our own dd/mm/yyyy, whatever the device region.
+        <div class="datebox">
+          {input}
+          <span class={cx("datebox-text", !dmy && "is-empty")} aria-hidden="true">
+            {dmy ? <bdi dir="ltr">{dmy}</bdi> : he.common.datePlaceholder}
+          </span>
+        </div>
+      ) : p.busy === undefined ? (
         input
       ) : (
         <span class={cx("inwrap", p.busy && "busy")}>

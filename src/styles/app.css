@@ -536,9 +536,58 @@ a.who:hover {
 .fld input[dir="ltr"] {
   text-align: end;
 }
+/* iOS Safari: native date/time controls keep an intrinsic width and spill
+   out of the card unless the native appearance is dropped. */
 .fld input[type="date"],
 .fld input[type="time"] {
   font-variant-numeric: tabular-nums;
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  max-inline-size: 100%;
+}
+.fld input::-webkit-date-and-time-value {
+  text-align: start;
+  min-block-size: 1.5em;
+}
+/* Date fields: the native input stays (picker, min, required, validation) but its
+   text, which follows the device region (M/D/YYYY on a US iPhone), is hidden and
+   replaced by our own dd/mm/yyyy overlay. */
+.datebox {
+  position: relative;
+  min-inline-size: 0;
+}
+.datebox input {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* separate rules: a browser that does not know one of these pseudo-elements drops the whole rule */
+.datebox input::-webkit-datetime-edit {
+  opacity: 0;
+}
+.datebox input::-webkit-date-and-time-value {
+  opacity: 0;
+}
+/* Chromium lays the control out left-to-right with the calendar button on the
+   right, where the overlay sits in RTL; move the button to the end (left). */
+.datebox input::-webkit-calendar-picker-indicator {
+  order: -1;
+}
+.datebox-text {
+  position: absolute;
+  inset-block: 0;
+  /* the input's padding + border */
+  inset-inline-start: 13.5px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  font-size: 16px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.datebox-text.is-empty {
+  color: var(--ink-3);
 }
 .fld.hl {
   background: var(--accent-soft);

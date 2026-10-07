@@ -122,9 +122,11 @@ Rules for every call:
 | `GET /api/g/:group/places?q=` | ✓ | → `{ suggestions: { text, placeId }[] }` · 501 `feature_off` |
 | `POST /api/feedback/audio` | – | raw audio body (`audio/webm` / `mp4` / `ogg` …, ≤ 3 MB) → `{ audioId, transcript: string \| null }` (Workers AI Whisper `@cf/openai/whisper-large-v3-turbo`, Hebrew; any AI failure → `null`) |
 | `GET /api/feedback/audio/:audioId` | – | → bytes |
+| `GET /api/feedback/audio/:audioId/card.svg?s=<sec>` | – | → `image/svg+xml` (~360×64) that looks like an audio player (play button, "Play recording · השמעת ההקלטה", mm:ss when `s` is 0–600 digits, else no duration, fake waveform). No storage lookup; long cache, `nosniff`. Embedded in the GitHub issue (GitHub strips `<audio>`). |
+| `GET /api/feedback/audio/:audioId/play` | – | → tiny static HTML page (`dir="rtl"`, `<audio controls autoplay src="/api/feedback/audio/:audioId">`); 404 when the recording doesn't exist. CSP `default-src 'none'; media-src 'self'; style-src 'unsafe-inline'; img-src 'self'`, `nosniff`, `Referrer-Policy: no-referrer`. The issue's card links here. |
 | `POST /api/feedback/screenshot` | – | raw image body (`image/jpeg` / `png` / `webp`, ≤ 600 KB) → `{ screenshotId }` |
 | `GET /api/feedback/screenshot/:screenshotId` | – | → bytes |
-| `POST /api/feedback` | – | `{ kind: "improve" \| "keep", text (≤ 4000), audioId?, transcript?, screenshotId?, context }` → `{ ok: true, id, issueUrl? }`. Always stores a JSON record; opens a GitHub issue when `GITHUB_FEEDBACK_TOKEN` is set (a GitHub failure still returns ok). |
+| `POST /api/feedback` | – | `{ kind: "improve" \| "keep", text (≤ 4000), audioId?, transcript?, audioSeconds? (recording length, rounded and clamped to 0..125, kept only with audioId), screenshotId?, context }` → `{ ok: true, id, issueUrl? }`. Always stores a JSON record; opens a GitHub issue when `GITHUB_FEEDBACK_TOKEN` is set (a GitHub failure still returns ok). |
 
 Feedback endpoints (`worker/feedback.ts`, pure parts in `shared/feedback.ts`) have no auth, size caps, and a naive per-isolate rate limit of 10 requests/min/IP per endpoint (429 `rate_limited`). `context` is auto-collected by the client: route, group id/name, acting family id/name, kid-page flag, app version (`__APP_VERSION__`), user agent, viewport, time, screenshot state (`attached` / `removed` / `failed` / `none`).
 

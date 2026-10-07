@@ -163,12 +163,77 @@ function serveBlob(b: StoredBlob): Response {
   });
 }
 
+/* ---------- audio player card + page (for the GitHub issue, which can't embed external <audio>) ---------- */
+
+/** `?s=` → whole seconds 0..600, or null when missing/invalid (the card then shows no duration). */
+export function cardSeconds(v: string | null): number | null {
+  if (v === null || !/^\d{1,6}$/.test(v)) return null;
+  return Math.min(600, Number(v));
+}
+
+const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
+/** Fixed pseudo-waveform heights (px), so every card looks the same apart from the duration. */
+const WAVE = [4, 7, 11, 6, 13, 9, 15, 10, 5, 12, 16, 8, 5, 11, 14, 7, 9, 15, 6, 12, 8, 4, 10, 13, 7, 5, 9, 12, 6, 10, 14, 8, 5, 7];
+
+/** ~360×64 image that looks like an audio player: play button, label, mm:ss (when known), a flat fake waveform. */
+export function audioCardSvg(seconds: number | null): string {
+  const waveX = seconds === null ? 64 : 112;
+  const n = Math.floor((344 - waveX) / 6);
+  const bars = Array.from({ length: n }, (_, i) => WAVE[i % WAVE.length]!)
+    .map((h, i) => `<rect x="${waveX + i * 6}" y="${44 - h / 2}" width="3" height="${h}" rx="1.5"/>`)
+    .join("");
+  const dur = seconds === null ? "" : `<text x="64" y="49" font-size="13" fill="#57606a">${mmss(seconds)}</text>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="64" viewBox="0 0 360 64" role="img" aria-label="Play recording">
+<rect x="0.5" y="0.5" width="359" height="63" rx="14" fill="#f6f8fa" stroke="#d0d7de"/>
+<circle cx="32" cy="32" r="20" fill="#d97706"/>
+<path d="M26 21.5 L43 32 L26 42.5 Z" fill="#ffffff"/>
+<g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<text x="64" y="26" font-size="14" font-weight="600" fill="#1f2328">Play recording · השמעת ההקלטה</text>
+${dur}
+</g>
+<g fill="#d97706" fill-opacity="0.5">${bars}</g>
+</svg>`;
+}
+
+/** `audioId` is validated by `isFeedbackId` (lowercase letters and digits), so it is safe in HTML as-is. */
+export function audioPlayerHtml(audioId: string): string {
+  return `<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הקלטת משוב</title>
+<style>
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;box-sizing:border-box;
+font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f6f8fa;color:#1f2328}
+h1{font-size:18px;font-weight:600;margin:0}
+audio{width:100%;max-width:420px}
+@media (prefers-color-scheme:dark){body{background:#0d1117;color:#e6edf3}}
+</style>
+</head>
+<body>
+<h1>🎙️ הקלטת משוב</h1>
+<audio controls autoplay preload="auto" src="/api/feedback/audio/${audioId}"></audio>
+</body>
+</html>
+`;
+}
+
 async function createIssue(env: Env, record: FeedbackRecord, origin: string): Promise<string | undefined> {
   const token = env.GITHUB_FEEDBACK_TOKEN;
   if (!token) return undefined;
   const repo = env.GITHUB_REPO || DEFAULT_REPO;
+  const audioBase = record.audioId ? `${origin}/api/feedback/audio/${record.audioId}` : undefined;
   const body = issueBody(record, {
-    ...(record.audioId ? { audioUrl: `${origin}/api/feedback/audio/${record.audioId}` } : {}),
+    ...(audioBase
+      ? {
+          audioUrl: audioBase,
+          audioPlayerUrl: `${audioBase}/play`,
+          audioCardUrl: `${audioBase}/card.svg${record.audioSeconds !== undefined ? `?s=${record.audioSeconds}` : ""}`,
+        }
+      : {}),
     ...(record.screenshotId ? { screenshotUrl: `${origin}/api/feedback/screenshot/${record.screenshotId}` } : {}),
   });
   const post = (labels?: string[]) =>
@@ -250,6 +315,33 @@ export async function handleFeedback(request: Request, env: Env, seg: string[], 
     const blob = await store.getBlob((kind === "audio" ? AUDIO_PREFIX : SHOT_PREFIX) + id);
     if (!blob) throw new ApiError("not_found");
     return serveBlob(blob);
+  }
+
+  if (kind === "audio" && seg.length === 5 && m === "GET") {
+    const id = seg[3];
+    if (!isFeedbackId(id)) throw new ApiError("not_found");
+    if (seg[4] === "card.svg") {
+      // Static apart from the duration; no storage lookup, so it is cheap for GitHub's image proxy.
+      return new Response(audioCardSvg(cardSeconds(url.searchParams.get("s"))), {
+        headers: {
+          "Content-Type": "image/svg+xml",
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+    if (seg[4] === "play") {
+      if (!(await store.getBlob(AUDIO_PREFIX + id))) throw new ApiError("not_found");
+      return new Response(audioPlayerHtml(id), {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+          "Content-Security-Policy": "default-src 'none'; media-src 'self'; style-src 'unsafe-inline'; img-src 'self'",
+          "X-Content-Type-Options": "nosniff",
+          "Referrer-Policy": "no-referrer",
+        },
+      });
+    }
   }
 
   throw new ApiError("not_found");

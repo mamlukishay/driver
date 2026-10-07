@@ -24,3 +24,9 @@ export function addDays(ymd: string, days: number): string {
 export function shownOnGroupHome(date: string, today: string, days = PAST_VISIBLE_DAYS): boolean {
   return date >= addDays(today, -days);
 }
+
+/** `yyyy-mm-dd` → `dd/mm/yyyy` (Israeli order, independent of the device locale); "" when empty or malformed. */
+export function fmtDmy(ymd: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
+}

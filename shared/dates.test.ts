@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { addDays, dateInZone, shownOnGroupHome } from "./dates.ts";
+import { addDays, dateInZone, fmtDmy, shownOnGroupHome } from "./dates.ts";
 
 describe("dates", () => {
   test("dateInZone uses Israel's calendar date", () => {
@@ -20,5 +20,13 @@ describe("dates", () => {
     expect(shownOnGroupHome("2026-10-07", today)).toBe(true);
     expect(shownOnGroupHome("2026-09-07", today)).toBe(true);
     expect(shownOnGroupHome("2026-09-06", today)).toBe(false);
+  });
+
+  test("fmtDmy shows dd/mm/yyyy, empty for empty or malformed input", () => {
+    expect(fmtDmy("2026-10-07")).toBe("07/10/2026");
+    expect(fmtDmy("2027-01-31")).toBe("31/01/2027");
+    expect(fmtDmy("")).toBe("");
+    expect(fmtDmy("2026-1-7")).toBe("");
+    expect(fmtDmy("garbage")).toBe("");
   });
 });
