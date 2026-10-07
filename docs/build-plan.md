@@ -187,4 +187,4 @@ Result: `https://trempush.<account>.workers.dev`. No card needed for the base ap
 - `shared/validate.ts`: `validateFamilyInput`, `validateEventInput`, `buildFamily`, `createEventState`. `shared/index.ts` re-exports all.
 - `bun run typecheck` runs `tsc` per tsconfig (TS 7 + reference-only root checks nothing).
 - Dev: after stopping `bun run dev`, vite/workerd may linger — kill them by PID.
-- Images: behind an `ImageStore` interface — R2 when an `IMAGES` bucket binding exists, otherwise the group DO (see workshop-spec §15).
+- Images: behind an `ImageStore` interface. **R2 bucket `trempush-images` is enabled** (binding `IMAGES`); removing the binding falls back to the group DO.

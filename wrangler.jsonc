@@ -11,13 +11,10 @@
     "bindings": [{ "name": "GROUP", "class_name": "GroupDO" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GroupDO"] }],
-  "observability": { "enabled": true }
-  // Images live inside each group's Durable Object by default. To store them in R2 instead:
-  //   1. bunx wrangler r2 bucket create trempush-images
-  //   2. uncomment the block below (and add a comma after the "observability" line above)
-  //   3. bun run deploy
-  // The worker picks R2 at runtime whenever the IMAGES binding exists; no code change needed.
-  // "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "trempush-images" }]
+  "observability": { "enabled": true },
+  // Images (invites, car photos) go to R2. Remove this binding to fall back to storing
+  // them inside each group's Durable Object; the worker picks at runtime, no code change.
+  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "trempush-images" }]
   // Optional secrets (the app works without them; /api/config reports which are set):
   //   bunx wrangler secret put GOOGLE_MAPS_API_KEY   -> places autocomplete, geocoding, routes
   //   bunx wrangler secret put ANTHROPIC_API_KEY     -> invitation image parsing
