@@ -42,7 +42,6 @@ test("fresh phone: a group link asks 'מי אתם?', returns to the link; settin
   // Event with an English word: its URL is /e/<mon>-<day>-birthday.
   await a.page.goto(`/g/${groupId}`);
   await a.page.getByRole("link", { name: he.group.newEvent }).click();
-  await a.page.getByRole("button", { name: he.newEvent.manual }).click();
   await a.page.getByLabel(he.newEvent.fTitle, { exact: true }).fill("יום הולדת");
   await a.page.getByLabel(he.newEvent.fPlace, { exact: true }).fill("פארק");
   // The date starts empty (no default that may already be in the past) and must not be in the past.
