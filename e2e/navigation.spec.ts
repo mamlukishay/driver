@@ -36,7 +36,7 @@ test("every screen has its own URL", async () => {
     [`${eventUrl}/drive/out`, he.drive.title("out")],
     [`${eventUrl}/drive/back`, he.drive.title("back")],
     [`/g/${groupId}/me`, he.profile.title],
-    [`/g/${groupId}/settings`, he.settings.title],
+    [`/g/${groupId}/settings`, "קבוצת ניווט"],
     [`/g/${groupId}/who`, "קבוצת ניווט"],
     [`/g/${groupId}/kid/${kidId}`, he.kid.hi(FAMILY.kid)],
   ];
