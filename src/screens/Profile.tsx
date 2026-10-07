@@ -33,7 +33,15 @@ export function Profile({ group }: { group: string }) {
         ) : !fam ? (
           <Loading />
         ) : (
-          <ProfileBody group={group} fam={fam} places={places} data={res.data!} />
+          <>
+            <p class="small muted">
+              {he.profile.notYou}{" "}
+              <a class="lnk" href={whoUrl(group, `/g/${group}`)}>
+                {he.profile.switchFamily}
+              </a>
+            </p>
+            <ProfileBody group={group} fam={fam} places={places} data={res.data!} />
+          </>
         )}
       </main>
     </>

@@ -89,10 +89,16 @@ test("fresh phone: a group link asks 'מי אתם?', returns to the link; settin
   await expect(c.page.getByText(he.settings.actingAs(he.family(B.name)))).toBeVisible();
   expect(await identityOf(c.page, groupId)).toBe(await identityOf(b.page, groupId));
 
-  // The chip leads to settings too; logging out sends the phone back to "מי אתם?".
+  // The chip leads to the family page, which offers switching family ("מי אתם?").
   await c.page.goto(`/g/${groupId}`);
   await c.page.locator(".who").click();
-  await expect(c.page).toHaveURL(new RegExp(`/g/${groupId}/settings$`));
+  await expect(c.page).toHaveURL(new RegExp(`/g/${groupId}/me$`));
+  await expect(c.page.getByRole("heading", { name: he.profile.title })).toBeVisible();
+  await c.page.getByRole("link", { name: he.profile.switchFamily }).click();
+  await expect(c.page).toHaveURL(new RegExp(`/g/${groupId}/who\\?next=`));
+  await expect(c.page.getByRole("heading", { name: he.who.title })).toBeVisible();
+  // Logging out (settings, via the gear) sends the phone back to "מי אתם?".
+  await c.page.goto(`/g/${groupId}/settings`);
   await c.page.getByRole("button", { name: he.settings.logout }).click();
   await expect(c.page.getByRole("heading", { name: he.who.title })).toBeVisible();
   expect(await identityOf(c.page, groupId)).toBeNull();

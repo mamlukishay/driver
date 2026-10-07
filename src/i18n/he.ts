@@ -41,7 +41,7 @@ export const he = {
     viewOnly: "צפייה בלבד",
     joinCta: "מי אתם?",
     settings: "הגדרות",
-    chipHint: "לחצו להגדרות או להחלפת משפחה",
+    chipHint: "לחצו לפרטי המשפחה",
   },
 
   who: {
@@ -414,6 +414,8 @@ export const he = {
     sendKidLink: (kid: string) => `שליחת הקישור ל${kid} ב-WhatsApp`,
     saved: "הפרופיל נשמר",
     notRegistered: "עוד לא בחרתם משפחה בטלפון הזה.",
+    notYou: "לא אתם?",
+    switchFamily: "החלפת משפחה",
   },
 
   kid: {

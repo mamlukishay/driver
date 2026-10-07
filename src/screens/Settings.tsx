@@ -41,18 +41,22 @@ export function Settings({ group }: { group: string }) {
           ) : (
             <p>{he.settings.notChosen}</p>
           )}
-          <a class="btn big" href={whoUrl(group, here)}>
-            {me ? he.settings.switchFamily : he.settings.choose}
-          </a>
-          {me && (
+          {me ? (
             <>
-              <a class="btn ghost big" href={`/g/${group}/me`}>
+              <a class="btn big" href={`/g/${group}/me`}>
                 {he.settings.editProfile}
+              </a>
+              <a class="btn ghost big" href={whoUrl(group, here)}>
+                {he.settings.switchFamily}
               </a>
               <button type="button" class="btn ghost big danger" onClick={logout}>
                 {he.settings.logout}
               </button>
             </>
+          ) : (
+            <a class="btn big" href={whoUrl(group, here)}>
+              {he.settings.choose}
+            </a>
           )}
         </section>
         <section class="card" aria-labelledby="share-h">
