@@ -1,5 +1,5 @@
 import { useLocation } from "preact-iso";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { normalizeWaGroupUrl } from "../../shared/whatsapp.ts";
 import { Field } from "../components/Field.tsx";
 import { Header, useMe, whoUrl } from "../components/Header.tsx";
@@ -20,6 +20,12 @@ export function Settings({ group }: { group: string }) {
   const grp = useGroup(group);
   const link = appUrl(`/join/${group}`);
   const here = `/g/${group}/settings`;
+  const linkRef = useRef<HTMLInputElement>(null);
+  // Show the end of the link (the group's slug), not the host, when it does not fit.
+  useEffect(() => {
+    const el = linkRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [link]);
 
   const logout = () => {
     removeIdentity(group);
@@ -28,35 +34,50 @@ export function Settings({ group }: { group: string }) {
     route(whoUrl(group, `/g/${group}`), true);
   };
 
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.info(he.settings.copied);
+    } catch {
+      // No clipboard access (old browser, insecure origin): select the link so it can be copied by hand.
+      linkRef.current?.focus();
+      linkRef.current?.select();
+    }
+  };
+
   return (
     <>
       <Header title={he.settings.title} up={`/g/${group}`} group={group} groupLine />
-      <main id="main" class="content">
-        <section class="card">
-          {me ? (
-            <p class="row" style={{ "--fc": famColor(me.family?.color ?? 0) }}>
-              <span class="fdot lg" aria-hidden="true" />
-              <b>{he.settings.actingAs(me.label)}</b>
-            </p>
-          ) : (
-            <p>{he.settings.notChosen}</p>
-          )}
+      <main id="main" class="content settings">
+        <section class="card" aria-labelledby="me-h">
+          <h2 class="hs" id="me-h">
+            {he.settings.meTitle}
+          </h2>
           {me ? (
             <>
-              <a class="btn big" href={`/g/${group}/me`}>
-                {he.settings.editProfile}
-              </a>
-              <a class="btn ghost big" href={whoUrl(group, here)}>
-                {he.settings.switchFamily}
-              </a>
-              <button type="button" class="btn ghost big danger" onClick={logout}>
+              <p class="set-me" style={{ "--fc": famColor(me.family?.color ?? 0) }}>
+                <span class="fdot lg" aria-hidden="true" />
+                <b>{me.label}</b>
+              </p>
+              <div class="row">
+                <a class="btn ghost grow1" href={`/g/${group}/me`}>
+                  {he.settings.editProfile}
+                </a>
+                <a class="btn ghost grow1" href={whoUrl(group, here)}>
+                  {he.settings.switchFamily}
+                </a>
+              </div>
+              <button type="button" class="lnk quiet start" onClick={logout}>
                 {he.settings.logout}
               </button>
             </>
           ) : (
-            <a class="btn big" href={whoUrl(group, here)}>
-              {he.settings.choose}
-            </a>
+            <>
+              <p class="small muted">{he.settings.notChosen}</p>
+              <a class="btn big" href={whoUrl(group, here)}>
+                {he.settings.choose}
+              </a>
+            </>
           )}
         </section>
         <section class="card" aria-labelledby="share-h">
@@ -64,9 +85,21 @@ export function Settings({ group }: { group: string }) {
             {he.settings.shareTitle}
           </h2>
           <p class="small muted">{he.settings.shareHint}</p>
-          <div class="fld">
-            <label for="group-link">{he.settings.linkLabel}</label>
-            <input id="group-link" readOnly value={link} dir="ltr" onFocus={(e) => (e.currentTarget as HTMLInputElement).select()} />
+          <div class="row">
+            <div class="fld grow1">
+              <input
+                id="group-link"
+                ref={linkRef}
+                aria-label={he.settings.linkLabel}
+                readOnly
+                value={link}
+                dir="ltr"
+                onFocus={(e) => (e.currentTarget as HTMLInputElement).select()}
+              />
+            </div>
+            <button type="button" class="btn ghost" onClick={() => void copyLink()}>
+              {he.settings.copy}
+            </button>
           </div>
           <WaButton class="btn wa big" text={he.wa.groupInvite(grp.data?.group.name ?? "", link)}>
             {he.settings.share}
@@ -114,13 +147,14 @@ function WaGroupSection({ group, data, canEdit }: { group: string; data: GroupRe
         {he.settings.waTitle}
       </h2>
       {current && (
-        <a class="btn wa big" href={current} target="_blank" rel="noopener noreferrer">
+        <a class="btn ghost set-wa" href={current} target="_blank" rel="noopener noreferrer">
           <WaIcon />
           <span>{he.waGroup.open}</span>
         </a>
       )}
       {canEdit && (
         <form
+          class="stack-form"
           onSubmit={(e) => {
             e.preventDefault();
             void save(value);
@@ -129,7 +163,7 @@ function WaGroupSection({ group, data, canEdit }: { group: string; data: GroupRe
         >
           <Field
             id="wa-group"
-            label={he.waGroup.label}
+            label={he.settings.waLinkLabel}
             hint={he.waGroup.hint}
             value={value}
             error={err}
@@ -141,8 +175,8 @@ function WaGroupSection({ group, data, canEdit }: { group: string; data: GroupRe
               setErr(null);
             }}
           />
-          <div class="row">
-            <button type="submit" class="btn ghost grow1" disabled={busy || value.trim() === current}>
+          <div class="row set-acts">
+            <button type="submit" class="btn ghost" disabled={busy || value.trim() === current}>
               {busy ? he.common.saving : he.settings.waSave}
             </button>
             {current && (
@@ -183,10 +217,11 @@ function DeleteSection({ group, name }: { group: string; name: string }) {
 
   return (
     <section class="card" aria-labelledby="del-h">
-      <h2 class="hs bad" id="del-h">
+      <h2 class="hs" id="del-h">
         {he.settings.deleteTitle}
       </h2>
-      <button type="button" class="btn ghost big danger" onClick={() => sheet.open("delete-group")}>
+      <p class="small muted">{he.settings.deleteBody}</p>
+      <button type="button" class="btn ghost danger start" onClick={() => sheet.open("delete-group")}>
         {he.settings.deleteOpen}
       </button>
       <Sheet open={open} title={he.settings.deleteTitle} onClose={sheet.close}>
