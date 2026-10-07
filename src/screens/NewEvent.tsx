@@ -179,9 +179,9 @@ export function NewEvent({ group }: { group: string }) {
               compact
               maxDim={1600}
               onPicked={onPicked}
-              sub={<span class="small muted">{inviteParse ? he.newEvent.dropHintParse : he.newEvent.dropHint}</span>}
+              sub={<span class="small muted">{he.newEvent.dropHint}</span>}
             >
-              <b>{he.newEvent.drop}</b>
+              <b>{inviteParse ? he.newEvent.dropParse : he.newEvent.drop}</b>
             </ImagePicker>
           )}
           {parsedOk && (
