@@ -2,7 +2,7 @@ import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import { normalizePhone } from "../../shared/phone.ts";
 import { he } from "../i18n/he.ts";
-import { cx } from "../util.ts";
+import { cx, fmtDmy } from "../util.ts";
 
 interface FieldProps {
   id: string;
@@ -27,28 +27,42 @@ interface FieldProps {
 
 export function Field(p: FieldProps) {
   const hintId = `${p.id}-hint`;
+  const dmy = p.type === "date" ? fmtDmy(p.value) : "";
+  const input = (
+    <input
+      id={p.id}
+      type={(p.type ?? "text") as "text"}
+      value={p.value}
+      placeholder={p.placeholder}
+      required={p.required}
+      inputMode={p.inputMode}
+      maxLength={p.maxLength}
+      min={p.min}
+      autoComplete={p.autoComplete}
+      dir={p.dir}
+      aria-invalid={p.error ? true : undefined}
+      aria-describedby={p.error || p.hint ? hintId : undefined}
+      onInput={(e) => p.onInput((e.currentTarget as HTMLInputElement).value)}
+      onBlur={p.onBlur}
+    />
+  );
   return (
     <div class={cx("fld", p.highlight && "hl", p.error && "err")}>
       <label for={p.id}>
         {p.label}
         {p.highlight && <i class="auto">{he.newEvent.detected}</i>}
       </label>
-      <input
-        id={p.id}
-        type={(p.type ?? "text") as "text"}
-        value={p.value}
-        placeholder={p.placeholder}
-        required={p.required}
-        inputMode={p.inputMode}
-        maxLength={p.maxLength}
-        min={p.min}
-        autoComplete={p.autoComplete}
-        dir={p.dir}
-        aria-invalid={p.error ? true : undefined}
-        aria-describedby={p.error || p.hint ? hintId : undefined}
-        onInput={(e) => p.onInput((e.currentTarget as HTMLInputElement).value)}
-        onBlur={p.onBlur}
-      />
+      {p.type === "date" ? (
+        // Native picker underneath; the visible text is our own dd/mm/yyyy, whatever the device region.
+        <div class="datebox">
+          {input}
+          <span class={cx("datebox-text", !dmy && "is-empty")} aria-hidden="true">
+            {dmy ? <bdi dir="ltr">{dmy}</bdi> : he.common.datePlaceholder}
+          </span>
+        </div>
+      ) : (
+        input
+      )}
       {(p.error || p.hint) && (
         <span class="hint" id={hintId}>
           {p.error || p.hint}

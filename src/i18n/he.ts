@@ -34,6 +34,7 @@ export const he = {
     mine: "שלי",
     call: "התקשרות",
     skip: "דילוג לתוכן",
+    datePlaceholder: "יום/חודש/שנה",
   },
 
   identity: {
