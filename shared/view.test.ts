@@ -190,6 +190,9 @@ describe("kidLegStatus", () => {
     expect(kidLegStatus(leg(r({ started: true, picked: true, ahead: 0 })), false)).toBe("picked");
     expect(kidLegStatus(leg(r({ started: true, picked: true })), true)).toBe("done");
     expect(kidLegStatus(leg(null), true)).toBe("done");
+    expect(kidLegStatus(leg(r()), true)).toBe("done");
+    expect(kidLegStatus(leg(r({ started: true })), true)).toBe("onTheWay");
+    expect(kidLegStatus(leg(r({ started: true, arrived: true })), true)).toBe("arrived");
     expect(kidLegStatus(leg(null, false), true)).toBeNull();
   });
 });

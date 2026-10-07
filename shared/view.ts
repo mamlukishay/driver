@@ -163,12 +163,13 @@ export function legOver(e: { date: string; start: string; returnTime: string }, 
 
 /**
  * The kid page's live status for one leg; null when the kid doesn't need this leg.
- * done > picked > arrived > next > onTheWay > assigned > waiting.
+ * done > picked > arrived > next > onTheWay > assigned > waiting. `over` (see `legOver`) makes the
+ * leg "done", except while a started run hasn't picked the kid up yet (a late driver stays live).
  */
 export function kidLegStatus(l: KidLegView, over: boolean): KidLegStatus | null {
   if (!l.needed) return null;
-  if (over) return "done";
   const r = l.ride;
+  if (over && !(r?.started && !r.picked)) return "done";
   if (!r) return "waiting";
   if (r.picked) return "picked";
   if (!r.started) return "assigned";
