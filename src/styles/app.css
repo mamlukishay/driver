@@ -209,21 +209,11 @@ mark {
 .bk:hover {
   background: var(--sunk);
 }
-.brand-dot {
-  inline-size: 22px;
-  block-size: 8px;
-  border-radius: 3px;
-  background: var(--asphalt);
-  position: relative;
+/* The app mark (components/Logo.tsx) on root screens, where the back arrow would be. */
+.brand {
+  display: block;
   flex: none;
-}
-.brand-dot::after {
-  content: "";
-  position: absolute;
-  inset-inline: 4px;
-  inset-block-start: 3px;
-  block-size: 2px;
-  background: var(--accent);
+  margin-inline-end: 2px;
 }
 .who {
   display: inline-flex;
@@ -368,22 +358,17 @@ a.who:hover {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding-block: 18px;
+  padding-block: 28px 18px;
 }
-.lane {
-  block-size: 12px;
-  background: var(--asphalt);
-  border-radius: 3px;
-  position: relative;
-  max-inline-size: 260px;
+.hero-logo {
+  align-self: center;
 }
-.lane::after {
-  content: "";
-  position: absolute;
-  inset-inline: 8px;
-  inset-block-start: 5px;
-  block-size: 2px;
-  background: repeating-linear-gradient(to left, var(--accent) 0 22px, transparent 22px 38px);
+.hero-tag {
+  text-align: center;
+  font-family: var(--ff-display);
+  font-size: 19px;
+  color: var(--ink);
+  margin-block-end: 6px;
 }
 .links {
   display: flex;
