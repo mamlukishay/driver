@@ -183,3 +183,16 @@ Parents usually get a designed invitation image (date, times, venue, address). C
 - **Hebrew is display-only.** Everything a user sees is Hebrew, RTL.
 - **Everything else is English**: code, identifiers, data objects / JSON keys, URLs and routes (`/g/class-4b/e/bday12/back`), blob keys, API, commit messages.
 - All UI strings live in one dictionary (`src/i18n/he.ts`). Dates and times are formatted with `Intl` (`he-IL`). Layout uses `dir="rtl"` + logical CSS properties (`margin-inline-start`, `inset-inline`), so the code never hard-codes left/right.
+
+## 14. Real driving routes from a maps service (replaces air distance)
+Straight-line distance is a poor metric: a highway, a river or one-way streets make "0.6 km" a 12-minute drive. Use a routing service, and never write our own routing.
+- **What we ask the maps service** (server-side, from a Netlify Function, with the API key in env vars):
+  1. **Address autocomplete at registration** (Google Places Autocomplete). Parents pick a real address → fewer typos, exact coordinates. Applies to all alternatives.
+  2. **Geocoding** once per address (replaces Nominatim; much better on Hebrew house numbers).
+  3. **Route matrix** of driving times between the homes in the event + the venue (Google Routes API `computeRouteMatrix`). B's dispatcher assigns by **driving minutes**, not km.
+  4. **Pickup order + ETAs** per car (Routes API `computeRoutes` with `optimizeWaypointOrder`), with `departureTime` for traffic. Used in driver mode and for "אגיע בעוד ~X דק׳".
+- **Cost**: a class-size event is ~10–15 points → ~100–200 matrix elements per plan. Google Maps Platform gives a monthly free allowance per API (since 2025, per-SKU free usage, roughly 10K calls/month for the basic tiers; verify before build). Requires a billing account. Alternatives with free tiers: Mapbox Matrix / Optimization, OpenRouteService (free key, daily quotas).
+- **Caching**: home→home times barely change. Cache per pair in Blobs (`route/{a}-{b}/{weekday-hour}`), recompute only for new families/venues. Live traffic only on ride day.
+- **Navigation** stays a free deep link: Google Maps URL with the **optimized** stop order (≤ 8 stops), Waze to the next stop.
+- **Terms**: Google's results may be shown as text/ETAs in our UI. Drawing them on a non-Google map isn't allowed — we don't draw a map in v1.
+- **Where it lands**: v1 = address autocomplete + geocoding (all alternatives); v1.1 = optimized pickup order + ETAs in driver mode; B uses the matrix for assignment.
