@@ -86,9 +86,7 @@ export const he = {
     deleteTitle: "מחיקת הקבוצה",
     deleteOpen: "מחיקת הקבוצה",
     deleteBody: "כל המשפחות, האירועים והתמונות יימחקו לכולם.",
-    deleteType: (name: string) => `לאישור, הקלידו את שם הקבוצה: ${name}`,
-    deleteYes: "מחיקה",
-    deleting: "מוחקים…",
+    deleteYes: "כן, למחוק",
     deleted: "הקבוצה נמחקה",
   },
 
@@ -303,7 +301,7 @@ export const he = {
     departs: (t: string) => `יציאה ${t}`,
     seatCount: (used: number, total: number) => `${used}/${total}`,
     emptySeat: (family: string) => `מושב פנוי ברכב של ${family}`,
-    seatedKid: (kid: string) => `${kid}, לחצו לאפשרויות`,
+    seatedKid: (kid: string) => `${kid}, לחצו להורדה מהרכב`,
     // friendly refusals
     whyViewOnly: "כדי לשבץ צריך לבחור את המשפחה שלכם (או להירשם).",
     whyNotMyKid: (kid: string) =>
@@ -313,24 +311,6 @@ export const he = {
     whyPickFirst: "בחרו קודם ילד/ה מהממתינים, ואז לחצו על מושב פנוי.",
     whyNoWaiting: "אין ילדים שממתינים בכיוון הזה.",
     whyUnseat: (kid: string) => `רק הנהג/ת או המשפחה של ${kid} יכולים להוריד אותו/ה מהרכב.`,
-  },
-
-  seatSheet: {
-    title: "אישור הושבה",
-    /** Sentence parts; `{ b }` parts are highlighted. */
-    parts: (kid: string, family: string, leg: Leg, time: string): (string | { b: string })[] =>
-      ["להושיב את ", { b: kid }, " ברכב של ", { b: family }, `, ${legName[leg]}, `, { b: time }, "?"],
-    partsMine: (kid: string, leg: Leg, time: string): (string | { b: string })[] =>
-      ["לקחת את ", { b: kid }, ` ברכב שלך, ${legName[leg]}, `, { b: time }, "?"],
-    confirm: "כן, להושיב",
-    confirmTake: "כן, אני לוקח/ת",
-  },
-
-  unseatSheet: {
-    title: "הורדה מהרכב",
-    sentence: (kid: string, family: string, leg: Leg) =>
-      `להוריד את ${kid} מהרכב של ${family} ב${legName[leg]}? ${kid} יחזור/תחזור לממתינים.`,
-    confirm: "כן, להוריד",
   },
 
   carSheet: {
