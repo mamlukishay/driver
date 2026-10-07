@@ -3,6 +3,8 @@ import type { EventView, FamilyView, Leg } from "../shared/types.ts";
 import { familyDisplayName, familyLabel, type LabelFamily } from "../shared/familyLabel.ts";
 import { he } from "./i18n/he.ts";
 
+export { fmtDmy } from "../shared/dates.ts";
+
 /** The Hebrew display label of a family, disambiguated against the rest of the group. */
 export function famLabel(family: LabelFamily | undefined, all: readonly LabelFamily[]): string {
   return family ? he.familyLabel(familyLabel(family, all)) : "?";

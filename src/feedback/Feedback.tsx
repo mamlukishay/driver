@@ -188,7 +188,7 @@ function FeedbackForm({ path, shot, onDone }: { path: string; shot: Shot | "fail
         kind,
         text: text.trim(),
         // The transcript only goes into the GitHub issue for triage; it is never shown in the form.
-        ...(audio ? { audioId: audio.audioId } : {}),
+        ...(audio ? { audioId: audio.audioId, ...(clip ? { audioSeconds: Math.round(clip.seconds) } : {}) } : {}),
         ...(audio?.transcript ? { transcript: audio.transcript } : {}),
         ...(screenshotId ? { screenshotId } : {}),
         context: collectContext(path, screenshot),

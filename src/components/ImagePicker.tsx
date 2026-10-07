@@ -58,15 +58,20 @@ interface Props {
   sub?: ComponentChildren;
   /** Slim one-line drop zone, for when the picker is optional. */
   compact?: boolean;
+  /** Drop variant only: a "paste" button beside the zone that reads an image from the clipboard on tap. */
+  paste?: boolean;
 }
 
-export function ImagePicker({ id, maxDim, onPicked, variant, children, sub, compact }: Props) {
+/** Reading images from the clipboard needs the async Clipboard API's `read()` (not just `readText()`). */
+const canReadClipboard = () => typeof navigator !== "undefined" && !!navigator.clipboard && "read" in navigator.clipboard;
+
+export function ImagePicker({ id, maxDim, onPicked, variant, children, sub, compact, paste }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const handle = async (file: File | undefined | null) => {
+  const handle = async (file: Blob | undefined | null) => {
     if (!file) return;
     setErr(null);
     setBusy(true);
@@ -78,6 +83,39 @@ export function ImagePicker({ id, maxDim, onPicked, variant, children, sub, comp
       setBusy(false);
       if (input.current) input.current.value = "";
     }
+  };
+
+  const onPaste = () => {
+    if (busy) return;
+    setErr(null);
+    // read() must be called synchronously inside the tap, or iOS Safari drops the user gesture.
+    let reading: Promise<ClipboardItems>;
+    try {
+      reading = navigator.clipboard.read();
+    } catch {
+      setErr(he.newEvent.pasteDenied);
+      return;
+    }
+    reading.then(
+      async (items) => {
+        for (const item of items) {
+          const type = item.types.find((t) => t.startsWith("image/"));
+          if (!type) continue;
+          setBusy(true);
+          let blob: Blob;
+          try {
+            blob = await item.getType(type);
+          } catch {
+            setBusy(false);
+            setErr(he.image.failed);
+            return;
+          }
+          return handle(blob);
+        }
+        setErr(he.newEvent.pasteEmpty);
+      },
+      () => setErr(he.newEvent.pasteDenied),
+    );
   };
 
   const fileInput = (
@@ -102,38 +140,54 @@ export function ImagePicker({ id, maxDim, onPicked, variant, children, sub, comp
       </div>
     );
 
+  const zone = (
+    <label
+      class={cx("drop", compact && "compact", over && "over")}
+      for={id}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        void handle(e.dataTransfer?.files?.[0]);
+      }}
+    >
+      <svg class="ic" width={compact ? 24 : 34} height={compact ? 24 : 34} viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      {compact ? (
+        <span class="drop-t">
+          {busy ? <b>{he.image.processing}</b> : children}
+          {sub}
+        </span>
+      ) : (
+        <>
+          {busy ? <b>{he.image.processing}</b> : children}
+          {sub}
+        </>
+      )}
+      {fileInput}
+    </label>
+  );
+
   return (
     <div>
-      <label
-        class={cx("drop", compact && "compact", over && "over")}
-        for={id}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setOver(true);
-        }}
-        onDragLeave={() => setOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setOver(false);
-          void handle(e.dataTransfer?.files?.[0]);
-        }}
-      >
-        <svg class="ic" width={compact ? 24 : 34} height={compact ? 24 : 34} viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        {compact ? (
-          <span class="drop-t">
-            {busy ? <b>{he.image.processing}</b> : children}
-            {sub}
-          </span>
-        ) : (
-          <>
-            {busy ? <b>{he.image.processing}</b> : children}
-            {sub}
-          </>
-        )}
-        {fileInput}
-      </label>
+      {paste && canReadClipboard() ? (
+        <div class="drop-row">
+          {zone}
+          <button type="button" class={cx("drop paste", compact && "compact")} aria-label={he.newEvent.paste} disabled={busy} onClick={onPaste}>
+            <svg class="ic" width={24} height={24} viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 4H7a2 2 0 00-2 2v13a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2h-2M9 4a1 1 0 011-1h4a1 1 0 011 1v1a1 1 0 01-1 1h-4a1 1 0 01-1-1V4zm0 8h6m-6 4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="small">{he.newEvent.pasteShort}</span>
+          </button>
+        </div>
+      ) : (
+        zone
+      )}
       {err && <p class="note gap">{err}</p>}
     </div>
   );

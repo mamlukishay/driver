@@ -102,6 +102,8 @@ test("feedback with voice + screenshot from the group home", async ({ browser })
   expect(payload.kind).toBe("keep");
   expect(payload.text).toBe("הלוח ממש ברור, תודה!");
   expect(payload.audioId).toBe(audio.audioId);
+  // The fake recorder stops at once, so the clip is 0 s long.
+  expect(payload.audioSeconds).toBe(0);
   expect(payload.screenshotId).toMatch(/^[a-z0-9]+$/);
   expect(payload.context).toMatchObject({
     path: `/g/${groupId}`,
@@ -130,6 +132,22 @@ test("feedback with voice + screenshot from the group home", async ({ browser })
   const rec = await page.request.get(`/api/feedback/audio/${audio.audioId}`);
   expect(rec.ok()).toBe(true);
   expect(rec.headers()["content-type"]).toBe("audio/webm");
+
+  // Player card (SVG image for the GitHub issue) and the tiny player page it links to.
+  const card = await page.request.get(`/api/feedback/audio/${audio.audioId}/card.svg?s=5`);
+  expect(card.ok()).toBe(true);
+  expect(card.headers()["content-type"]).toBe("image/svg+xml");
+  expect(card.headers()["x-content-type-options"]).toBe("nosniff");
+  const svg = await card.text();
+  expect(svg).toContain("<svg");
+  expect(svg).toContain("00:05");
+  const noDur = await (await page.request.get(`/api/feedback/audio/${audio.audioId}/card.svg?s=abc`)).text();
+  expect(noDur).not.toMatch(/\d\d:\d\d/);
+  const play = await page.request.get(`/api/feedback/audio/${audio.audioId}/play`);
+  expect(play.ok()).toBe(true);
+  expect(play.headers()["content-type"]).toBe("text/html; charset=utf-8");
+  expect(play.headers()["content-security-policy"]).toContain("media-src 'self'");
+  expect(await play.text()).toContain(`<audio controls autoplay preload="auto" src="/api/feedback/audio/${audio.audioId}"`);
 });
 
 test("discarding the recording restores the mic and sends no audio", async ({ browser }) => {
@@ -248,4 +266,8 @@ test("API rejects bad feedback and oversized audio", async ({ request, baseURL }
   expect(big.status()).toBe(413);
   const missing = await request.get(`${base}/api/feedback/audio/nosuchid23456`);
   expect(missing.status()).toBe(404);
+  const missingPlay = await request.get(`${base}/api/feedback/audio/nosuchid23456/play`);
+  expect(missingPlay.status()).toBe(404);
+  const badId = await request.get(`${base}/api/feedback/audio/..%2Fx/card.svg`);
+  expect(badId.status()).toBe(404);
 });

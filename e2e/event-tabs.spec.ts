@@ -198,8 +198,7 @@ test("group home: my kids' chip, cancelled tag, past events collapsed and hidden
   await page.goto(`${eventUrl}/out`);
   await offerCar(page, "out");
   await page.getByRole("button", { name: he.board.take }).click();
-  await page.getByRole("dialog").getByRole("button", { name: he.seatSheet.confirmTake }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(page.getByText(he.toast.took(FAMILY.kid))).toBeVisible();
   await page.goto(`/g/${groupId}`);
   await expect(card).toContainText(he.manage.myKid(FAMILY.kid, "✓", "?"));
 

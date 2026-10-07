@@ -1,11 +1,11 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { EventView, Leg, Offer } from "../../shared/types.ts";
 import { CarCard } from "../components/CarCard.tsx";
 import { Stepper } from "../components/Field.tsx";
 import { GapMeter } from "../components/GapMeter.tsx";
 import { Header } from "../components/Header.tsx";
 import { KidChip } from "../components/KidChip.tsx";
-import { ConfirmSentence, Sheet } from "../components/Sheet.tsx";
+import { Sheet } from "../components/Sheet.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
 import { he } from "../i18n/he.ts";
@@ -56,6 +56,29 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   // A cancelled event freezes the board: nothing can be seated or offered.
   const frozen = !!ev.cancelled;
 
+  // Seating and unseating act on tap (no confirmation; the toast offers undo).
+  // A ref, not state, so a second tap in the same frame is already ignored.
+  const busy = useRef(false);
+  const seat = async (o: Offer, kidId: string) => {
+    if (busy.current) return;
+    busy.current = true;
+    const name = idx.kidName(kidId);
+    const ok = await runAction(
+      group,
+      ev,
+      { type: "seatKid", offerId: o.id, kidId },
+      o.familyId === me ? he.toast.took(name) : he.toast.seated(name, idx.famLabel(o.familyId)),
+    );
+    busy.current = false;
+    if (ok) setSel(null);
+  };
+  const unseat = async (o: Offer, kidId: string) => {
+    if (busy.current) return;
+    busy.current = true;
+    await runAction(group, ev, { type: "unseatKid", offerId: o.id, kidId }, he.toast.unseated(idx.kidName(kidId)));
+    busy.current = false;
+  };
+
   const onChip = (kidId: string) => {
     if (frozen) return toast.warn(he.errors.event_cancelled);
     if (!me) return toast.warn(he.board.whyViewOnly);
@@ -68,14 +91,14 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
     if (!me) return toast.warn(he.board.whyViewOnly);
     if (!sel) return toast.warn(waiting.length ? he.board.whyPickFirst : he.board.whyNoWaiting);
     if (!kidMine(sel) && o.familyId !== me) return toast.warn(he.board.whySeatNotAllowed(idx.kidName(sel), idx.famLabel(o.familyId)));
-    sheet.open("seat", { kid: sel, offer: o.id });
+    void seat(o, sel);
   };
 
   const onSeated = (o: Offer, kidId: string) => {
     if (frozen) return toast.warn(he.errors.event_cancelled);
     if (!me) return toast.warn(he.board.whyViewOnly);
     if (!kidMine(kidId) && o.familyId !== me) return toast.warn(he.board.whyUnseat(idx.kidName(kidId)));
-    sheet.open("unseat", { kid: kidId, offer: o.id });
+    void unseat(o, kidId);
   };
 
   const confirmDepart = (o: Offer) => runAction(group, ev, { type: "confirmDeparture", offerId: o.id }, he.manage.toastConfirmed);
@@ -101,7 +124,7 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
                 return (
                   <div class="row sp take-row">
                     {chip}
-                    <button type="button" class="mini" onClick={() => sheet.open("seat", { kid: kidId, offer: myOffer.id })}>
+                    <button type="button" class="mini" onClick={() => void seat(myOffer, kidId)}>
                       {he.board.take}
                     </button>
                   </div>
@@ -157,8 +180,6 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
         )}
       </section>
 
-      <SeatSheet group={group} ev={ev} leg={leg} onDone={() => setSel(null)} />
-      <UnseatSheet group={group} ev={ev} leg={leg} />
       <CarSheet group={group} ev={ev} leg={leg} />
     </EventFrame>
   );
@@ -166,78 +187,6 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
 
 function useOfferFromQuery(ev: EventView, leg: Leg, id: string | undefined) {
   return id ? ev.offers[leg].find((o) => o.id === id) : undefined;
-}
-
-function SeatSheet({ group, ev, leg, onDone }: { group: string; ev: EventView; leg: Leg; onDone: () => void }) {
-  const sheet = useSheet();
-  const [busy, setBusy] = useState(false);
-  const open = sheet.name === "seat";
-  const idx = eventIndex(ev);
-  const offer = useOfferFromQuery(ev, leg, sheet.query.offer);
-  const kid = sheet.query.kid ? idx.kid(sheet.query.kid) : undefined;
-  const valid = open && offer && kid;
-  const mine = offer?.familyId === ev.me;
-  const famName = offer ? idx.famLabel(offer.familyId) : "";
-  const confirm = async () => {
-    if (!offer || !kid) return;
-    setBusy(true);
-    const ok = await runAction(
-      group,
-      ev,
-      { type: "seatKid", offerId: offer.id, kidId: kid.id },
-      mine ? he.toast.took(kid.name) : he.toast.seated(kid.name, famName),
-    );
-    setBusy(false);
-    if (ok) onDone();
-    sheet.close();
-  };
-  return (
-    <Sheet open={!!valid} title={he.seatSheet.title} onClose={sheet.close}>
-      {valid && (
-        <ConfirmSentence
-          parts={
-            mine
-              ? he.seatSheet.partsMine(kid.name, leg, offer.departAt)
-              : he.seatSheet.parts(kid.name, famName, leg, offer.departAt)
-          }
-          confirm={mine ? he.seatSheet.confirmTake : he.seatSheet.confirm}
-          onConfirm={confirm}
-          onCancel={sheet.close}
-          busy={busy}
-        />
-      )}
-    </Sheet>
-  );
-}
-
-function UnseatSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }) {
-  const sheet = useSheet();
-  const [busy, setBusy] = useState(false);
-  const idx = eventIndex(ev);
-  const offer = useOfferFromQuery(ev, leg, sheet.query.offer);
-  const kid = sheet.query.kid ? idx.kid(sheet.query.kid) : undefined;
-  const valid = sheet.name === "unseat" && offer && kid && offer.kidIds.includes(kid.id);
-  const confirm = async () => {
-    if (!offer || !kid) return;
-    setBusy(true);
-    await runAction(group, ev, { type: "unseatKid", offerId: offer.id, kidId: kid.id }, he.toast.unseated(kid.name));
-    setBusy(false);
-    sheet.close();
-  };
-  return (
-    <Sheet open={!!valid} title={he.unseatSheet.title} onClose={sheet.close}>
-      {valid && (
-        <ConfirmSentence
-          parts={[he.unseatSheet.sentence(kid.name, idx.famLabel(offer.familyId), leg)]}
-          confirm={he.unseatSheet.confirm}
-          onConfirm={confirm}
-          onCancel={sheet.close}
-          busy={busy}
-          danger
-        />
-      )}
-    </Sheet>
-  );
 }
 
 function CarSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }) {

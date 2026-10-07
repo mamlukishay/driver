@@ -43,7 +43,8 @@ bun install --frozen-lockfile
 
 ## Per issue
 
-Read the issue (`gh issue view N --json title,body,labels`), including the transcript, the screenshot and the
+Read the issue (`gh issue view N --json title,body,labels`), including the voice transcript (under "Voice recording";
+the player card next to it just links to the original audio), the screenshot and the
 context table (route, group, family, kid page, app version, viewport, user agent). Then decide exactly one:
 
 | Decision | When | Action |

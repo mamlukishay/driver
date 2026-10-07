@@ -53,17 +53,19 @@ test("permissions, identity chip and an unknown stored family", async ({ browser
     await expect(a.page).not.toHaveURL(/sheet=/);
     await expect(bKidChip).toHaveAttribute("aria-pressed", "false");
 
-    // Even if A forges the confirm sheet URL by hand, the server says no, in Hebrew.
+    // Even if A sends the action by hand, the server says no (403 forbidden).
+    const aKey = await familyIdOf(a.page, groupId);
     const bKey = await familyIdOf(b.page, groupId);
     const before = await apiEvent(b.page, groupId, eventId, bKey);
     const offer = before.offers.out[0]!;
     const bKid = before.families.find((f) => f.name === B.name)!.kids[0]!;
     expect(offer.kidIds).toEqual([]);
-    await a.page.goto(`${eventUrl}/out?sheet=seat&kid=${bKid.id}&offer=${offer.id}`);
-    const sheet = a.page.getByRole("dialog", { name: he.seatSheet.title });
-    await expect(sheet).toBeVisible();
-    await sheet.getByRole("button", { name: he.seatSheet.confirm }).click();
-    await expect(a.page.getByText(he.errors.forbidden)).toBeVisible();
+    const forged = await a.page.request.post(`/api/g/${groupId}/events/${eventId}/actions`, {
+      headers: { "X-Family-Id": aKey },
+      data: { type: "seatKid", offerId: offer.id, kidId: bKid.id },
+    });
+    expect(forged.status()).toBe(403);
+    expect(((await forged.json()) as { error: string }).error).toBe("forbidden");
 
     // Nothing changed server-side: no seat, same version, B's page unchanged.
     const after = await apiEvent(b.page, groupId, eventId, bKey);
