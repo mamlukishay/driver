@@ -24,7 +24,7 @@ export interface FamilyDraft {
   name: string;
   parents: { name: string; phone: string }[];
   address: string;
-  kids: { id?: string; name: string; phone: string; kidToken?: string }[];
+  kids: { id?: string; name: string; phone: string }[];
   cars: CarDraft[];
 }
 
@@ -43,7 +43,6 @@ export function draftFrom(f: FamilyInput | FamilyPrivate): FamilyDraft {
     parents: f.parents.length ? f.parents.map((p) => ({ name: p.name, phone: local(p.phone) })) : [{ name: "", phone: "" }],
     kids: f.kids.map((k) => ({
       ...("id" in k && k.id ? { id: k.id } : {}),
-      ...("kidToken" in k ? { kidToken: k.kidToken } : {}),
       name: k.name,
       phone: local(k.phone),
     })),

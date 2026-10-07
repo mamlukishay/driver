@@ -12,7 +12,7 @@ import { useLive } from "../live.ts";
 import { keys, refetch, useKid } from "../store.ts";
 import { famColor, fmtDate, todayYmd } from "../util.ts";
 
-export function Kid({ group, token }: { group: string; token: string }) {
+export function Kid({ group, kidId: token }: { group: string; kidId: string }) {
   const res = useKid(group, token);
   useLive(group);
   const v = res.data;

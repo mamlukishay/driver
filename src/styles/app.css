@@ -223,6 +223,54 @@ mark {
 .who b {
   color: var(--fc, var(--ink));
 }
+a.who {
+  text-decoration: none;
+  min-block-size: 30px;
+}
+a.who:hover {
+  background: var(--sunk);
+}
+.gear {
+  inline-size: 44px;
+  block-size: 44px;
+  margin-inline-end: -10px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--ink-2);
+}
+.gear:hover {
+  background: var(--sunk);
+}
+/* "מי אתם?" family buttons */
+.fampick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 64px;
+  padding: 12px 16px;
+  border: 1.5px solid var(--line);
+  border-inline-start: 6px solid var(--fc);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+.fampick:hover {
+  background: var(--sunk);
+}
+.fampick b {
+  font-size: 17px;
+  display: block;
+}
+.fampick small {
+  color: var(--ink-2);
+  display: block;
+}
 .who.anon {
   border-style: dashed;
   border-color: var(--ink-3);

@@ -1,10 +1,8 @@
-import { useEffect } from "preact/hooks";
 import { MiniGap } from "../components/GapMeter.tsx";
-import { Header, useIdentity } from "../components/Header.tsx";
+import { Header, useIdentity, whoUrl } from "../components/Header.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { WaButton } from "../components/WaButton.tsx";
 import { he } from "../i18n/he.ts";
-import { updateIdentity } from "../identity.ts";
 import { useLive } from "../live.ts";
 import { useGroup } from "../store.ts";
 import { appUrl, dateBadge, fmtDate, todayYmd } from "../util.ts";
@@ -14,18 +12,6 @@ export function GroupHome({ group }: { group: string }) {
   const res = useGroup(group);
   useLive(group);
   const data = res.data;
-
-  // Keep the cached group name / family name fresh for the home screen and the chip.
-  useEffect(() => {
-    if (!data || !me) return;
-    const patch: Record<string, unknown> = {};
-    if (me.groupName !== data.group.name) patch.groupName = data.group.name;
-    if (data.me && (data.me.name !== me.familyName || data.me.color !== me.color)) {
-      patch.familyName = data.me.name;
-      patch.color = data.me.color;
-    }
-    if (Object.keys(patch).length) updateIdentity(group, patch);
-  }, [data, me]);
 
   const today = todayYmd();
   const upcoming = data?.events.filter((e) => e.date >= today) ?? [];
@@ -51,7 +37,7 @@ export function GroupHome({ group }: { group: string }) {
                 {he.group.newEvent}
               </a>
             ) : (
-              <a class="btn big" href={`/join/${group}`}>
+              <a class="btn big" href={whoUrl(group, location.pathname + location.search)}>
                 {he.group.joinCta}
               </a>
             )}
@@ -78,7 +64,7 @@ export function GroupHome({ group }: { group: string }) {
             )}
             <nav class="links" aria-label={he.group.myFamily}>
               {me && <a href={`/g/${group}/me`}>{he.group.myFamily}</a>}
-              {me && <a href={`/g/${group}/devices`}>{he.group.devices}</a>}
+              <a href={`/g/${group}/settings`}>{he.group.settings}</a>
               <WaButton class="lnk-wa" text={he.wa.groupInvite(data.group.name, appUrl(`/join/${group}`))}>
                 {he.group.invite}
               </WaButton>

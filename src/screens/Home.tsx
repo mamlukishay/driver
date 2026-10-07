@@ -1,7 +1,24 @@
 import { Header } from "../components/Header.tsx";
 import { he } from "../i18n/he.ts";
 import { allIdentities } from "../identity.ts";
-import { famColor } from "../util.ts";
+import { useGroup } from "../store.ts";
+import { famColor, famLabel } from "../util.ts";
+
+/** One "my groups" row: names come from the group itself (only the family id is stored). */
+function GroupRow({ group, familyId }: { group: string; familyId: string }) {
+  const res = useGroup(group);
+  const families = res.data?.families ?? [];
+  const fam = families.find((f) => f.id === familyId);
+  return (
+    <a class="evcard" href={`/g/${group}`} style={{ "--fc": famColor(fam?.color ?? 0) }}>
+      <span class="fdot lg" aria-hidden="true" />
+      <span class="evm">
+        <b>{res.data?.group.name ?? group}</b>
+        <small>{fam ? famLabel(fam, families) : "…"}</small>
+      </span>
+    </a>
+  );
+}
 
 export function Home() {
   const groups = Object.entries(allIdentities());
@@ -23,15 +40,9 @@ export function Home() {
           <>
             <h2 class="hs">{he.home.title}</h2>
             <ul class="list">
-              {groups.map(([gid, id]) => (
+              {groups.map(([gid, familyId]) => (
                 <li>
-                  <a class="evcard" href={`/g/${gid}`} style={{ "--fc": famColor(id.color) }}>
-                    <span class="fdot lg" aria-hidden="true" />
-                    <span class="evm">
-                      <b>{id.groupName ?? gid}</b>
-                      <small>{he.family(id.familyName)}</small>
-                    </span>
-                  </a>
+                  <GroupRow group={gid} familyId={familyId} />
                 </li>
               ))}
             </ul>

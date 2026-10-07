@@ -49,7 +49,8 @@ interface Props {
   group: string;
   offer: Offer;
   car: CarPublic | undefined;
-  familyName: string;
+  /** Display label ("משפחת X", disambiguated). */
+  familyLabel: string;
   color: number;
   mine: boolean;
   kids: SeatKid[];
@@ -60,7 +61,7 @@ interface Props {
   actions?: ComponentChildren;
 }
 
-export function CarCard({ group, offer, car, familyName, color, mine, kids, armed, onEmptySeat, onKid, actions }: Props) {
+export function CarCard({ group, offer, car, familyLabel, color, mine, kids, armed, onEmptySeat, onKid, actions }: Props) {
   const empty = Math.max(0, offer.seats - kids.length);
   return (
     <article class={cx("car", mine && "me")} style={{ "--fc": famColor(color) }}>
@@ -68,7 +69,7 @@ export function CarCard({ group, offer, car, familyName, color, mine, kids, arme
         {car ? <CarPic group={group} car={car} color={color} /> : <CarGlyph color={color} />}
         <div class="grow1">
           <div class="row">
-            <b>{he.family(familyName)}</b>
+            <b>{familyLabel}</b>
             {mine && <span class="tag me">{he.common.mine}</span>}
           </div>
           <small class="muted">
@@ -101,7 +102,7 @@ export function CarCard({ group, offer, car, familyName, color, mine, kids, arme
         ))}
         {Array.from({ length: empty }, () => (
           <span class="seat-wrap">
-            <button type="button" class={cx("seat", armed && "arm")} onClick={onEmptySeat} aria-label={he.board.emptySeat(familyName)}>
+            <button type="button" class={cx("seat", armed && "arm")} onClick={onEmptySeat} aria-label={he.board.emptySeat(familyLabel)}>
               +
             </button>
           </span>

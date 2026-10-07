@@ -63,7 +63,7 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   const onEmpty = (o: Offer) => {
     if (!me) return toast.warn(he.board.whyViewOnly);
     if (!sel) return toast.warn(waiting.length ? he.board.whyPickFirst : he.board.whyNoWaiting);
-    if (!kidMine(sel) && o.familyId !== me) return toast.warn(he.board.whySeatNotAllowed(idx.kidName(sel), idx.famName(o.familyId)));
+    if (!kidMine(sel) && o.familyId !== me) return toast.warn(he.board.whySeatNotAllowed(idx.kidName(sel), idx.famLabel(o.familyId)));
     sheet.open("seat", { kid: sel, offer: o.id });
   };
 
@@ -131,7 +131,7 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               group={group}
               offer={o}
               car={idx.car(o.familyId, o.carId)}
-              familyName={fam?.name ?? "?"}
+              familyLabel={idx.famLabel(o.familyId)}
               color={fam?.color ?? 0}
               mine={mine}
               armed={!!sel && (mine || kidMine(sel))}
@@ -209,7 +209,7 @@ function SeatSheet({ group, ev, leg, onDone }: { group: string; ev: EventView; l
   const kid = sheet.query.kid ? idx.kid(sheet.query.kid) : undefined;
   const valid = open && offer && kid;
   const mine = offer?.familyId === ev.me;
-  const famName = offer ? idx.famName(offer.familyId) : "";
+  const famName = offer ? idx.famLabel(offer.familyId) : "";
   const confirm = async () => {
     if (!offer || !kid) return;
     setBusy(true);
@@ -261,7 +261,7 @@ function UnseatSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Le
     <Sheet open={!!valid} title={he.unseatSheet.title} onClose={sheet.close}>
       {valid && (
         <ConfirmSentence
-          parts={[he.unseatSheet.sentence(kid.name, idx.famName(offer.familyId), leg)]}
+          parts={[he.unseatSheet.sentence(kid.name, idx.famLabel(offer.familyId), leg)]}
           confirm={he.unseatSheet.confirm}
           onConfirm={confirm}
           onCancel={sheet.close}

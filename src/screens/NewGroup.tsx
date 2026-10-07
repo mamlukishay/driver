@@ -1,17 +1,48 @@
 import { useState } from "preact/hooks";
+import { isSlug, slugify, suggestGroupSlug } from "../../shared/slug.ts";
 import { Field } from "../components/Field.tsx";
 import { Header } from "../components/Header.tsx";
 import { toast } from "../components/Toast.tsx";
 import { WaButton } from "../components/WaButton.tsx";
-import { api } from "../api.ts";
+import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { appUrl } from "../util.ts";
 
+/** Typing helper: lowercase, spaces → hyphens, drop anything not URL-safe (keeps a trailing hyphen while typing). */
+const cleanSlugInput = (v: string) =>
+  v
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 40);
+
 export function NewGroup() {
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState(() => suggestGroupSlug(""));
+  const [slugTouched, setSlugTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [slugErr, setSlugErr] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+
+  const onName = (v: string) => {
+    setName(v);
+    setErr(null);
+    // Follow the name until the user edits the URL name; keep the random fallback stable.
+    if (!slugTouched) {
+      const s = slugify(v);
+      setSlug(isSlug(s) ? s : slug.startsWith("group-") ? slug : suggestGroupSlug(v));
+    }
+  };
+  const onSlug = (v: string) => {
+    const c = cleanSlugInput(v);
+    setSlug(c);
+    setSlugTouched(true);
+    setSuggestion(null);
+    setSlugErr(c && !isSlug(c) ? he.newGroup.slugInvalid : null);
+  };
 
   const submit = async (e: Event) => {
     e.preventDefault();
@@ -20,12 +51,22 @@ export function NewGroup() {
       document.getElementById("group-name")?.focus();
       return;
     }
+    if (!isSlug(slug)) {
+      setSlugErr(he.newGroup.slugInvalid);
+      document.getElementById("group-slug")?.focus();
+      return;
+    }
     setBusy(true);
     try {
-      const r = await api.createGroup(name.trim());
+      const r = await api.createGroup(name.trim(), slug);
       setCreated({ id: r.groupId, name: name.trim() });
     } catch (x) {
-      toast.error(x);
+      if (x instanceof ApiError && x.code === "slug_taken") {
+        const s = typeof x.data?.suggestion === "string" ? x.data.suggestion : undefined;
+        setSlugErr(he.newGroup.slugTaken(s));
+        setSuggestion(s ?? null);
+        document.getElementById("group-slug")?.focus();
+      } else toast.error(x);
     } finally {
       setBusy(false);
     }
@@ -48,7 +89,7 @@ export function NewGroup() {
               {he.newGroup.share}
             </WaButton>
           </section>
-          <a class="btn big" href={`/join/${created.id}`}>
+          <a class="btn big" href={`/join/${created.id}?new=1`}>
             {he.newGroup.continue}
           </a>
         </main>
@@ -61,7 +102,24 @@ export function NewGroup() {
       <Header title={he.newGroup.title} up="/" />
       <main id="main" class="content">
         <form class="card" onSubmit={submit} noValidate>
-          <Field id="group-name" label={he.newGroup.nameLabel} placeholder={he.newGroup.namePlaceholder} hint={he.newGroup.nameHint} value={name} error={err} onInput={(v) => (setName(v), setErr(null))} />
+          <Field id="group-name" label={he.newGroup.nameLabel} placeholder={he.newGroup.namePlaceholder} hint={he.newGroup.nameHint} value={name} error={err} onInput={onName} />
+          <Field
+            id="group-slug"
+            label={he.newGroup.slugLabel}
+            hint={he.newGroup.slugHint(appUrl(`/g/${slug || "…"}`))}
+            value={slug}
+            error={slugErr}
+            dir="ltr"
+            autoComplete="off"
+            maxLength={40}
+            onInput={onSlug}
+          >
+            {suggestion && (
+              <button type="button" class="lnk" onClick={() => onSlug(suggestion)}>
+                {he.newGroup.useSuggestion(suggestion)}
+              </button>
+            )}
+          </Field>
           <button type="submit" class="btn big" disabled={busy}>
             {busy ? he.common.saving : he.newGroup.submit}
           </button>

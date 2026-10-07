@@ -1,12 +1,11 @@
 import { useState } from "preact/hooks";
 import { draftFrom, draftToInput, FamilyForm, uploadCarPhotos, type FamilyDraft } from "../components/FamilyForm.tsx";
-import { Header, useIdentity } from "../components/Header.tsx";
+import { Header, useIdentity, whoUrl } from "../components/Header.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
 import { WaButton } from "../components/WaButton.tsx";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
-import { setLastProfile, updateIdentity } from "../identity.ts";
 import { keys, setData, useGroup } from "../store.ts";
 import type { GroupResponse } from "../../shared/types.ts";
 import { appUrl } from "../util.ts";
@@ -24,7 +23,7 @@ export function Profile({ group }: { group: string }) {
         {!me ? (
           <>
             <p class="note">{he.profile.notRegistered}</p>
-            <a class="btn big" href={`/join/${group}`}>
+            <a class="btn big" href={whoUrl(group, location.pathname + location.search)}>
               {he.group.joinCta}
             </a>
           </>
@@ -49,8 +48,6 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
       const input = draftToInput(withPhotos);
       const r = await api.updateMe(group, input);
       setData<GroupResponse>(keys.group(group), { ...data, me: r.me });
-      updateIdentity(group, { familyName: r.me.name, color: r.me.color });
-      setLastProfile(input);
       toast.info(he.profile.saved);
     } catch (e) {
       toast.error(e);
@@ -66,7 +63,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
           </h2>
           <p class="small muted">{he.profile.kidLinksHint}</p>
           {fam.kids.map((k) => (
-            <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(`/kid/${group}/${k.kidToken}`))}>
+            <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(`/g/${group}/kid/${k.id}`))}>
               {he.profile.sendKidLink(k.name)}
             </WaButton>
           ))}

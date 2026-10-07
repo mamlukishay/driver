@@ -65,7 +65,7 @@ export function summaryText(group: string, ev: EventView): string {
       time: legTime(ev, leg),
       missing: ev.gaps[leg].missing,
       cars: ev.offers[leg].map((o) => ({
-        family: idx.famName(o.familyId),
+        family: idx.famLabel(o.familyId),
         departAt: o.departAt,
         kids: o.kidIds.map(idx.kidName),
       })),
@@ -99,7 +99,7 @@ export function logLine(ev: EventView, entry: EventView["log"][number]): string 
       break;
     case "seatKid": {
       const o = [...ev.offers.out, ...ev.offers.back].find((x) => x.id === a.offerId);
-      text = L.seatKid(idx.kidName(a.kidId), o ? idx.famName(o.familyId) : "?");
+      text = L.seatKid(idx.kidName(a.kidId), o ? idx.famLabel(o.familyId) : "?");
       break;
     }
     case "unseatKid":
@@ -123,5 +123,5 @@ export function logLine(ev: EventView, entry: EventView["log"][number]): string 
     default:
       text = L.other;
   }
-  return L.line(idx.famName(entry.familyId), text);
+  return L.line(idx.famLabel(entry.familyId), text);
 }

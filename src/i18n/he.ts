@@ -1,5 +1,6 @@
 /** All user-facing Hebrew strings. Code, keys and routes stay English. */
 import type { ErrorCode, Leg } from "../../shared/types.ts";
+import type { FamilyLabelParts } from "../../shared/familyLabel.ts";
 
 export type ClientErrorCode = ErrorCode | "network" | "unknown";
 
@@ -15,6 +16,9 @@ export const he = {
   appName: "טרמפוש",
   legName,
   family: (name: string) => `משפחת ${name}`,
+  /** "משפחת כהן", "משפחת כהן (נועה, טל)" or "משפחת כהן 2" (see shared/familyLabel.ts). */
+  familyLabel: (p: FamilyLabelParts) =>
+    p.ordinal ? `משפחת ${p.name.trim()} ${p.ordinal}` : p.extra?.length ? `משפחת ${p.name.trim()} (${p.extra.join(", ")})` : `משפחת ${p.name.trim()}`,
   seats: seatsText,
   joinNames,
 
@@ -44,7 +48,37 @@ export const he = {
   identity: {
     actingAs: "פועל/ת בתור:",
     viewOnly: "צפייה בלבד",
-    joinCta: "הצטרפות",
+    joinCta: "מי אתם?",
+    settings: "הגדרות",
+    chipHint: "לחצו להגדרות או להחלפת משפחה",
+  },
+
+  who: {
+    title: "מי אתם?",
+    lead: "בחרו את המשפחה שלכם. הבחירה נשמרת בטלפון הזה.",
+    empty: "עוד אין משפחות בקבוצה. הירשמו ראשונים.",
+    newFamily: "משפחה חדשה — הרשמה",
+    justLook: "רק להסתכל",
+    confirmTitle: "אישור משפחה",
+    confirmParts: (label: string): (string | { b: string })[] => ["אתם ", { b: label }, "?"],
+    confirmNote: "תמיד אפשר לשנות בהגדרות.",
+    confirm: "כן, זו אנחנו",
+    noKids: "בלי ילדים רשומים",
+  },
+
+  settings: {
+    title: "הגדרות",
+    actingAs: (label: string) => `את/ה פועל/ת בתור ${label}`,
+    notChosen: "עוד לא בחרתם משפחה בטלפון הזה.",
+    choose: "בחירת משפחה",
+    switchFamily: "החלפת משפחה",
+    editProfile: "עריכת פרטי המשפחה",
+    logout: "התנתקות מהטלפון הזה",
+    logoutDone: "הטלפון הזה כבר לא פועל בתור אף משפחה",
+    shareTitle: "קישור לקבוצה",
+    shareHint: "כל מי שיש לו את הקישור יכול לצפות ולפעול בקבוצה. שלחו אותו רק בקבוצת ההורים.",
+    share: "שליחת הקישור ב-WhatsApp",
+    linkLabel: "קישור לקבוצה",
   },
 
   errors: {
@@ -57,6 +91,7 @@ export const he = {
     feature_off: "האפשרות הזאת לא פעילה כרגע. אפשר להמשיך ידנית.",
     too_large: "התמונה גדולה מדי. נסו תמונה אחרת או צלמו מחדש.",
     undo_expired: "עברו יותר משתי דקות, אז כבר אי אפשר לבטל. אפשר לתקן ידנית.",
+    slug_taken: "הכתובת הזאת כבר תפוסה. בחרו שם אחר באנגלית.",
     network: "אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.",
     unknown: "משהו השתבש. נסו שוב בעוד רגע.",
   } satisfies Record<ClientErrorCode, string>,
@@ -76,6 +111,12 @@ export const he = {
     nameLabel: "שם הקבוצה",
     namePlaceholder: "לדוגמה: כיתה ד׳ 2",
     nameHint: "השם שההורים יראו בהזמנה.",
+    slugLabel: "שם באנגלית לכתובת",
+    slugHint: (url: string) => `הקישור יהיה ${url}`,
+    slugInvalid: "רק אותיות אנגליות קטנות, ספרות ומקף, 3–40 תווים, בלי מקף בהתחלה או בסוף.",
+    slugTaken: (suggestion?: string) =>
+      suggestion ? `הכתובת הזאת כבר תפוסה. אולי ${suggestion}?` : "הכתובת הזאת כבר תפוסה. נסו שם אחר.",
+    useSuggestion: (s: string) => `להשתמש ב-${s}`,
     submit: "יצירת הקבוצה",
     createdTitle: "הקבוצה מוכנה!",
     createdBody: "שלחו את הקישור בקבוצת ההורים. כל משפחה נרשמת פעם אחת.",
@@ -89,12 +130,14 @@ export const he = {
     title: (group: string) => `הוזמנתם לקבוצה ${group}`,
     lead: "פעם אחת: שם המשפחה, הורים וטלפונים, כתובת, ילדים ורכב. בלי סיסמה ובלי אפליקציה להתקין.",
     submit: "שמירה והצטרפות",
-    otherDevice: "כבר נרשמתי בטלפון אחר",
-    otherDeviceHelp:
-      "בטלפון שבו נרשמתם, פתחו את הקבוצה ← \"חיבור טלפון נוסף\", ושלחו לעצמכם את הקישור. פתיחה שלו כאן תחבר את הטלפון הזה.",
-    already: (family: string) => `הטלפון הזה כבר רשום בקבוצה בתור משפחת ${family}.`,
+    pickExisting: "המשפחה שלכם כבר רשומה? בחרו אותה",
+    already: (family: string) => `הטלפון הזה כבר פועל בקבוצה בתור ${family}.`,
     toGroup: "לקבוצה",
-    prefilled: "מילאנו מהפרופיל שלכם בקבוצה אחרת. בדקו שהכל נכון.",
+    dupTitle: "זו המשפחה שלכם?",
+    dupText: (family: string, kids: string[]) =>
+      `יש כבר ${family} בקבוצה${kids.length ? ` (${kids.join(", ")})` : ""}. זו המשפחה שלכם?`,
+    dupYes: "כן, זו אנחנו",
+    dupNo: "לא, משפחה אחרת",
     savedPhotosLater: "התמונות של הרכב יעלו מיד אחרי ההרשמה.",
   },
 
@@ -110,7 +153,7 @@ export const he = {
     addParent: "+ הורה נוסף",
     removeParent: "הסרת ההורה",
     address: "כתובת הבית",
-    addressHint: "לאיסוף. רק מי שמסיע את הילדים שלכם יראה אותה.",
+    addressHint: "לאיסוף. כל המשפחות בקבוצה רואות אותה.",
     addressSuggestions: "הצעות כתובת",
     kids: "ילדים",
     kidsHint: "טלפון לילד/ה הוא רשות",
@@ -143,10 +186,10 @@ export const he = {
     past: "אירועים שעברו",
     empty: "עוד אין אירועים. הוסיפו את הראשון, מתחילים מתמונת ההזמנה.",
     newEvent: "+ אירוע חדש",
-    joinCta: "הצטרפות לקבוצה",
-    viewOnlyNote: "אתם צופים בקבוצה בלי להיות רשומים. כדי להושיב ילדים או להציע רכב, הצטרפו.",
+    joinCta: "בחירת משפחה או הרשמה",
+    viewOnlyNote: "אתם צופים בקבוצה בלי לבחור משפחה. כדי להושיב ילדים או להציע רכב, בחרו את המשפחה שלכם או הירשמו.",
     myFamily: "המשפחה שלי",
-    devices: "חיבור טלפון נוסף",
+    settings: "הגדרות",
     invite: "הזמנת משפחות לקבוצה",
     familiesCount: (n: number) => (n === 1 ? "משפחה אחת בקבוצה" : `${n} משפחות בקבוצה`),
   },
@@ -176,6 +219,8 @@ export const he = {
     fPlace: "מקום",
     fPlacePlaceholder: "לדוגמה: פארק הירקון",
     fAddress: "כתובת",
+    fSlugWord: "מילה באנגלית לכתובת (לא חובה)",
+    fSlugWordHint: (slug: string) => `הכתובת תהיה …/e/${slug}`,
     cover: "תמונת ההזמנה",
     removeCover: "הסרת התמונה",
     submit: "צור אירוע",
@@ -195,7 +240,7 @@ export const he = {
     toBoard: "לשיבוץ",
     driveMode: "מצב נהג",
     share: "שתף סיכום לקבוצה",
-    joinToRsvp: "כדי לרשום את הילדים, הצטרפו לקבוצה.",
+    joinToRsvp: "כדי לרשום את הילדים, בחרו את המשפחה שלכם או הירשמו.",
     savedPlan: (kid: string) => `עודכן: ${kid}`,
   },
 
@@ -228,14 +273,14 @@ export const he = {
     noHistory: "עוד לא היו פעולות.",
     departs: (t: string) => `יציאה ${t}`,
     seatCount: (used: number, total: number) => `${used}/${total}`,
-    emptySeat: (family: string) => `מושב פנוי ברכב של משפחת ${family}`,
+    emptySeat: (family: string) => `מושב פנוי ברכב של ${family}`,
     seatedKid: (kid: string) => `${kid}, לחצו לאפשרויות`,
     // friendly refusals
-    whyViewOnly: "כדי לשבץ צריך להצטרף לקבוצה.",
+    whyViewOnly: "כדי לשבץ צריך לבחור את המשפחה שלכם (או להירשם).",
     whyNotMyKid: (kid: string) =>
       `אפשר להושיב רק את הילדים שלך, או ילדים ברכב שלך. ${kid} לא שלך, ואין לך רכב בכיוון הזה.`,
     whySeatNotAllowed: (kid: string, family: string) =>
-      `${kid} לא מהמשפחה שלך והרכב של משפחת ${family}, אז רק הם יכולים להושיב אותו/ה כאן.`,
+      `${kid} לא מהמשפחה שלך והרכב של ${family}, אז רק הם יכולים להושיב אותו/ה כאן.`,
     whyPickFirst: "בחרו קודם ילד/ה מהממתינים, ואז לחצו על מושב פנוי.",
     whyNoWaiting: "אין ילדים שממתינים בכיוון הזה.",
     whyUnseat: (kid: string) => `רק הנהג/ת או המשפחה של ${kid} יכולים להוריד אותו/ה מהרכב.`,
@@ -246,7 +291,7 @@ export const he = {
     title: "אישור הושבה",
     /** Sentence parts; `{ b }` parts are highlighted. */
     parts: (kid: string, family: string, leg: Leg, time: string): (string | { b: string })[] =>
-      ["להושיב את ", { b: kid }, " ברכב של ", { b: `משפחת ${family}` }, `, ${legName[leg]}, `, { b: time }, "?"],
+      ["להושיב את ", { b: kid }, " ברכב של ", { b: family }, `, ${legName[leg]}, `, { b: time }, "?"],
     partsMine: (kid: string, leg: Leg, time: string): (string | { b: string })[] =>
       ["לקחת את ", { b: kid }, ` ברכב שלך, ${legName[leg]}, `, { b: time }, "?"],
     notice: "הם יראו את זה מיד, עם השם שלך.",
@@ -257,7 +302,7 @@ export const he = {
   unseatSheet: {
     title: "הורדה מהרכב",
     sentence: (kid: string, family: string, leg: Leg) =>
-      `להוריד את ${kid} מהרכב של משפחת ${family} ב${legName[leg]}? ${kid} יחזור/תחזור לממתינים.`,
+      `להוריד את ${kid} מהרכב של ${family} ב${legName[leg]}? ${kid} יחזור/תחזור לממתינים.`,
     confirm: "כן, להוריד",
   },
 
@@ -276,7 +321,7 @@ export const he = {
   },
 
   toast: {
-    seated: (kid: string, family: string) => `${kid} הושב/ה ברכב של משפחת ${family}`,
+    seated: (kid: string, family: string) => `${kid} הושב/ה ברכב של ${family}`,
     took: (kid: string) => `${kid} ברכב שלך`,
     unseated: (kid: string) => `${kid} חזר/ה לממתינים`,
     offered: (leg: Leg) => `ההצעה שלך ב${legName[leg]} פורסמה`,
@@ -295,7 +340,7 @@ export const he = {
   log: {
     title: "היסטוריה",
     undone: "(בוטל)",
-    line: (family: string, text: string) => `משפחת ${family}: ${text}`,
+    line: (family: string, text: string) => `${family}: ${text}`,
     setKidPlan: (kid: string, rsvp: "yes" | "no", out: boolean, back: boolean) =>
       rsvp === "no"
         ? `סימנו ש${kid} לא מגיע/ה`
@@ -341,22 +386,10 @@ export const he = {
   profile: {
     title: "המשפחה שלי",
     kidLinks: "קישור אישי לכל ילד/ה",
-    kidLinksHint: "הקישור לקריאה בלבד, בטוח לטלפון של ילד/ה.",
+    kidLinksHint: "הקישור לקריאה בלבד, אפשר לשלוח לטלפון של הילד/ה.",
     sendKidLink: (kid: string) => `שליחת הקישור ל${kid} ב-WhatsApp`,
     saved: "הפרופיל נשמר",
-    notRegistered: "הטלפון הזה עוד לא רשום בקבוצה.",
-  },
-
-  devices: {
-    title: "חיבור טלפון נוסף",
-    lead: "פתחו את הקישור הזה בטלפון השני (או של ההורה השני), והוא יפעל בתור המשפחה שלכם.",
-    warn: "זה כמו מפתח של המשפחה. לא לשתף בקבוצה.",
-    sendSelf: (name: string) => `שליחה לעצמי ב-WhatsApp (${name})`,
-    sendOther: "שליחה ב-WhatsApp למישהו אחר",
-    imported: (family: string) => `הטלפון הזה מחובר עכשיו בתור משפחת ${family} ✓`,
-    importFailed: "הקישור לא תקין או שפג תוקפו. בקשו קישור חדש מהטלפון הרשום.",
-    notRegistered: "הטלפון הזה עוד לא רשום בקבוצה. אם נרשמתם בטלפון אחר, שלחו משם את הקישור.",
-    linkLabel: "הקישור האישי",
+    notRegistered: "עוד לא בחרתם משפחה בטלפון הזה.",
   },
 
   kid: {
@@ -414,7 +447,7 @@ export const he = {
       for (const l of p.legs) {
         t += `\n${legName[l.leg]} (${l.time}):\n`;
         if (l.cars.length === 0) t += "עוד אין רכבים\n";
-        for (const c of l.cars) t += `🚗 משפחת ${c.family} ${c.departAt}: ${c.kids.length ? c.kids.join(", ") : "עוד אין ילדים"}\n`;
+        for (const c of l.cars) t += `🚗 ${c.family} ${c.departAt}: ${c.kids.length ? c.kids.join(", ") : "עוד אין ילדים"}\n`;
         if (l.missing > 0) t += `⚠️ ${missingText(l.missing, l.leg)}\n`;
       }
       return `${t}\nפרטים והרשמה: ${p.url}`;
@@ -424,7 +457,6 @@ export const he = {
     downstairsParent: (kid: string) => `היי, אני למטה עם הרכב, מחכה ל${kid} 🚗`,
     kidLink: (kid: string, url: string) =>
       `היי ${kid} 💛 זה הקישור שלך לטרמפוש. שם רואים מי אוסף אותך ומתי:\n${url}`,
-    selfLink: (url: string) => `הקישור שלי לטרמפוש (לא לשתף):\n${url}`,
   },
 };
 

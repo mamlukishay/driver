@@ -1,8 +1,9 @@
 import { useLocation } from "preact-iso";
 import { useState } from "preact/hooks";
 import type { EventInput, InviteParseResponse } from "../../shared/types.ts";
+import { eventSlugBase, slugify } from "../../shared/slug.ts";
 import { Field } from "../components/Field.tsx";
-import { Header, useIdentity } from "../components/Header.tsx";
+import { Header, useIdentity, whoUrl } from "../components/Header.tsx";
 import { ImagePicker } from "../components/ImagePicker.tsx";
 import { toast } from "../components/Toast.tsx";
 import { api } from "../api.ts";
@@ -34,6 +35,7 @@ export function NewEvent({ group }: { group: string }) {
   const [parsedOk, setParsedOk] = useState(false);
   const [errs, setErrs] = useState<Partial<Record<Key, string>>>({});
   const [saving, setSaving] = useState(false);
+  const [slugWord, setSlugWord] = useState("");
 
   if (!me) {
     return (
@@ -41,7 +43,7 @@ export function NewEvent({ group }: { group: string }) {
         <Header title={he.newEvent.title} up={`/g/${group}`} group={group} />
         <main id="main" class="content">
           <p class="note">{he.group.viewOnlyNote}</p>
-          <a class="btn big" href={`/join/${group}`}>
+          <a class="btn big" href={whoUrl(group, location.pathname + location.search)}>
             {he.group.joinCta}
           </a>
         </main>
@@ -110,7 +112,8 @@ export function NewEvent({ group }: { group: string }) {
     }
     setSaving(true);
     try {
-      const r = await api.createEvent(group, { ...f, ...(cover ? { coverImageId: cover } : {}) });
+      const word = slugify(slugWord, 20);
+      const r = await api.createEvent(group, { ...f, ...(cover ? { coverImageId: cover } : {}), ...(word ? { slugWord: word } : {}) });
       route(`/g/${group}/e/${r.eventId}`);
     } catch (x) {
       toast.error(x);
@@ -195,6 +198,16 @@ export function NewEvent({ group }: { group: string }) {
               </div>
               <Field id="ev-place" label={he.newEvent.fPlace} placeholder={he.newEvent.fPlacePlaceholder} value={f.place} highlight={hl.has("place")} error={errs.place} onInput={(v) => set("place", v)} />
               <Field id="ev-address" label={he.newEvent.fAddress} value={f.address} highlight={hl.has("address")} error={errs.address} onInput={(v) => set("address", v)} />
+              <Field
+                id="ev-slug"
+                label={he.newEvent.fSlugWord}
+                hint={he.newEvent.fSlugWordHint(eventSlugBase(f.date, slugWord))}
+                value={slugWord}
+                dir="ltr"
+                autoComplete="off"
+                maxLength={20}
+                onInput={(v) => setSlugWord(v.toLowerCase().replace(/[^a-z0-9 -]/g, ""))}
+              />
             </section>
             <button type="submit" class="btn big" disabled={saving}>
               {saving ? he.common.saving : he.newEvent.submit}

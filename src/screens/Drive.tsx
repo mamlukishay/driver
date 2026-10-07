@@ -110,7 +110,7 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
             const parent = fam.parents.find((p) => p.phone);
             return (
               <div class="row sp">
-                <span>{he.family(fam.name)}</span>
+                <span>{idx.famLabel(fam.id)}</span>
                 {parent?.phone ? (
                   <WaButton class="btn wa sm" phone={parent.phone} text={he.wa.leftHome(kids.map(idx.kidName))}>
                     {parent.name}
@@ -196,7 +196,7 @@ function KidStop({ group, ev, offer, kidId, picked }: { group: string; ev: Event
         <span class="grow1">
           <b>{k.name}</b>
           <small>
-            {he.family(k.family.name)}
+            {idx.famLabel(k.family.id)}
             {k.family.address ? ` · ${k.family.address}` : ""}
           </small>
         </span>

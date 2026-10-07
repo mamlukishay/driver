@@ -3,7 +3,7 @@ import type { EventView, KidPlan } from "../../shared/types.ts";
 import { LEGS } from "../../shared/types.ts";
 import { Switch } from "../components/Field.tsx";
 import { GapMeter } from "../components/GapMeter.tsx";
-import { Header } from "../components/Header.tsx";
+import { Header, whoUrl } from "../components/Header.tsx";
 import { Avatar } from "../components/KidChip.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { WaButton } from "../components/WaButton.tsx";
@@ -39,7 +39,7 @@ function EventBody({ group, ev }: { group: string; ev: EventView }) {
         {!ev.me ? (
           <>
             <p class="small muted">{he.event.joinToRsvp}</p>
-            <a class="btn" href={`/join/${group}`}>
+            <a class="btn" href={whoUrl(group, location.pathname + location.search)}>
               {he.group.joinCta}
             </a>
           </>
