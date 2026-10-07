@@ -231,6 +231,28 @@ async function main() {
   const kidC = C.me.kids[0]!;
   check("kid not seated -> ready 404", (await call("POST", `/api/g/${g}/kid/${kidC.id}/ready`)).status === 404);
 
+  // per-event kid view + live ride fields
+  const kve = await call<KidView>("GET", `/api/g/${g}/kid/${kidA.id}?event=${e}`);
+  check("kid view ?event= -> only that event", kve.status === 200 && kve.data.events.length === 1 && kve.data.events[0]!.id === e, kve.data);
+  check("kid view ?event= past event is still shown", (await call<KidView>("GET", `/api/g/${g}/kid/${kidA.id}?event=${ev3.data.eventId}`)).data.events[0]?.id === ev3.data.eventId);
+  check("kid view unknown event -> 404", (await call("GET", `/api/g/${g}/kid/${kidA.id}?event=nope-nope`)).status === 404);
+  check("kid view bad event slug -> 404", (await call("GET", `/api/g/${g}/kid/${kidA.id}?event=BAD!`)).status === 404);
+  check("kid ready with event -> ok", (await call("POST", `/api/g/${g}/kid/${kidA.id}/ready`, { body: { ready: true, event: e } })).status === 200);
+  check("kid ready with event without a ride -> 404", (await call("POST", `/api/g/${g}/kid/${kidA.id}/ready`, { body: { event: ev3.data.eventId } })).status === 404);
+  r = await act(B.key, { type: "startRun", offerId });
+  check("B starts the run", r.status === 200, r.data);
+  r = await act(A.key, { type: "setArrived", offerId, kidId: kidA.id, arrived: true });
+  check("setArrived by non-owner -> 403", r.status === 403, r.data);
+  r = await act(B.key, { type: "setArrived", offerId, kidId: kidA.id, arrived: true });
+  check("B setArrived for A's kid", r.status === 200 && r.data.event.offers.out[0]!.run?.arrived?.includes(kidA.id) === true, r.data);
+  const kva = (await call<KidView>("GET", `/api/g/${g}/kid/${kidA.id}?event=${e}`)).data.events[0]!.legs.out.ride;
+  const kvb = (await call<KidView>("GET", `/api/g/${g}/kid/${kidB.id}?event=${e}`)).data.events[0]!.legs.out.ride;
+  check("kid view: arrived + ahead follow pickup order", kva?.started === true && kva.arrived === true && kva.ahead === 0 && kvb?.arrived === false && kvb.ahead === 1, [kva, kvb]);
+  r = await act(B.key, { type: "setPicked", offerId, kidId: kidA.id, picked: true });
+  check("picking clears arrived", r.status === 200 && !r.data.event.offers.out[0]!.run?.arrived && r.data.event.offers.out[0]!.run!.picked.includes(kidA.id), r.data);
+  const kvb2 = (await call<KidView>("GET", `/api/g/${g}/kid/${kidB.id}?event=${e}`)).data.events[0]!.legs.out.ride;
+  check("next kid now has nobody ahead", kvb2?.ahead === 0, kvb2);
+
   ws.close();
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed ? 1 : 0);
