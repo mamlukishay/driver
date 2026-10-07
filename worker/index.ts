@@ -6,12 +6,13 @@ import { cleanText } from "../shared/validate.ts";
 import { normalizeWaGroupUrl } from "../shared/whatsapp.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { handleFeedback } from "./feedback.ts";
+import { handleSuggestSlug } from "./slug-suggest.ts";
 
 export { GroupDO } from "./group-do.ts";
 
 function configFor(env: Env): ConfigResponse {
   const maps = Boolean(env.GOOGLE_MAPS_API_KEY);
-  return { features: { places: maps, routes: maps, inviteParse: Boolean(env.ANTHROPIC_API_KEY || env.AI) } };
+  return { features: { places: maps, routes: maps, inviteParse: Boolean(env.ANTHROPIC_API_KEY || env.AI), slugSuggest: Boolean(env.AI) } };
 }
 
 /** The group's DO, addressed by its slug. */
@@ -60,6 +61,8 @@ async function route(request: Request, env: Env): Promise<Response> {
 
   if (seg[1] === "config" && seg.length === 2 && method === "GET") return json(configFor(env));
   if (seg[1] === "groups" && seg.length === 2 && method === "POST") return createGroup(request, env, url);
+  if (seg[1] === "groups" && seg[2] === "suggest-slug" && seg.length === 3 && method === "POST")
+    return handleSuggestSlug(request, env, (s) => slugTaken(env, url, s));
 
   if (seg[1] === "feedback") return handleFeedback(request, env, seg, url);
 

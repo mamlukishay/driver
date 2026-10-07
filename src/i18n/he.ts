@@ -133,6 +133,7 @@ export const he = {
     slugTaken: (suggestion?: string) =>
       suggestion ? `הכתובת הזאת כבר תפוסה. אולי ${suggestion}?` : "הכתובת הזאת כבר תפוסה. נסו שם אחר.",
     useSuggestion: (s: string) => `להשתמש ב-${s}`,
+    suggestingSlug: "מציע שם…",
     submit: "יצירת הקבוצה",
     createdTitle: "הקבוצה מוכנה!",
     createdBody: "שלחו את הקישור בקבוצת ההורים.",

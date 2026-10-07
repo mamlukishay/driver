@@ -22,33 +22,46 @@ interface FieldProps {
   autoComplete?: string;
   dir?: "ltr" | "rtl";
   onBlur?: () => void;
+  /** Shows a small spinner inside the input (its left edge: busy fields are `dir="ltr"`, text aligned right). */
+  busy?: boolean;
   children?: ComponentChildren;
 }
 
 export function Field(p: FieldProps) {
   const hintId = `${p.id}-hint`;
+  const input = (
+    <input
+      id={p.id}
+      type={(p.type ?? "text") as "text"}
+      value={p.value}
+      placeholder={p.placeholder}
+      required={p.required}
+      inputMode={p.inputMode}
+      maxLength={p.maxLength}
+      min={p.min}
+      autoComplete={p.autoComplete}
+      dir={p.dir}
+      aria-invalid={p.error ? true : undefined}
+      aria-busy={p.busy || undefined}
+      aria-describedby={p.error || p.hint ? hintId : undefined}
+      onInput={(e) => p.onInput((e.currentTarget as HTMLInputElement).value)}
+      onBlur={p.onBlur}
+    />
+  );
   return (
     <div class={cx("fld", p.highlight && "hl", p.error && "err")}>
       <label for={p.id}>
         {p.label}
         {p.highlight && <i class="auto">{he.newEvent.detected}</i>}
       </label>
-      <input
-        id={p.id}
-        type={(p.type ?? "text") as "text"}
-        value={p.value}
-        placeholder={p.placeholder}
-        required={p.required}
-        inputMode={p.inputMode}
-        maxLength={p.maxLength}
-        min={p.min}
-        autoComplete={p.autoComplete}
-        dir={p.dir}
-        aria-invalid={p.error ? true : undefined}
-        aria-describedby={p.error || p.hint ? hintId : undefined}
-        onInput={(e) => p.onInput((e.currentTarget as HTMLInputElement).value)}
-        onBlur={p.onBlur}
-      />
+      {p.busy === undefined ? (
+        input
+      ) : (
+        <span class={cx("inwrap", p.busy && "busy")}>
+          {input}
+          {p.busy && <i class="spin" aria-hidden="true" />}
+        </span>
+      )}
       {(p.error || p.hint) && (
         <span class="hint" id={hintId}>
           {p.error || p.hint}
