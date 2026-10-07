@@ -43,6 +43,10 @@ wrangler.jsonc, vite.config.ts, playwright.config.ts
 
 ## Deploy to Cloudflare (free plan)
 
+**Automatic (GitHub Actions):** `.github/workflows/deploy.yml` runs tests, typecheck and build on every push, then `wrangler deploy` when the repository secrets `CLOUDFLARE_API_TOKEN` (template "Edit Cloudflare Workers", plus R2 edit) and `CLOUDFLARE_ACCOUNT_ID` are set. Without them it builds and skips the deploy.
+
+**Manual:**
+
 ```sh
 bun install
 bunx wrangler login
