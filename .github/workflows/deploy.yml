@@ -2,7 +2,7 @@ name: Test & deploy
 
 on:
   push:
-    branches: [claude/dreamy-pasteur-ysim8c, main]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
