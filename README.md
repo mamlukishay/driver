@@ -61,13 +61,17 @@ Invitation images and car photos are stored in the R2 bucket `trempush-images`, 
 
 To fall back to storing images inside each group's Durable Object (no R2, no extra setup), delete the `r2_buckets` entry from `wrangler.jsonc` and redeploy. The worker picks the store at runtime, so no code change is needed. Images already in R2 are not migrated.
 
-### Optional features (secrets)
+### Optional add-ons
 
 The app works without these; `/api/config` reports which are on, and the UI hides what is off.
 
+**Invitation reading** works out of the box on Cloudflare via Workers AI (the `AI` binding in `wrangler.jsonc`, free daily allowance), no key needed. The model is the `INVITE_MODEL` var (default `@cf/meta/llama-4-scout-17b-16e-instruct`; the alternative is `@cf/mistralai/mistral-small-3.1-24b-instruct`). If `ANTHROPIC_API_KEY` is set, Claude takes over automatically, which is better on stylized Hebrew. When reading fails, the form just opens empty for manual entry.
+
+The Workers AI binding has no local simulator, so `bun run dev` stubs it (parsing returns nothing and the manual form shows). To exercise it for real locally, log in with `bunx wrangler login` (or set `CLOUDFLARE_API_TOKEN`) and run `REMOTE_BINDINGS=1 bun run dev`.
+
 ```sh
 bunx wrangler secret put GOOGLE_MAPS_API_KEY   # address autocomplete, geocoding, routes
-bunx wrangler secret put ANTHROPIC_API_KEY     # read details from an invitation image
+bunx wrangler secret put ANTHROPIC_API_KEY     # optional: read invitations with Claude instead of Workers AI
 ```
 
 Locally, put them in `.dev.vars` (gitignored):

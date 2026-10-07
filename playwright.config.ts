@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 5200;
+const PORT = Number(process.env.E2E_PORT ?? 5200);
 const browsersDir = process.env.PLAYWRIGHT_BROWSERS_PATH ?? "/opt/pw-browsers";
 // The preinstalled browser build may not match this Playwright's expected revision; point at it directly.
 const chromiumPath = `${browsersDir}/chromium`;

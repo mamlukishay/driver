@@ -35,7 +35,7 @@ import {
 } from "../shared/ids.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { createImageStore, IMAGE_MIMES } from "./images.ts";
-import { parseInvite } from "./invite.ts";
+import { DEFAULT_INVITE_MODEL, parseInvite, parseInviteWithWorkersAI } from "./invite.ts";
 import { placesAutocomplete } from "./google.ts";
 
 const FAMILY_COLORS = 5;
@@ -489,11 +489,12 @@ export class GroupDO extends DurableObject<Env> {
     const body = await readJson(request);
     const imageId = isObj(body) ? (body as Partial<InviteParseRequest>).imageId : undefined;
     if (!isId(imageId)) throw new ApiError("invalid");
-    const apiKey = this.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new ApiError("feature_off");
+    const { ANTHROPIC_API_KEY: apiKey, AI: ai } = this.env;
+    if (!apiKey && !ai) throw new ApiError("feature_off");
     const img = await createImageStore(this.env, meta.id, this.ctx.storage).get(imageId);
     if (!img) throw new ApiError("not_found");
-    return json(await parseInvite(apiKey, img, todayIL()));
+    if (apiKey) return json(await parseInvite(apiKey, img, todayIL()));
+    return json(await parseInviteWithWorkersAI(ai!, this.env.INVITE_MODEL || DEFAULT_INVITE_MODEL, img, todayIL()));
   }
 
   private async places(request: Request, url: URL): Promise<Response> {

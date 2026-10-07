@@ -5,7 +5,7 @@ import { he } from "../src/i18n/he.ts";
 
 export { he };
 
-export const BASE_URL = "http://localhost:5200";
+export const BASE_URL = `http://localhost:${process.env.E2E_PORT ?? 5200}`;
 
 export interface User {
   ctx: BrowserContext;

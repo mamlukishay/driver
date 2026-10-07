@@ -8,7 +8,7 @@ export { GroupDO } from "./group-do.ts";
 
 function configFor(env: Env): ConfigResponse {
   const maps = Boolean(env.GOOGLE_MAPS_API_KEY);
-  return { features: { places: maps, routes: maps, inviteParse: Boolean(env.ANTHROPIC_API_KEY) } };
+  return { features: { places: maps, routes: maps, inviteParse: Boolean(env.ANTHROPIC_API_KEY || env.AI) } };
 }
 
 async function route(request: Request, env: Env): Promise<Response> {

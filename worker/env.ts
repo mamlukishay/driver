@@ -7,4 +7,8 @@ export interface Env {
   IMAGES?: R2Bucket;
   GOOGLE_MAPS_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
+  /** Workers AI binding (free default for invitation parsing). Used when ANTHROPIC_API_KEY is not set. */
+  AI?: Ai;
+  /** Workers AI vision model for invitation parsing; see wrangler.jsonc. */
+  INVITE_MODEL?: string;
 }

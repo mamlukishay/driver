@@ -14,9 +14,15 @@
   "observability": { "enabled": true },
   // Images (invites, car photos) go to R2. Remove this binding to fall back to storing
   // them inside each group's Durable Object; the worker picks at runtime, no code change.
-  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "trempush-images" }]
+  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "trempush-images" }],
+  // Workers AI reads invitation images (free daily allowance). ANTHROPIC_API_KEY, if set, takes over.
+  "ai": { "binding": "AI" },
+  "vars": {
+    // Vision model for invitation parsing. Alternative: "@cf/mistralai/mistral-small-3.1-24b-instruct"
+    "INVITE_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct"
+  }
   // Optional secrets (the app works without them; /api/config reports which are set):
   //   bunx wrangler secret put GOOGLE_MAPS_API_KEY   -> places autocomplete, geocoding, routes
-  //   bunx wrangler secret put ANTHROPIC_API_KEY     -> invitation image parsing
+  //   bunx wrangler secret put ANTHROPIC_API_KEY     -> invitation parsing with Claude instead of Workers AI
   // Locally, put them in .dev.vars (gitignored).
 }

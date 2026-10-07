@@ -29,7 +29,7 @@ worker/
   index.ts              fetch handler: /api/* router → GroupDO stub; /api/config; invite/places proxies
   group-do.ts           class GroupDO (SQLite-backed DO): storage, actions, websockets, images
   google.ts             optional Places/Routes calls (only if GOOGLE_MAPS_API_KEY)
-  invite.ts             optional Claude vision parse (only if ANTHROPIC_API_KEY)
+  invite.ts             invitation parse: Claude if ANTHROPIC_API_KEY, else Workers AI (AI binding); pure JSON parser in shared/inviteParse.ts
 src/
   main.tsx, app.tsx     LocationProvider + Router + routes table
   i18n/he.ts            ALL user-facing strings (Hebrew). Code/keys English.
