@@ -1,6 +1,32 @@
 # טרמפוש — notes for Claude
 
-- **Branching:** work and push directly on `main` (owner's decision; not a sensitive project). Open a separate branch only for breaking changes that could corrupt stored data (e.g. storage/schema migrations). Every push to `main` runs tests and deploys to Cloudflare.
+## Deploying: a push to `main` IS the deploy
+
+- **Live app:** https://trempush.mamlukishay.workers.dev (Cloudflare Workers, free plan).
+- **Pipeline:** every push to `main` runs `.github/workflows/deploy.yml` ("Test & deploy") on
+  GitHub Actions: `bun install` → `bun test` → `bun run typecheck` → `bun run build` →
+  `wrangler deploy` → syncs optional Worker secrets. If any step fails, nothing deploys and the
+  previous version stays live. There is no other deploy path, no staging, no manual step.
+- **CI does not run e2e.** So before pushing to `main`, the main agent runs the full suite
+  locally (see "Before you push"): that is the only e2e gate before production.
+- **Sessions often start on a generated `claude/...` branch. Don't stay there.** Work on `main`
+  (`git fetch origin main && git checkout main && git pull`). If work already happened on another
+  branch, merge it into `main`, run the full suite on the merged result, then push `main`.
+- **Verify the deploy** with the GitHub tools (`actions_list` → `list_workflow_runs` for
+  `deploy.yml` on `main`; the job log ends with `Deployed trempush triggers` and the URL). A
+  session cannot reach `*.workers.dev` or `api.cloudflare.com`, and has no Cloudflare login, so
+  never run `wrangler deploy` from a session and never claim the live site was checked.
+- **Secrets/bindings** live in GitHub Actions secrets (`CLOUDFLARE_API_TOKEN`,
+  `CLOUDFLARE_ACCOUNT_ID`, `GH_FEEDBACK_TOKEN`, optional `ANTHROPIC_API_KEY`,
+  `GOOGLE_MAPS_API_KEY`) and `wrangler.jsonc` (Durable Object `GROUP`, R2 `IMAGES` =
+  `trempush-images`, Workers AI `AI`). Re-run the workflow (`workflow_dispatch`) after a secret
+  changes so it is synced to the Worker.
+- **Exception:** the feedback routine (`docs/feedback-agent.md`) commits to the `feedback-fixes`
+  branch and a PR, never to `main`; the owner merges after review, and the merge deploys.
+
+## House rules
+
+- **Branching:** work and push directly on `main` (owner's decision; not a sensitive project). Open a separate branch only for breaking changes that could corrupt stored data (e.g. storage/schema migrations).
 - **Language:** Hebrew is display-only (all UI strings in `src/i18n/he.ts`). Code, identifiers, URLs, JSON keys and commits are English.
 - **Trust model:** small private groups that trust each other. Anyone with the group link can act as any family; guardrails (identity chip, confirmations, undo, permission rules) prevent mistakes, not malice. Don't store sensitive data.
 - **Contracts:** `docs/build-plan.md` (routes, API, storage) and `docs/workshop-spec.md` (product decisions, §0 first). Keep them updated when you change behavior.
