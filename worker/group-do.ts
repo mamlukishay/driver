@@ -13,7 +13,7 @@ import type {
   RegisterFamilyResponse,
   WsMessage,
 } from "../shared/types.ts";
-import { FAMILY_KEY_HEADER, LEGS, MAX_IMAGE_BYTES } from "../shared/types.ts";
+import { FAMILY_ID_HEADER, LEGS, MAX_IMAGE_BYTES } from "../shared/types.ts";
 import { applyAction, undo } from "../shared/actions.ts";
 import type { ActionCtx } from "../shared/actions.ts";
 import { eventSummary, familyPrivate, familyPublic, kidView, LOG_TAIL, viewFor } from "../shared/view.ts";
@@ -24,15 +24,8 @@ import {
   validateEventInput,
   validateFamilyInput,
 } from "../shared/validate.ts";
-import {
-  formatFamilyKey,
-  familySecret,
-  isId,
-  kidToken as newKidToken,
-  newId,
-  parseFamilyKey,
-  sha256hex,
-} from "../shared/ids.ts";
+import { isId, newId } from "../shared/ids.ts";
+import { eventSlugBase, firstFreeSlug, isSlug, slugify } from "../shared/slug.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { createImageStore, IMAGE_MIMES } from "./images.ts";
 import { DEFAULT_INVITE_MODEL, parseInvite, parseInviteWithWorkersAI } from "./invite.ts";
@@ -44,19 +37,6 @@ const SEQ_WIDTH = 8;
 
 const pad = (n: number) => String(n).padStart(SEQ_WIDTH, "0");
 const logKey = (eventId: string, seq: string) => `log:${eventId}:${seq}`;
-const kidTokenKey = (token: string) => `kidtoken:${token}`;
-
-interface KidTokenRow {
-  kidId: string;
-  familyId: string;
-}
-
-function safeEqual(a: string, b: string): boolean {
-  let diff = a.length ^ b.length;
-  const n = Math.max(a.length, b.length);
-  for (let i = 0; i < n; i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
-  return diff === 0;
-}
 
 /** `yyyy-mm-dd` in Israel. */
 function todayIL(now = Date.now()): string {
@@ -87,20 +67,20 @@ export class GroupDO extends DurableObject<Env> {
     const seg = url.pathname.split("/").filter(Boolean); // api, g|kid, group, ...
     const m = request.method;
 
-    if (seg[0] !== "api") throw new ApiError("not_found");
-
-    if (seg[1] === "kid") {
-      const token = seg[3];
-      if (!token || !isId(token)) throw new ApiError("not_found");
-      if (seg.length === 4 && m === "GET") return this.kidGet(token);
-      if (seg.length === 5 && seg[4] === "ready" && m === "POST") return this.kidReady(request, token);
-      throw new ApiError("not_found");
-    }
-
-    if (seg[1] !== "g") throw new ApiError("not_found");
+    if (seg[0] !== "api" || seg[1] !== "g") throw new ApiError("not_found");
     const rest = seg.slice(3);
 
+    // Internal calls from the Worker (it refuses `__*` paths from outside).
     if (rest[0] === "__init" && rest.length === 1 && m === "POST") return this.init(request, seg[2]!);
+    if (rest[0] === "__taken" && rest.length === 1 && m === "GET") return json({ taken: !!(await this.ctx.storage.get("meta")) });
+
+    if (rest[0] === "kid") {
+      const kid = rest[1];
+      if (!kid || kid.length > 64 || !/^[a-z0-9]+$/.test(kid)) throw new ApiError("not_found");
+      if (rest.length === 2 && m === "GET") return this.kidGet(kid);
+      if (rest.length === 3 && rest[2] === "ready" && m === "POST") return this.kidReady(request, kid);
+      throw new ApiError("not_found");
+    }
 
     if (rest.length === 0 && m === "GET") return this.groupGet(request);
     if (rest[0] === "families" && rest.length === 1 && m === "POST") return this.registerFamily(request);
@@ -108,7 +88,7 @@ export class GroupDO extends DurableObject<Env> {
     if (rest[0] === "events") {
       if (rest.length === 1 && m === "POST") return this.createEvent(request);
       const id = rest[1];
-      if (id && isId(id)) {
+      if (id && isSlug(id)) {
         if (rest.length === 2 && m === "GET") return this.eventGet(request, id);
         if (rest.length === 3 && rest[2] === "actions" && m === "POST") return this.eventAction(request, id);
         if (rest.length === 3 && rest[2] === "undo" && m === "POST") return this.eventUndo(request, id);
@@ -153,16 +133,15 @@ export class GroupDO extends DurableObject<Env> {
     return [...rows.values()].reverse();
   }
 
-  /** Authenticates `X-Family-Key`. Null when the header is absent; 403 when present but wrong. */
+  /**
+   * Which family the request acts as (`X-Family-Id`). Null when absent; 403 when it names no family
+   * in this group. No secret: anyone with the group link may act as any family (guardrails, not auth).
+   */
   private async authenticate(request: Request): Promise<Family | null> {
-    const header = request.headers.get(FAMILY_KEY_HEADER);
+    const header = request.headers.get(FAMILY_ID_HEADER);
     if (header === null || header === "") return null;
-    const parsed = parseFamilyKey(header);
-    if (!parsed) throw new ApiError("forbidden");
-    const hash = await sha256hex(parsed.secret);
-    const family = await this.ctx.storage.get<Family>(`family:${parsed.familyId}`);
-    const ok = safeEqual(hash, family?.keyHash ?? "0".repeat(64));
-    if (!family || !ok) throw new ApiError("forbidden");
+    const family = isId(header) ? await this.ctx.storage.get<Family>(`family:${header}`) : undefined;
+    if (!family) throw new ApiError("forbidden");
     return family;
   }
 
@@ -192,7 +171,7 @@ export class GroupDO extends DurableObject<Env> {
   /* ---------- group ---------- */
 
   private async init(request: Request, id: string): Promise<Response> {
-    if (await this.ctx.storage.get("meta")) throw new ApiError("invalid");
+    if (await this.ctx.storage.get("meta")) throw new ApiError("slug_taken");
     const body = await readJson(request);
     const name = isObj(body) ? cleanText(body.name, 60) : null;
     if (!name) throw new ApiError("invalid");
@@ -220,8 +199,6 @@ export class GroupDO extends DurableObject<Env> {
   private async registerFamily(request: Request): Promise<Response> {
     const input = validateFamilyInput(await readJson(request));
     if (!input.ok) throw new ApiError("invalid");
-    const secret = familySecret();
-    const keyHash = await sha256hex(secret);
 
     const meta = await this.meta();
     const families = await this.families();
@@ -229,17 +206,16 @@ export class GroupDO extends DurableObject<Env> {
     const id = newId(8);
     const family = buildFamily(
       input.value,
-      { id, color: families.length % FAMILY_COLORS, keyHash, createdAt: Date.now() },
+      { id, color: families.length % FAMILY_COLORS, createdAt: Date.now() },
       null,
-      { id: () => newId(8), kidToken: newKidToken },
+      { id: () => newId(8) },
     );
     const writes: Record<string, unknown> = { [`family:${id}`]: family };
-    for (const kid of family.kids) writes[kidTokenKey(kid.kidToken)] = { kidId: kid.id, familyId: id } satisfies KidTokenRow;
     meta.version += 1;
     writes.meta = meta;
     await this.ctx.storage.put(writes);
     this.broadcast({ t: "group", version: meta.version });
-    const res: RegisterFamilyResponse = { familyId: id, key: formatFamilyKey(id, secret) };
+    const res: RegisterFamilyResponse = { familyId: id };
     return json(res);
   }
 
@@ -253,18 +229,14 @@ export class GroupDO extends DurableObject<Env> {
     const meta = await this.meta();
     const family = buildFamily(
       input.value,
-      { id: prev.id, color: prev.color, keyHash: prev.keyHash, createdAt: prev.createdAt },
+      { id: prev.id, color: prev.color, createdAt: prev.createdAt },
       prev,
-      { id: () => newId(8), kidToken: newKidToken },
+      { id: () => newId(8) },
     );
     const writes: Record<string, unknown> = { [`family:${prev.id}`]: family };
-    const keep = new Set(family.kids.map((k) => k.kidToken));
-    const stale = prev.kids.filter((k) => !keep.has(k.kidToken)).map((k) => kidTokenKey(k.kidToken));
-    for (const kid of family.kids) writes[kidTokenKey(kid.kidToken)] = { kidId: kid.id, familyId: prev.id } satisfies KidTokenRow;
     meta.version += 1;
     writes.meta = meta;
     await this.ctx.storage.put(writes);
-    if (stale.length) await this.ctx.storage.delete(stale);
     this.broadcast({ t: "group", version: meta.version });
     return json({ me: familyPrivate(family) });
   }
@@ -273,10 +245,18 @@ export class GroupDO extends DurableObject<Env> {
 
   private async createEvent(request: Request): Promise<Response> {
     const family = await this.requireFamily(request);
-    const input = validateEventInput(await readJson(request));
+    const body = await readJson(request);
+    const input = validateEventInput(body);
     if (!input.ok) throw new ApiError("invalid");
+    const rawWord = isObj(body) ? body.slugWord : undefined;
+    if (rawWord !== undefined && rawWord !== null && typeof rawWord !== "string") throw new ApiError("invalid");
+    const word = typeof rawWord === "string" ? rawWord.trim() : "";
+    if (word && (word.length > 30 || !slugify(word, 20))) throw new ApiError("invalid");
     const meta = await this.meta();
-    const id = newId(8);
+    // The slug is the event's id: `oct-16[-word]`, `-2`, `-3`… on a clash. Immutable afterwards.
+    const existing = new Set((await this.ctx.storage.list({ prefix: "event:" })).keys());
+    const id = firstFreeSlug(eventSlugBase(input.value.date, word), (s) => existing.has(`event:${s}`));
+    if (!id) throw new ApiError("invalid");
     const state = createEventState(input.value, { id, hostFamilyId: family.id, now: Date.now() });
     meta.version += 1;
     await this.ctx.storage.put({ [`event:${id}`]: state, meta });
@@ -357,20 +337,23 @@ export class GroupDO extends DurableObject<Env> {
 
   /* ---------- kid ---------- */
 
-  private async kidFamily(token: string): Promise<{ family: Family; row: KidTokenRow }> {
-    const row = await this.ctx.storage.get<KidTokenRow>(kidTokenKey(token));
-    const family = row && (await this.ctx.storage.get<Family>(`family:${row.familyId}`));
-    if (!row || !family || !family.kids.some((k) => k.id === row.kidId && k.kidToken === token)) {
-      throw new ApiError("not_found");
+  /**
+   * Finds a kid by id. Links sent before kid ids were used carried a separate `kidToken`, which
+   * older stored families still have; it is accepted too so those links keep working.
+   */
+  private async kidFamily(kidParam: string): Promise<{ family: Family; kidId: string }> {
+    for (const family of await this.families()) {
+      const kid = family.kids.find((k) => k.id === kidParam || (k as { kidToken?: string }).kidToken === kidParam);
+      if (kid) return { family, kidId: kid.id };
     }
-    return { family, row };
+    throw new ApiError("not_found");
   }
 
-  private async kidGet(token: string): Promise<Response> {
+  private async kidGet(kidParam: string): Promise<Response> {
     const meta = await this.meta();
-    await this.kidFamily(token);
+    const { kidId } = await this.kidFamily(kidParam);
     const [families, events] = await Promise.all([this.families(), this.events()]);
-    const view = kidView(meta, families, events, token, todayIL());
+    const view = kidView(meta, families, events, kidId, todayIL());
     if (!view) throw new ApiError("not_found");
     return json(view);
   }
@@ -380,11 +363,12 @@ export class GroupDO extends DurableObject<Env> {
    * (earliest upcoming event, outbound before return, skipping rides already picked up).
    * Optional body `{ ready?: boolean }` (default true).
    */
-  private async kidReady(request: Request, token: string): Promise<Response> {
+  private async kidReady(request: Request, kidParam: string): Promise<Response> {
     const body = await readJson(request, true);
     const ready = isObj(body) && typeof body.ready === "boolean" ? body.ready : true;
     await this.meta();
-    const { family, row } = await this.kidFamily(token);
+    const { family, kidId } = await this.kidFamily(kidParam);
+    const row = { kidId };
 
     const events = (await this.events())
       .filter((e) => e.date >= todayIL())

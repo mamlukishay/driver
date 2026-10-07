@@ -96,23 +96,22 @@ export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
 export interface FamilyBase {
   id: string;
   color: number;
-  keyHash: string;
   createdAt: number;
 }
 
 /**
  * Builds the stored Family from validated input. Kids/cars whose `id` matches `prev` keep
- * their id (and kidToken); everything else gets fresh ids.
+ * their id (so kid links keep working); everything else gets fresh ids.
  */
 export function buildFamily(
   input: FamilyInput,
   base: FamilyBase,
   prev: Family | null,
-  gen: { id: () => string; kidToken: () => string },
+  gen: { id: () => string },
 ): Family {
   const kids: Kid[] = input.kids.map((k) => {
     const old = k.id ? prev?.kids.find((p) => p.id === k.id) : undefined;
-    const kid: Kid = { id: old?.id ?? gen.id(), name: k.name, kidToken: old?.kidToken ?? gen.kidToken() };
+    const kid: Kid = { id: old?.id ?? gen.id(), name: k.name };
     if (k.phone) kid.phone = k.phone;
     return kid;
   });

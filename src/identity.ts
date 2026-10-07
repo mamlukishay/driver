@@ -1,61 +1,63 @@
-/** Device identities: which family this browser acts as, per group. localStorage, always try/catch. */
-import type { FamilyInput } from "../shared/types.ts";
-
-export interface Identity {
-  familyId: string;
-  /** `<familyId>.<secret>`, sent as X-Family-Key. */
-  key: string;
-  familyName: string;
-  color: number;
-  /** Cached for the home screen. */
-  groupName?: string;
-}
+/**
+ * Which family this browser acts as, per group: `{ [groupSlug]: familyId }` in localStorage under
+ * `trempush.identities`. No secrets: anyone with the group link may pick any family. Always try/catch.
+ */
 
 const IDS_KEY = "trempush.identities";
-const PROFILE_KEY = "trempush.lastProfile";
+const BROWSE_KEY = "trempush.browse";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
+const emit = () => listeners.forEach((l) => l());
 
-function read<T>(key: string, fallback: T): T {
+/** In-memory mirror so the app keeps working when storage is blocked. */
+let memory: Record<string, string> | null = null;
+
+function load(): Record<string, string> {
+  const out: Record<string, string> = {};
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    const raw = JSON.parse(localStorage.getItem(IDS_KEY) ?? "{}") as Record<string, unknown>;
+    for (const [g, v] of Object.entries(raw ?? {})) {
+      // Older versions stored `{ familyId, key, … }`; keep just the family id.
+      const id = typeof v === "string" ? v : v && typeof v === "object" ? (v as { familyId?: unknown }).familyId : null;
+      if (typeof id === "string" && id) out[g] = id;
+    }
   } catch {
-    return fallback;
+    /* blocked or corrupt storage: start empty */
   }
+  return out;
 }
 
-function write(key: string, value: unknown): void {
+function save(all: Record<string, string>): void {
+  memory = all;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(IDS_KEY, JSON.stringify(all));
   } catch {
     /* private mode / quota: identity lives only for this page view */
   }
+  emit();
 }
 
-/** In-memory mirror so the app keeps working when storage is blocked. */
-let memory: Record<string, Identity> | null = null;
-
-export function allIdentities(): Record<string, Identity> {
-  if (!memory) memory = read<Record<string, Identity>>(IDS_KEY, {});
+export function allIdentities(): Record<string, string> {
+  if (!memory) memory = load();
   return memory;
 }
 
-export function getIdentity(groupId: string): Identity | null {
-  return allIdentities()[groupId] ?? null;
+/** The family id this device acts as in `group`, or null. */
+export function getIdentity(group: string): string | null {
+  return allIdentities()[group] ?? null;
 }
 
-export function setIdentity(groupId: string, id: Identity): void {
-  const all = { ...allIdentities(), [groupId]: id };
-  memory = all;
-  write(IDS_KEY, all);
-  listeners.forEach((l) => l());
+export function setIdentity(group: string, familyId: string): void {
+  save({ ...allIdentities(), [group]: familyId });
 }
 
-export function updateIdentity(groupId: string, patch: Partial<Identity>): void {
-  const cur = getIdentity(groupId);
-  if (cur) setIdentity(groupId, { ...cur, ...patch });
+/** "התנתקות מהטלפון הזה", or the server no longer knows the family. */
+export function removeIdentity(group: string): void {
+  const all = { ...allIdentities() };
+  if (!(group in all)) return;
+  delete all[group];
+  save(all);
 }
 
 export function onIdentityChange(l: Listener): () => void {
@@ -63,53 +65,32 @@ export function onIdentityChange(l: Listener): () => void {
   return () => listeners.delete(l);
 }
 
-/** The most recent family profile, used to pre-fill joining another group. Ids are stripped. */
-export function getLastProfile(): FamilyInput | null {
-  return read<FamilyInput | null>(PROFILE_KEY, null);
-}
+/* ---------- "רק להסתכל": browse a group without choosing a family (this tab only) ---------- */
 
-export function setLastProfile(p: FamilyInput): void {
-  write(PROFILE_KEY, {
-    name: p.name,
-    address: p.address,
-    parents: p.parents.map((x) => ({ name: x.name, phone: x.phone })),
-    kids: p.kids.map((k) => ({ name: k.name, ...(k.phone ? { phone: k.phone } : {}) })),
-    cars: p.cars.map((c) => ({
-      label: c.label,
-      seats: c.seats,
-      ...(c.color ? { color: c.color } : {}),
-      ...(c.plate ? { plate: c.plate } : {}),
-    })),
-  } satisfies FamilyInput);
-}
+let browsing: Set<string> | null = null;
 
-/**
- * Reads `#<familyId>.<secret>` from the URL (the devices magic link), then clears the hash with
- * replaceState so the key doesn't linger in the address bar. Returns the key, or null.
- */
-export function importFromFragment(): string | null {
-  const hash = location.hash.slice(1);
-  if (!hash) return null;
-  let key: string;
-  try {
-    key = decodeURIComponent(hash);
-  } catch {
-    key = hash;
+function browseSet(): Set<string> {
+  if (!browsing) {
+    try {
+      browsing = new Set(JSON.parse(sessionStorage.getItem(BROWSE_KEY) ?? "[]") as string[]);
+    } catch {
+      browsing = new Set();
+    }
   }
+  return browsing;
+}
+
+export function isBrowsing(group: string): boolean {
+  return browseSet().has(group);
+}
+
+export function setBrowsing(group: string, on: boolean): void {
+  const s = browseSet();
+  if (on) s.add(group);
+  else s.delete(group);
   try {
-    history.replaceState(history.state, "", location.pathname + location.search);
+    sessionStorage.setItem(BROWSE_KEY, JSON.stringify([...s]));
   } catch {
     /* ignore */
   }
-  return /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(key) ? key : null;
-}
-
-/** Drops this device's identity for a group (e.g. the server rejected the key). */
-export function removeIdentity(groupId: string): void {
-  const all = { ...allIdentities() };
-  if (!(groupId in all)) return;
-  delete all[groupId];
-  memory = all;
-  write(IDS_KEY, all);
-  listeners.forEach((l) => l());
 }

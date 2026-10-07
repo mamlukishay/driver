@@ -39,17 +39,17 @@ describe("validateFamilyInput", () => {
 });
 
 describe("buildFamily", () => {
-  test("keeps ids and kid tokens of existing kids, mints new ones otherwise", () => {
+  test("keeps ids of existing kids, mints new ones otherwise", () => {
     let n = 0;
-    const gen = { id: () => `id${++n}`, kidToken: () => `tok${n}` };
-    const base = { id: "fam1", color: 2, keyHash: "h", createdAt: 5 };
+    const gen = { id: () => `id${++n}` };
+    const base = { id: "fam1", color: 2, createdAt: 5 };
     const v = validateFamilyInput(input);
     if (!v.ok) throw new Error();
     const first = buildFamily(v.value, base, null, gen);
-    expect(first.kids.map((k) => [k.id, k.kidToken])).toEqual([["id1", "tok1"], ["id2", "tok2"]]);
+    expect(first.kids.map((k) => k.id)).toEqual(["id1", "id2"]);
     const edited = buildFamily({ ...v.value, kids: [{ id: "id2", name: "Tali" }, { name: "New" }] }, base, first, gen);
-    expect(edited.kids).toEqual([{ id: "id2", name: "Tali", kidToken: "tok2" }, { id: "id4", name: "New", kidToken: "tok4" }]);
-    expect(edited.keyHash).toBe("h");
+    expect(edited.kids).toEqual([{ id: "id2", name: "Tali" }, { id: "id4", name: "New" }]);
+    expect("keyHash" in edited).toBe(false);
   });
 });
 

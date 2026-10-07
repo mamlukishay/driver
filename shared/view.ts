@@ -14,30 +14,27 @@ import type {
   LogEntry,
   LogEntryView,
 } from "./types.ts";
-import { LEGS } from "./types.ts";
 import { gapsFor, waitingKids } from "./gaps.ts";
 
 export const LOG_TAIL = 50;
 
-export function familyPublic(f: Family | FamilyPrivate): FamilyPublic {
+/** A clean copy of a family; strips fields older versions stored (`keyHash`, `kidToken`). */
+export function familyPublic(f: Family): FamilyPublic {
   return {
     id: f.id,
     name: f.name,
     color: f.color,
-    parents: f.parents.map((p) => ({ name: p.name })),
-    kids: f.kids.map((k) => ({ id: k.id, name: k.name })),
+    parents: f.parents.map((p) => ({ name: p.name, phone: p.phone })),
+    address: f.address,
+    kids: f.kids.map((k) => (k.phone ? { id: k.id, name: k.name, phone: k.phone } : { id: k.id, name: k.name })),
     cars: f.cars.map((c) => ({ ...c })),
+    createdAt: f.createdAt,
   };
 }
 
+/** The requester's own family; same data as `familyPublic`. */
 export function familyPrivate(f: Family): FamilyPrivate {
-  const { keyHash: _, ...rest } = f;
-  return {
-    ...rest,
-    parents: f.parents.map((p) => ({ ...p })),
-    kids: f.kids.map((k) => ({ ...k })),
-    cars: f.cars.map((c) => ({ ...c })),
-  };
+  return familyPublic(f);
 }
 
 export function eventSummary(state: EventState): EventSummary {
@@ -61,57 +58,29 @@ export function logEntryView(e: LogEntry): LogEntryView {
   return rest;
 }
 
-/** Who can see what, for one requester (build-plan §3 "Visibility"). */
-export function visibility(state: EventState, families: readonly (Family | FamilyPrivate)[], requester: string | null) {
-  const familyOfKid = new Map<string, string>();
-  for (const f of families) for (const k of f.kids) familyOfKid.set(k.id, f.id);
-  const offers = LEGS.flatMap((leg) => state.offers[leg]);
-  const passengersOf = (o: { kidIds: string[] }) => new Set(o.kidIds.map((k) => familyOfKid.get(k)));
-
-  return {
-    parentPhones(target: string): boolean {
-      if (requester === null) return false;
-      if (requester === target || requester === state.hostFamilyId) return true;
-      return offers.some(
-        (o) =>
-          (o.familyId === requester && passengersOf(o).has(target)) ||
-          (o.familyId === target && passengersOf(o).has(requester)),
-      );
-    },
-    kidPhone(kidId: string): boolean {
-      if (requester === null) return false;
-      if (familyOfKid.get(kidId) === requester) return true;
-      return offers.some((o) => o.familyId === requester && o.kidIds.includes(kidId));
-    },
-    address(target: string): boolean {
-      if (requester === null) return false;
-      if (requester === target) return true;
-      return offers.some((o) => o.familyId === requester && passengersOf(o).has(target));
-    },
-  };
-}
-
-/** The event as `requesterFamilyId` may see it; phones and addresses only where allowed. */
+/**
+ * The event as `requesterFamilyId` sees it. Everyone in the group (and anyone with the link)
+ * sees every family's phones and address; `me` is the requester when it is a member.
+ */
 export function viewFor(
   state: EventState,
-  families: readonly (Family | FamilyPrivate)[],
+  families: readonly Family[],
   requesterFamilyId: string | null,
   log: readonly LogEntry[] = [],
 ): EventView {
   const me = requesterFamilyId && families.some((f) => f.id === requesterFamilyId) ? requesterFamilyId : null;
-  const can = visibility(state, families, me);
 
   const familyViews: FamilyView[] = families.map((f) => {
-    const showParents = can.parentPhones(f.id);
     const v: FamilyView = {
       id: f.id,
       name: f.name,
       color: f.color,
-      parents: f.parents.map((p) => (showParents ? { name: p.name, phone: p.phone } : { name: p.name })),
-      kids: f.kids.map((k) => (k.phone && can.kidPhone(k.id) ? { id: k.id, name: k.name, phone: k.phone } : { id: k.id, name: k.name })),
+      parents: f.parents.map((p) => ({ name: p.name, phone: p.phone })),
+      kids: f.kids.map((k) => (k.phone ? { id: k.id, name: k.name, phone: k.phone } : { id: k.id, name: k.name })),
       cars: f.cars.map((c) => ({ ...c })),
+      createdAt: f.createdAt,
     };
-    if (f.address && can.address(f.id)) v.address = f.address;
+    if (f.address) v.address = f.address;
     return v;
   });
 
@@ -150,17 +119,17 @@ export function viewFor(
 
 /**
  * The read-only kid page: upcoming events (date >= `today`, `yyyy-mm-dd`) and, per leg,
- * the ride the kid is seated in. Null when the token is unknown.
+ * the ride the kid is seated in. Null when the kid id is unknown.
  */
 export function kidView(
   group: GroupMeta,
-  families: readonly (Family | FamilyPrivate)[],
+  families: readonly Family[],
   events: readonly EventState[],
-  kidToken: string,
+  kidId: string,
   today: string,
 ): KidView | null {
-  const family = families.find((f) => f.kids.some((k) => k.kidToken === kidToken));
-  const kid = family?.kids.find((k) => k.kidToken === kidToken);
+  const family = families.find((f) => f.kids.some((k) => k.id === kidId));
+  const kid = family?.kids.find((k) => k.id === kidId);
   if (!family || !kid) return null;
 
   const legView = (e: EventState, leg: Leg): KidLegView => {

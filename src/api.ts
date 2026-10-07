@@ -1,10 +1,10 @@
-/** Typed client for build-plan §3. Attaches X-Family-Key from the device identity for the group. */
+/** Typed client for build-plan §3. Attaches X-Family-Id from the device identity for the group. */
 import type {
   ActionResponse,
   ConfigResponse,
+  CreateEventRequest,
   CreateEventResponse,
   CreateGroupResponse,
-  EventInput,
   EventView,
   FamilyInput,
   GroupResponse,
@@ -17,7 +17,7 @@ import type {
   UndoResponse,
   UpdateFamilyResponse,
 } from "../shared/types.ts";
-import { FAMILY_KEY_HEADER } from "../shared/types.ts";
+import { FAMILY_ID_HEADER } from "../shared/types.ts";
 import { getIdentity, removeIdentity } from "./identity.ts";
 import type { ClientErrorCode } from "./i18n/he.ts";
 
@@ -25,6 +25,8 @@ export class ApiError extends Error {
   constructor(
     readonly code: ClientErrorCode,
     readonly status = 0,
+    /** The parsed error body (e.g. `suggestion` for `slug_taken`). */
+    readonly data: Record<string, unknown> | null = null,
   ) {
     super(code);
   }
@@ -34,16 +36,14 @@ interface ReqOpts {
   method?: string;
   body?: unknown;
   raw?: Blob;
-  /** Group whose identity key to attach. */
+  /** Group whose identity (family id) to attach. */
   group?: string;
-  /** Explicit key (e.g. while importing a device link). */
-  key?: string;
 }
 
 async function req<T>(path: string, o: ReqOpts = {}): Promise<T> {
   const headers: Record<string, string> = {};
-  const key = o.key ?? (o.group ? getIdentity(o.group)?.key : undefined);
-  if (key) headers[FAMILY_KEY_HEADER] = key;
+  const familyId = o.group ? getIdentity(o.group) : null;
+  if (familyId) headers[FAMILY_ID_HEADER] = familyId;
   let body: BodyInit | undefined;
   if (o.raw) {
     body = o.raw;
@@ -66,22 +66,21 @@ async function req<T>(path: string, o: ReqOpts = {}): Promise<T> {
   }
   if (!res.ok) {
     const code = (data as { error?: ClientErrorCode } | null)?.error ?? "unknown";
-    // A stored key the server rejects is useless: drop it and fall back to view-only.
-    if (res.status === 403 && key && !o.key && o.group) {
-      const rejected = await isKeyRejected(o.group, key, path);
-      if (rejected) removeIdentity(o.group);
+    // A stored family the group doesn't know (e.g. removed) is useless: drop it.
+    if (res.status === 403 && familyId && o.group) {
+      if (await isFamilyUnknown(o.group, familyId, path)) removeIdentity(o.group);
     }
-    throw new ApiError(code, res.status);
+    throw new ApiError(code, res.status, data as Record<string, unknown> | null);
   }
   return data as T;
 }
 
-/** Distinguishes "bad key" from "not allowed to do that": the optional-auth GET only 403s on a bad key. */
-async function isKeyRejected(group: string, key: string, path: string): Promise<boolean> {
-  const groupPath = `/api/g/${group}`;
+/** Distinguishes "unknown family" from "not allowed to do that": the optional-auth GETs only 403 on an unknown family. */
+async function isFamilyUnknown(group: string, familyId: string, path: string): Promise<boolean> {
+  const groupPath = g(group);
   if (path === groupPath || /\/events\/[^/]+$/.test(path)) return true;
   try {
-    const r = await fetch(groupPath, { headers: { [FAMILY_KEY_HEADER]: key } });
+    const r = await fetch(groupPath, { headers: { [FAMILY_ID_HEADER]: familyId } });
     return r.status === 403;
   } catch {
     return false;
@@ -103,10 +102,9 @@ export const api = {
     return configPromise;
   },
 
-  createGroup: (name: string) => req<CreateGroupResponse>("/api/groups", { body: { name } }),
+  createGroup: (name: string, slug: string) => req<CreateGroupResponse>("/api/groups", { body: { name, slug } }),
 
   getGroup: (group: string) => req<GroupResponse>(g(group), { group }),
-  getGroupWithKey: (group: string, key: string) => req<GroupResponse>(g(group), { key }),
 
   register: (group: string, input: FamilyInput) =>
     req<RegisterFamilyResponse>(`${g(group)}/families`, { body: input }),
@@ -114,7 +112,7 @@ export const api = {
   updateMe: (group: string, input: FamilyInput) =>
     req<UpdateFamilyResponse>(`${g(group)}/families/me`, { method: "PUT", body: input, group }),
 
-  createEvent: (group: string, input: EventInput) =>
+  createEvent: (group: string, input: CreateEventRequest) =>
     req<CreateEventResponse>(`${g(group)}/events`, { body: input, group }),
 
   getEvent: (group: string, event: string) =>
@@ -134,13 +132,10 @@ export const api = {
 
   imageUrl: (group: string, imageId: string) => `${g(group)}/images/${encodeURIComponent(imageId)}`,
 
-  getKid: (group: string, token: string) =>
-    req<KidView>(`/api/kid/${encodeURIComponent(group)}/${encodeURIComponent(token)}`),
+  getKid: (group: string, kidId: string) => req<KidView>(`${g(group)}/kid/${encodeURIComponent(kidId)}`),
 
-  kidReady: (group: string, token: string, ready = true) =>
-    req<{ ok: true }>(`/api/kid/${encodeURIComponent(group)}/${encodeURIComponent(token)}/ready`, {
-      body: { ready },
-    }),
+  kidReady: (group: string, kidId: string, ready = true) =>
+    req<{ ok: true }>(`${g(group)}/kid/${encodeURIComponent(kidId)}/ready`, { body: { ready } }),
 
   parseInvite: (group: string, imageId: string) =>
     req<InviteParseResponse>(`${g(group)}/invite/parse`, { body: { imageId }, group }),

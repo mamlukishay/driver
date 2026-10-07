@@ -6,3 +6,5 @@ export * from "./phone.ts";
 export * from "./ids.ts";
 export * from "./whatsapp.ts";
 export * from "./validate.ts";
+export * from "./slug.ts";
+export * from "./familyLabel.ts";

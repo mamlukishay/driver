@@ -12,7 +12,8 @@ export type ErrorCode =
   | "stale"
   | "feature_off"
   | "too_large"
-  | "undo_expired";
+  | "undo_expired"
+  | "slug_taken";
 
 export const ERROR_STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
@@ -24,6 +25,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   feature_off: 501,
   too_large: 413,
   undo_expired: 409,
+  slug_taken: 409,
 };
 
 /* ---------- families ---------- */
@@ -38,7 +40,6 @@ export interface Kid {
   id: string;
   name: string;
   phone?: string;
-  kidToken: string;
 }
 
 export interface Car {
@@ -63,12 +64,11 @@ export interface Family {
   address: string;
   kids: Kid[];
   cars: Car[];
-  keyHash: string;
   createdAt: number;
 }
 
 export interface KidInput {
-  /** Present when editing an existing kid (keeps its id and kidToken). */
+  /** Present when editing an existing kid (keeps its id, and so its kid link). */
   id?: string;
   name: string;
   phone?: string;
@@ -93,18 +93,14 @@ export interface FamilyInput {
 
 export type CarPublic = Car;
 
-/** What every group member sees about a family. */
-export interface FamilyPublic {
-  id: string;
-  name: string;
-  color: number;
-  parents: { name: string }[];
-  kids: { id: string; name: string }[];
-  cars: CarPublic[];
-}
+/**
+ * What every group member sees about a family: everything (trust model: families in a group
+ * trust each other; never add sensitive fields).
+ */
+export type FamilyPublic = Family;
 
-/** The requester's own family, everything except keyHash. */
-export type FamilyPrivate = Omit<Family, "keyHash">;
+/** The requester's own family (same data as FamilyPublic; kept as a name for clarity). */
+export type FamilyPrivate = Family;
 
 /** The minimum the reducer needs to know about families. */
 export interface FamilyRef {
@@ -116,6 +112,7 @@ export interface FamilyRef {
 /* ---------- group ---------- */
 
 export interface GroupMeta {
+  /** The group's slug (also its Durable Object name and URL segment). */
   id: string;
   name: string;
   createdAt: number;
@@ -163,6 +160,7 @@ export interface Offer {
 
 /** Stored as `event:{id}`; the materialized result of the action log. */
 export interface EventState extends EventInput {
+  /** The event's slug (`oct-16-birthday`), unique within the group and immutable. */
   id: string;
   hostFamilyId: string;
   createdAt: number;
@@ -249,7 +247,7 @@ export interface EventSummary {
   gaps: Gaps;
 }
 
-/** A family as one requester sees it inside an event; optional fields appear only where allowed. */
+/** A family inside an event view (everyone sees everything; kid phone/address only when set). */
 export interface FamilyView {
   id: string;
   name: string;
@@ -258,6 +256,8 @@ export interface FamilyView {
   kids: { id: string; name: string; phone?: string }[];
   cars: CarPublic[];
   address?: string;
+  /** For stable labels of same-named families (see familyLabel). */
+  createdAt: number;
 }
 
 export interface EventView extends EventInput {
@@ -319,9 +319,16 @@ export interface ConfigResponse {
 }
 export interface CreateGroupRequest {
   name: string;
+  /** English URL name (`SLUG_RE`). Omitted → a random one. */
+  slug?: string;
 }
 export interface CreateGroupResponse {
   groupId: string;
+}
+/** 409 body when the group slug is taken. */
+export interface SlugTakenResponse {
+  error: "slug_taken";
+  suggestion?: string;
 }
 export interface GroupResponse {
   group: GroupMeta;
@@ -331,13 +338,14 @@ export interface GroupResponse {
 }
 export interface RegisterFamilyResponse {
   familyId: string;
-  /** `<familyId>.<secret>`, sent back as the `X-Family-Key` header. */
-  key: string;
 }
 export interface UpdateFamilyResponse {
   me: FamilyPrivate;
 }
+/** `POST events` body: the event plus an optional English word for its slug. */
+export type CreateEventRequest = EventInput & { slugWord?: string };
 export interface CreateEventResponse {
+  /** The new event's slug. */
   eventId: string;
 }
 export interface ActionResponse {
@@ -370,6 +378,7 @@ export type WsMessage =
   | { t: "event"; eventId: string; version: number }
   | { t: "group"; version: number };
 
-export const FAMILY_KEY_HEADER = "X-Family-Key";
+/** Which family the client acts as. The server only checks that it exists in the group. */
+export const FAMILY_ID_HEADER = "X-Family-Id";
 export const UNDO_WINDOW_MS = 2 * 60 * 1000;
 export const MAX_IMAGE_BYTES = 400 * 1024;
