@@ -59,7 +59,7 @@ e2e/                    Playwright smoke (mobile viewport, Hebrew)
 | `/g/:group/devices` | "Move to another phone": magic link `…/devices#<familyId>.<key>` (key in the fragment only). |
 | `/kid/:group/:kidToken` | Kid view (read-only): per leg who picks me up, when, car photo, call driver, "אני מוכן/ה". |
 
-Sheets use `?sheet=<name>` (pushState), so back closes the sheet. Examples: `seat` (confirm seating), `car` (offer a car).
+Sheets use `?sheet=<name>` (pushState), so back closes the sheet. Examples: `seat` (confirm seating), `car` (offer a car), `feedback` (the in-app feedback sheet, opened from the floating "משוב" button on every screen, kid page included).
 
 Scroll position is restored per history entry. Never use `replaceState` for real navigation.
 
@@ -88,6 +88,13 @@ Rules for every call:
 | `POST /api/kid/:group/:kidToken/ready` | kid token | → `{ ok: true }` (logs `kidReady`, broadcasts) |
 | `POST /api/g/:group/invite/parse` | ✓ | `{ imageId }` → `{ title?, date?, times?: string[], place?, address? }` · 501 `feature_off` |
 | `GET /api/g/:group/places?q=` | ✓ | → `{ suggestions: { text, placeId }[] }` · 501 `feature_off` |
+| `POST /api/feedback/audio` | – | raw audio body (`audio/webm` / `mp4` / `ogg` …, ≤ 3 MB) → `{ audioId, transcript: string \| null }` (Workers AI Whisper `@cf/openai/whisper-large-v3-turbo`, Hebrew; any AI failure → `null`) |
+| `GET /api/feedback/audio/:audioId` | – | → bytes |
+| `POST /api/feedback/screenshot` | – | raw image body (`image/jpeg` / `png` / `webp`, ≤ 600 KB) → `{ screenshotId }` |
+| `GET /api/feedback/screenshot/:screenshotId` | – | → bytes |
+| `POST /api/feedback` | – | `{ kind: "improve" \| "keep", text (≤ 4000), audioId?, transcript?, screenshotId?, context }` → `{ ok: true, id, issueUrl? }`. Always stores a JSON record; opens a GitHub issue when `GITHUB_FEEDBACK_TOKEN` is set (a GitHub failure still returns ok). |
+
+Feedback endpoints (`worker/feedback.ts`, pure parts in `shared/feedback.ts`) have no auth, size caps, and a naive per-isolate rate limit of 10 requests/min/IP per endpoint (429 `rate_limited`). `context` is auto-collected by the client: route, group id/name, acting family id/name, kid-page flag, app version (`__APP_VERSION__`), user agent, viewport, time, screenshot state (`attached` / `removed` / `failed` / `none`).
 
 ### Actions (shared/actions.ts)
 
@@ -130,6 +137,8 @@ img:{id}             { mime, bytes: ArrayBuffer, createdAt }
 kidtoken:{token}     kidId + familyId (index)
 ```
 
+Feedback storage: with the R2 binding `IMAGES`, records go to `feedback/{yyyy-mm-dd}/{id}.json`, audio to `feedback-audio/{id}`, screenshots to `feedback-shots/{id}`. Without R2 the same keys live in a dedicated GroupDO instance (`idFromName("__feedback__")`, keys prefixed `fb:`; blobs split into 1 MB chunks).
+
 ## 5. UX rules (from the workshop — non-negotiable)
 
 - **Mobile-first, RTL, Hebrew.** Big tap targets.
@@ -167,6 +176,7 @@ bun run deploy                     # vite build + wrangler deploy
 # optional add-ons:
 bunx wrangler secret put GOOGLE_MAPS_API_KEY
 bunx wrangler secret put ANTHROPIC_API_KEY
+bunx wrangler secret put GITHUB_FEEDBACK_TOKEN   # feedback → GitHub issues (see README "Feedback")
 ```
 
 Result: `https://trempush.<account>.workers.dev`. No card needed for the base app.

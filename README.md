@@ -81,6 +81,21 @@ GOOGLE_MAPS_API_KEY=...
 ANTHROPIC_API_KEY=...
 ```
 
+## Feedback
+
+Every screen (the kid page too) has a small floating **משוב** button. It captures a screenshot of the visible screen, then opens a sheet with a לשיפור/לשימור toggle, a text field and a voice button (recorded audio is transcribed by Workers AI Whisper and appended to the text). Route, group, acting family, app version and device details are attached automatically. The Worker always stores a JSON record (R2 `feedback/…` or the Durable Object fallback); see `docs/build-plan.md` for the API.
+
+**GitHub issues (optional).** Create a fine-grained personal access token limited to this repository (`mamlukishay/driver`) with **Issues: read and write** and **Metadata: read**. Save it as the Actions secret `GH_FEEDBACK_TOKEN`; the deploy workflow copies it into the Worker as `GITHUB_FEEDBACK_TOKEN` (also synced when present: `ANTHROPIC_API_KEY`, `GOOGLE_MAPS_API_KEY`). Each feedback then opens an issue titled `[לשיפור] …` / `[לשימור] …` with labels `feedback` + `improve`/`keep`, the transcript, an audio link, the inline screenshot and a context table. `GITHUB_REPO` overrides the target repo. If the repository is public, **feedback issues are public**.
+
+**Auto-triage with a Claude Code routine (optional).**
+
+1. At [claude.ai/code/routines](https://claude.ai/code/routines) create a new routine with repository `mamlukishay/driver` and no schedule.
+2. Prompt: `Follow docs/feedback-agent.md in the repo. The triggering issue number is in the routine-fire-payload block.`
+3. Edit → Add trigger → API → Generate token.
+4. Save the trigger URL as the Actions secret `ROUTINE_FIRE_URL` and the token as `ROUTINE_FIRE_TOKEN`.
+
+`.github/workflows/feedback-routine.yml` fires the routine for feedback issues opened by the owner's token, after a 5-minute debounce (a burst becomes one run) and with only the issue number in the payload. The routine triages every open untriaged feedback issue into one `feedback-fixes` branch and a single "Feedback fixes" PR. To review it, open a Claude Code session and say "review the feedback PR". The full procedure is in [docs/feedback-agent.md](docs/feedback-agent.md).
+
 ## Language convention
 
 The UI is Hebrew and right-to-left; everything else is English: code, identifiers, routes, API fields and error codes, comments, commits. Every user-facing string lives in `src/i18n/he.ts` (API error codes are mapped there), and tests import that dictionary rather than hard-coding copy.
@@ -89,6 +104,7 @@ The UI is Hebrew and right-to-left; everything else is English: code, identifier
 
 - [docs/build-plan.md](docs/build-plan.md): stack, routes, API contract, actions and visibility rules, milestones
 - [docs/workshop-spec.md](docs/workshop-spec.md): product decisions and architecture workshop record
+- [docs/feedback-agent.md](docs/feedback-agent.md): instructions for the feedback-triage routine and the review flow
 
 ## Manual QA checklist
 

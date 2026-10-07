@@ -451,7 +451,7 @@ export const he = {
     shotRemove: "הסר צילום מסך",
     shotRestore: "צרף צילום מסך",
     shotRemoved: "צילום המסך לא יצורף",
-    contextNote: "יצורפו פרטי מסך ומכשיר",
+    contextNote: "יצורפו צילום מסך ופרטי מכשיר",
     send: "שליחה",
     sending: "שולחים…",
     thanks: "תודה! המשוב נשלח",

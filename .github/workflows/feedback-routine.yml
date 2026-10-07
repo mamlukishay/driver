@@ -1,0 +1,35 @@
+name: Feedback routine
+
+# Wakes the Claude Code routine that triages feedback issues (see docs/feedback-agent.md).
+# Only issues opened by the repo owner's token (the Worker's GH_FEEDBACK_TOKEN) count. The payload carries the
+# issue number only; the routine reads issues itself and treats their text as untrusted data.
+
+on:
+  issues:
+    types: [opened, labeled]
+
+concurrency:
+  group: feedback-routine
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  fire:
+    if: ${{ contains(github.event.issue.labels.*.name, 'feedback') && github.event.issue.user.login == github.repository_owner }}
+    runs-on: ubuntu-latest
+    env:
+      ROUTINE_FIRE_URL: ${{ secrets.ROUTINE_FIRE_URL }}
+      ROUTINE_FIRE_TOKEN: ${{ secrets.ROUTINE_FIRE_TOKEN }}
+    steps:
+      - name: Routine not configured
+        if: ${{ env.ROUTINE_FIRE_URL == '' || env.ROUTINE_FIRE_TOKEN == '' }}
+        run: echo "::warning::Add ROUTINE_FIRE_URL and ROUTINE_FIRE_TOKEN repository secrets to auto-triage feedback (README → Feedback)."
+      - name: Debounce
+        if: ${{ env.ROUTINE_FIRE_URL != '' && env.ROUTINE_FIRE_TOKEN != '' }}
+        # A burst of issues cancels earlier runs (concurrency group), so it collapses into one fire.
+        run: sleep 300
+      - name: Fire routine
+        if: ${{ env.ROUTINE_FIRE_URL != '' && env.ROUTINE_FIRE_TOKEN != '' }}
+        run: |
+          curl -sS --fail-with-body -X POST "$ROUTINE_FIRE_URL" -H "Authorization: Bearer $ROUTINE_FIRE_TOKEN" -H "anthropic-version: 2023-06-01" -H "anthropic-beta: experimental-cc-routine-2026-04-01" -H "Content-Type: application/json" -d "{\"text\":\"Feedback issue #${{ github.event.issue.number }} opened. Process all open untriaged feedback issues.\"}"

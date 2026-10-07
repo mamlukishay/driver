@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { FeedbackAudioResponse, FeedbackInput, FeedbackResponse } from "../shared/feedback.ts";
-import { createGroup, he, newUser, registerFamily, type User } from "./helpers.ts";
+import { apiGroup, createGroup, he, keyOf, newUser, registerFamily, soloScene, type User } from "./helpers.ts";
 
 const FAMILY = { name: "לוי", parent: "דנה", phone: "052-333-4444", kid: "איתי" };
 
@@ -157,6 +157,41 @@ test("mic denied falls back to text; removing the screenshot; back closes the sh
   expect(payload.audioId).toBeUndefined();
   expect(payload.context.screenshot).toBe("removed");
   expect(payload.context.path).toBe("/");
+  await expect(page.getByText(he.feedback.thanks)).toBeVisible();
+});
+
+test("button floats over other sheets and on the kid page (smaller, no family attribution)", async ({ browser }) => {
+  user = await newUser(browser);
+  const page = user.page;
+  const scene = await soloScene(page, { ...FAMILY, car: { label: "סובארו", seats: 4 } }, "קבוצת כפתור", "יום ספורט");
+
+  // Over another sheet (offer a car on the board): still visible and on top.
+  await page.goto(`${scene.eventUrl}/out`);
+  await page.getByRole("button", { name: he.board.offer("out") }).click();
+  await expect(page).toHaveURL(/sheet=car/);
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(fab(page)).toBeVisible();
+  const onTop = await fab(page).evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+  });
+  expect(onTop).toBe(true);
+  const fullHeight = (await fab(page).boundingBox())!.height;
+
+  // Kid page: smaller button; feedback is not attributed to the device's family.
+  const group = await apiGroup(page, scene.groupId, await keyOf(page, scene.groupId));
+  const kidToken = group.me!.kids[0]!.kidToken;
+  await page.goto(`/kid/${scene.groupId}/${kidToken}`);
+  await expect(fab(page)).toBeVisible();
+  expect((await fab(page).boundingBox())!.height).toBeLessThan(fullHeight);
+  await fab(page).click();
+  const dialog = page.getByRole("dialog", { name: he.feedback.title });
+  await dialog.getByLabel(he.feedback.textLabel).fill("לא רואים את הנהג");
+  const sent = page.waitForRequest((r) => r.url().endsWith("/api/feedback") && r.method() === "POST");
+  await dialog.getByRole("button", { name: he.feedback.send }).click();
+  const payload = (await sent).postDataJSON() as FeedbackInput;
+  expect(payload.context).toMatchObject({ kidPage: true, groupId: scene.groupId });
+  expect(payload.context.familyId).toBeUndefined();
   await expect(page.getByText(he.feedback.thanks)).toBeVisible();
 });
 
