@@ -11,4 +11,8 @@ export interface Env {
   AI?: Ai;
   /** Workers AI vision model for invitation parsing; see wrangler.jsonc. */
   INVITE_MODEL?: string;
+  /** Fine-grained PAT (Issues: read/write) for opening feedback issues; optional. See README "Feedback". */
+  GITHUB_FEEDBACK_TOKEN?: string;
+  /** `owner/repo` for feedback issues; defaults to mamlukishay/driver. */
+  GITHUB_REPO?: string;
 }

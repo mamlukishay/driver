@@ -2,6 +2,7 @@ import { LocationProvider, Route, Router } from "preact-iso";
 import type { Leg } from "../shared/types.ts";
 import { he } from "./i18n/he.ts";
 import { ToastHost } from "./components/Toast.tsx";
+import { FeedbackHost } from "./feedback/Feedback.tsx";
 import { useHistoryEffects } from "./nav.ts";
 import { Board } from "./screens/Board.tsx";
 import { Devices } from "./screens/Devices.tsx";
@@ -60,6 +61,7 @@ function Shell() {
         <Route default component={NotFound} />
       </Router>
       <ToastHost />
+      <FeedbackHost />
     </>
   );
 }
