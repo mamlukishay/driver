@@ -1,3 +1,4 @@
+import { familyDisplayName } from "../../shared/familyLabel.ts";
 import { useEffect, useState } from "preact/hooks";
 import type { KidEventView, KidLegStatus, KidRide, KidView, Leg } from "../../shared/types.ts";
 import { LEGS } from "../../shared/types.ts";
@@ -110,7 +111,7 @@ function KidEvent({ group, token, focused, e, next }: { group: string; token: st
 }
 
 /** First name of the driver's parent, for "X יצא/ה לדרך" / "X למטה!". */
-const driverName = (r: KidRide) => r.driver.parents[0]?.name || he.family(r.driver.name);
+const driverName = (r: KidRide) => r.driver.parents[0]?.name || he.family(familyDisplayName(r.driver));
 
 /** The big, glanceable status line of a leg. */
 function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ride: KidRide | null }) {
@@ -121,7 +122,7 @@ function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ri
       main = he.kid.status.waiting;
       break;
     case "assigned":
-      main = he.kid.driver(ride!.driver.name);
+      main = he.kid.driver(familyDisplayName(ride!.driver));
       hint = he.kid.at(ride!.departAt);
       break;
     case "onTheWay":
@@ -202,7 +203,7 @@ function KidLeg({
       <StatusBlock leg={leg} status={status} ride={r} />
       {status !== "assigned" && (
         <span class="small">
-          {he.kid.driver(r.driver.name)} · <span class="num">{he.kid.at(r.departAt)}</span>
+          {he.kid.driver(familyDisplayName(r.driver))} · <span class="num">{he.kid.at(r.departAt)}</span>
         </span>
       )}
       <CarPic group={group} car={r.car} color={r.driver.color} big />

@@ -1,6 +1,6 @@
 import { useReducer, useRef } from "preact/hooks";
 import type { EventView, FamilyView, Leg } from "../shared/types.ts";
-import { familyLabel, type LabelFamily } from "../shared/familyLabel.ts";
+import { familyDisplayName, familyLabel, type LabelFamily } from "../shared/familyLabel.ts";
 import { he } from "./i18n/he.ts";
 
 /** The Hebrew display label of a family, disambiguated against the rest of the group. */
@@ -75,7 +75,10 @@ export function eventIndex(ev: EventView) {
     fam: (id: string) => famById.get(id),
     kid: (id: string) => kidById.get(id),
     kidName: (id: string) => kidById.get(id)?.name ?? "?",
-    famName: (id: string) => famById.get(id)?.name ?? "?",
+    famName: (id: string) => {
+      const f = famById.get(id);
+      return f ? familyDisplayName(f) : "?";
+    },
     /** "משפחת X", disambiguated when names collide. */
     famLabel: (id: string) => famLabel(famById.get(id), ev.families),
     car: (familyId: string, carId: string) => famById.get(familyId)?.cars.find((c) => c.id === carId),

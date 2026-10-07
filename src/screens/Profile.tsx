@@ -77,7 +77,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
   };
   return (
     <>
-      <FamilyForm group={group} initial={initial} submitLabel={he.common.save} places={places} onSubmit={save} />
+      <FamilyForm group={group} initial={initial} submitLabel={he.common.save} places={places} revealErrors={!initial.name} onSubmit={save} />
       {fam.kids.length > 0 && (
         <section class="card" aria-labelledby="kidlinks-h">
           <h2 class="hs" id="kidlinks-h">

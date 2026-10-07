@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildFamily, createEventState, isDate, isTime, validateEventInput, validateFamilyInput } from "./validate.ts";
+import { buildFamily, createEventState, isDate, isJunkName, isTime, validateEventInput, validateFamilyInput } from "./validate.ts";
 
 const input = {
   name: " Cohen ",
@@ -35,6 +35,26 @@ describe("validateFamilyInput", () => {
       { ...input, cars: [{ label: "x", seats: 13 }] },
     ];
     for (const b of bads) expect(validateFamilyInput(b).ok).toBe(false);
+  });
+
+  test("rejects blank and stringified-missing names (family, parent, kid)", () => {
+    for (const junk of ["   ", "undefined", " undefined ", "Undefined", "null", "NULL", undefined, null, 5]) {
+      expect(validateFamilyInput({ ...input, name: junk }).ok).toBe(false);
+      expect(validateFamilyInput({ ...input, parents: [{ name: junk, phone: "050-1234567" }] }).ok).toBe(false);
+      expect(validateFamilyInput({ ...input, kids: [{ name: junk }] }).ok).toBe(false);
+    }
+  });
+
+  test("names that merely contain the words are fine", () => {
+    expect(validateFamilyInput({ ...input, name: "Nullman" }).ok).toBe(true);
+    expect(validateFamilyInput({ ...input, kids: [{ name: "undefined2" }] }).ok).toBe(true);
+  });
+});
+
+describe("isJunkName", () => {
+  test("missing, blank or a stringified missing value", () => {
+    for (const v of [undefined, null, 0, "", "  ", "undefined", "null", " Null "]) expect(isJunkName(v)).toBe(true);
+    for (const v of ["כהן", "Nullman", "undefined family"]) expect(isJunkName(v)).toBe(false);
   });
 });
 
