@@ -61,6 +61,19 @@ test("from a board: menu → group settings, back returns to the board (not the 
   await expect(page).not.toHaveURL(/sheet=/);
   await expect(menu(page)).toBeHidden();
 
+  // Esc closes it; the screen underneath takes taps right away (even mid slide-down), and a
+  // quick reopen shows the menu open.
+  await openMenu(page);
+  await page.keyboard.press("Escape");
+  await expect(page).not.toHaveURL(/sheet=/);
+  await menuButton(page).click({ timeout: 2000 });
+  await expect(page).toHaveURL(/[?&]sheet=nav/);
+  await expect(menu(page)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu(page)).toBeHidden();
+  await expect(page.locator(".ov")).toHaveCount(0);
+  await expect(menuButton(page)).toBeFocused();
+
   // Back closes an open menu and stays on the screen.
   await openMenu(page);
   await page.goBack();

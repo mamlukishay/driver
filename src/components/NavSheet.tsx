@@ -22,7 +22,7 @@ export function NavSheet({ group }: { group?: string }) {
   const open = sheet.name === NAV_SHEET;
   const name = useGroupName(open ? group : undefined);
   return (
-    <Sheet open={open} title={group ? (name ?? he.appName) : he.appName} onClose={sheet.close}>
+    <Sheet open={open} title={group ? (name ?? he.appName) : he.appName} onClose={sheet.close} slide>
       {open && <NavBody group={group} />}
     </Sheet>
   );
