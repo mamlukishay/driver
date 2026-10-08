@@ -77,8 +77,9 @@ test("fresh phone: a group link asks 'מי אתם?', returns to the link; settin
   expect(Object.keys(stored)).toEqual([groupId]);
   expect(typeof stored[groupId]).toBe("string");
 
-  // Settings (gear) → "החלפת משפחה" → pick B → the chip updates.
-  await c.page.getByRole("link", { name: he.identity.settings }).click();
+  // Settings (☰ menu) → "החלפת משפחה" → pick B → the chip updates.
+  await c.page.getByRole("banner").getByRole("button", { name: he.nav.menu }).click();
+  await c.page.getByRole("dialog").getByRole("link", { name: he.settings.title }).click();
   await expect(c.page).toHaveURL(new RegExp(`/g/${groupId}/settings$`));
   await expect(c.page.getByRole("region", { name: he.settings.meTitle })).toContainText(he.family(A.name));
   await expect(c.page.getByLabel(he.settings.linkLabel)).toHaveValue(new RegExp(`/join/${groupId}$`));
@@ -97,7 +98,7 @@ test("fresh phone: a group link asks 'מי אתם?', returns to the link; settin
   await c.page.getByRole("link", { name: he.profile.switchFamily }).click();
   await expect(c.page).toHaveURL(new RegExp(`/g/${groupId}/who\\?next=`));
   await expect(c.page.getByRole("heading", { name: he.who.title })).toBeVisible();
-  // Logging out (settings, via the gear) sends the phone back to "מי אתם?".
+  // Logging out (settings, via the ☰ menu) sends the phone back to "מי אתם?".
   await c.page.goto(`/g/${groupId}/settings`);
   await c.page.getByRole("button", { name: he.settings.logout }).click();
   await expect(c.page.getByRole("heading", { name: he.who.title })).toBeVisible();

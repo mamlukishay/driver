@@ -14,7 +14,7 @@ Do not include any real names / content from the source chat. All sample data is
 - **Kid links per event + live ride status**: besides the permanent kid link (next rides), each kid has a per-event link (`/g/:group/kid/:kidId/e/:event`), sent by the parent from the event page and by the driver from driver mode ("שיתוף עם הנוסעים"). The kid page shows one big status per leg: מחפשים הסעה → מי אוסף ומתי → יצא/ה לדרך → את/ה הבא/ה בתור → "{driver} למטה!" (driver taps "הגעתי") → עלית לרכב ✓ → הסתיימה, updated live.
 - **Existing events** (`docs/events-workshop.html`): C's **tabs** "הילדים שלי | הלוך | חזור" (each a real URL, switched with replace or a swipe, gap dots on the leg tabs) + A's **⋯ menu** (עריכת פרטים / שיתוף לקבוצה / ביטול אירוע ↔ שחזור). **Any family edits** (logged old → new, undoable; the slug never changes); a date/time change shows an "עודכן" banner with a WhatsApp update and flags the affected cars "בדקו שעת יציאה" until the driver confirms or changes the time. **Cancel, no delete**: a cancelled event is greyed with "בוטל" and its rides are frozen until "שחזור". Group home: past events collapsed, hidden 30 days after their date (links keep working); a "my kids" chip per event. Kid links are sent only to a kid's own phone; without one, "+ הוספת טלפון".
 - **Several groups per device** (one group = one parents' WhatsApp group; groups stay isolated): joining another group prefills the form from this device's family in a group it already uses ("העתקה מ:"), with that family's kids as unchecked checkboxes ("מי מהילדים בקבוצה הזו?"), so each group gets only its own kids; the copy is independent (no sync). The group name is always visible (the title on the group home and settings, otherwise the identity chip; event headers, kid page); "הקבוצות שלי" lists groups by last use with my kids there and the next event. Any family can rename the group in settings ("שם הקבוצה"); the link/slug stays.
-- **Group admin**: the header back arrow always goes up the hierarchy (board/drive/invite → event → group → הקבוצות שלי), the group-name line links to the group, and the group home links to "הקבוצות שלי". Any family can **delete the group** from settings (a simple yes/no confirm; families, events and photos go for everyone; others see "הקבוצה נמחקה" live; the slug is free again). A group may store its parents' **WhatsApp group link** (optional, editable in settings) for a "פתיחת קבוצת הוואטסאפ" button; sending to the group keeps the WhatsApp chooser. WhatsApp texts are short (2–4 lines, link last).
+- **Group admin**: the header back arrow always goes up the hierarchy (board/drive/invite → event → group → הקבוצות שלי), the group-name line links to the group, and the header ☰ menu (`?sheet=nav`) reaches this group's places, my other groups and "הקבוצות שלי" from every screen with a header. Any family can **delete the group** from settings (a simple yes/no confirm; families, events and photos go for everyone; others see "הקבוצה נמחקה" live; the slug is free again). A group may store its parents' **WhatsApp group link** (optional, editable in settings) for a "פתיחת קבוצת הוואטסאפ" button; sending to the group keeps the WhatsApp chooser. WhatsApp texts are short (2–4 lines, link last).
 - **Seat and unseat on tap** (2026-10-07, supersedes the per-write sentence confirmation in §3 and the `?sheet=seat` example): seating a kid (waiting chip → empty seat, or "אני לוקח/ת") and taking a seated kid off happen on the tap itself, with the 10 s undo toast; nothing there is destructive and a mistake is fixed by tapping again.
 - Build plan: `docs/build-plan.md`.
 - Sections 4–9 are the workshop record (how we chose); where they mention Netlify, §15 supersedes them.
@@ -65,7 +65,8 @@ Personas: **Parent** (registers family, RSVPs kids, offers rides, drives) and **
 /g/:group/e/:event/back   → leg: חזור
 /g/:group/e/:event/drive/:leg → driver run mode (pickup checklist)
 /kid/:group/:kidToken     → kid's read-only "my rides" page
-/me                       → my family profile (kids, cars, phone, address)
+/me                       → my family profile (kids, phone, address; a cars summary)
+/me/cars                  → my cars (הרכבים שלי)
 /me/devices               → "move to another phone" link
 ```
 
@@ -191,7 +192,7 @@ Parents usually get a designed invitation image (date, times, venue, address). C
 - Data model: `parents:[{name, phone}]`, `kids:[{id, name, phone?}]`.
 
 ## 12. Car photo (optional)
-- In the family profile, each car can have an optional **photo** (and optional color + last 3 plate digits). Add it with "+ תמונת הרכב (רשות)" from the gallery or camera. It's compressed on the phone (~800px, ~100 KB) and stored in the group's Durable Object (`img:{imageId}`).
+- On "הרכבים שלי" (`/g/:group/me/cars`, linked from the family page and the board), each car can have an optional **photo** (and optional color + last 3 plate digits). Add it with "+ תמונת הרכב (רשות)" from the gallery or camera. It's compressed on the phone (~800px, ~100 KB) and stored in the group's Durable Object (`img:{imageId}`).
 - **Where it shows**: as a thumbnail on the car card in every leg/offer, large on the **kid page** ("חפשי את הרכב הזה" + color + plate digits), and in the passengers' parents' view. When there's no photo, it falls back to a car icon tinted with the family color + the car label.
 - Why: kids (and other parents at pickup) recognize the car at the curb outside a school or event.
 

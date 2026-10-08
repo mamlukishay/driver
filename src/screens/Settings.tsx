@@ -47,7 +47,7 @@ export function Settings({ group }: { group: string }) {
 
   return (
     <>
-      <Header title={grp.data?.group.name ?? he.common.loading} sub={he.settings.title} up={`/g/${group}`} group={group} noGear titleIsGroup />
+      <Header title={grp.data?.group.name ?? he.common.loading} sub={he.settings.title} up={`/g/${group}`} group={group} titleIsGroup />
       <main id="main" class="content settings">
         <section class="card" aria-labelledby="me-h">
           <h2 class="hs" id="me-h">

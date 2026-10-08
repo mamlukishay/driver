@@ -196,17 +196,18 @@ test("header arrow and group-name link walk up from a board to my groups, withou
   await banner.getByRole("link", { name: "קבוצת כותרת", exact: true }).click();
   await expect.poll(() => path(page)).toBe(g);
 
-  // The group home links to my groups.
-  await banner.getByRole("link", { name: he.home.title, exact: true }).click();
+  // My groups is in the ☰ menu.
+  await banner.getByRole("button", { name: he.nav.menu }).click();
+  await page.getByRole("dialog").getByRole("link", { name: he.nav.allGroups }).click();
   await expect.poll(() => path(page)).toBe("/");
   await expect(page.getByRole("heading", { name: he.home.title })).toBeVisible();
 
-  // Settings is titled with the group's name ("הגדרות הקבוצה" under it, no gear, no group name in the chip);
+  // Settings is titled with the group's name ("הגדרות הקבוצה" under it, no group name in the chip);
   // its arrow goes to the group home, and from there the arrow goes to my groups.
   await page.goto(`${g}/settings`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("קבוצת כותרת");
   await expect(banner.getByText(he.settings.title, { exact: true })).toBeVisible();
-  await expect(banner.getByRole("link", { name: he.identity.settings })).toHaveCount(0);
+  await expect(banner.getByRole("button", { name: he.nav.menu })).toBeVisible();
   await expect(banner.locator(".who-grp")).toHaveCount(0);
   await banner.getByRole("button", { name: he.common.back }).click();
   await expect.poll(() => path(page)).toBe(g);

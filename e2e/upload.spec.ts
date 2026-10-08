@@ -50,10 +50,10 @@ test("an invitation image uploaded on a new event renders", async () => {
   expect(res.headers()["content-type"]).toContain("image/");
 });
 
-test("a car photo uploaded in the profile renders and persists", async () => {
+test("a car photo uploaded on the cars page renders and persists", async () => {
   const { page } = user;
-  await page.goto(`/g/${groupId}/me`);
-  await expect(page.getByRole("heading", { level: 1, name: he.profile.title })).toBeVisible();
+  await page.goto(`/g/${groupId}/me/cars`);
+  await expect(page.getByRole("heading", { level: 1, name: he.cars.title })).toBeVisible();
   await page.getByRole("button", { name: he.form.addCar }).click();
   await page.getByLabel(he.form.carLabel).fill("סובארו כחולה");
   await page.locator("#car-0-photo").setInputFiles(png);
@@ -65,7 +65,7 @@ test("a car photo uploaded in the profile renders and persists", async () => {
   await expectImageLoaded(preview);
 
   await page.getByRole("button", { name: he.common.save }).click();
-  await expect(page.getByText(he.profile.saved)).toBeVisible();
+  await expect(page.getByText(he.cars.saved)).toBeVisible();
 
   // After a reload the photo comes from the server.
   await page.reload();

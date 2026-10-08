@@ -1,6 +1,7 @@
 import { useLocation } from "preact-iso";
 import { useEffect, useState } from "preact/hooks";
-import { draftFrom, draftToInput, FamilyForm, uploadCarPhotos, type FamilyDraft } from "../components/FamilyForm.tsx";
+import { CarPic, Plate } from "../components/CarCard.tsx";
+import { draftFrom, draftToInput, FamilyForm, type FamilyDraft } from "../components/FamilyForm.tsx";
 import { Header, useIdentity, whoUrl } from "../components/Header.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
@@ -66,8 +67,8 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
   }, [focus]);
   const save = async (d: FamilyDraft) => {
     try {
-      const withPhotos = await uploadCarPhotos(group, d);
-      const input = draftToInput(withPhotos);
+      // Cars are edited on their own page: send them as stored now, never a stale copy.
+      const input = draftToInput({ ...d, cars: draftFrom(fam).cars });
       const r = await api.updateMe(group, input);
       setData<GroupResponse>(keys.group(group), { ...data, me: r.me });
       toast.info(he.profile.saved);
@@ -77,7 +78,31 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
   };
   return (
     <>
-      <FamilyForm group={group} initial={initial} submitLabel={he.common.save} places={places} revealErrors={!initial.name} onSubmit={save} />
+      <FamilyForm group={group} initial={initial} submitLabel={he.common.save} places={places} cars={false} revealErrors={!initial.name} onSubmit={save} />
+      <section class="card" aria-labelledby="cars-sum-h">
+        <h2 class="hs" id="cars-sum-h">
+          {he.cars.summary}
+        </h2>
+        {fam.cars.length === 0 ? (
+          <p class="small muted">{he.cars.none}</p>
+        ) : (
+          <ul class="list">
+            {fam.cars.map((c) => (
+              <li key={c.id} class="row">
+                <CarPic group={group} car={c} color={fam.color} />
+                <span class="grow1">
+                  <b>{c.label}</b>
+                  <span class="muted"> · {he.cars.seats(c.seats)}</span>
+                </span>
+                <Plate plate={c.plate} />
+              </li>
+            ))}
+          </ul>
+        )}
+        <a class="btn ghost" href={`/g/${group}/me/cars`}>
+          {he.cars.manage}
+        </a>
+      </section>
       {fam.kids.length > 0 && (
         <section class="card" aria-labelledby="kidlinks-h">
           <h2 class="hs" id="kidlinks-h">
