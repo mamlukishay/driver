@@ -42,17 +42,9 @@ body:has(.ov) .fb-fab {
   inset-block-end: auto;
   inset-block-start: calc(12px + env(safe-area-inset-top, 0px));
 }
-/* Kid page: a small pill at the end of the page, in flow, so it never covers the status cards. */
-.fb-fab.kid {
-  position: static;
-  display: flex;
-  inline-size: fit-content;
-  margin: 0 auto calc(16px + env(safe-area-inset-bottom, 0px));
-  min-block-size: 28px;
-  padding: 4px 10px;
-  border-inline-start: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 12px;
+/* Kid page: the page is asphalt; a darker edge keeps the tab from glowing. */
+body:has(.kidpage) .fb-fab {
+  border-color: var(--asphalt-2);
 }
 
 .fb-form {

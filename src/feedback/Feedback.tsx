@@ -11,7 +11,7 @@ import { he } from "../i18n/he.ts";
 import { useSheet } from "../nav.ts";
 import { feedbackApi } from "./api.ts";
 import { captureViewport } from "./capture.ts";
-import { collectContext, isKidPath } from "./context.ts";
+import { collectContext } from "./context.ts";
 import { fmtClock, useRecorder } from "./recorder.ts";
 import "./feedback.css";
 
@@ -53,7 +53,7 @@ export function FeedbackHost() {
       {!open && (
         <button
           type="button"
-          class={`fb-fab ${isKidPath(path) ? "kid" : ""}`}
+          class="fb-fab"
           data-feedback-ignore
           aria-label={he.feedback.buttonLabel}
           aria-busy={busy}
