@@ -189,7 +189,7 @@ Feedback storage: with the R2 binding `IMAGES`, records go to `feedback/{yyyy-mm
 
 - **Mobile-first, RTL, Hebrew.** Big tap targets.
 - **One action per screen.** The identity chip "פועל/ת בתור: משפחת X" is always visible, in the family color, and opens the family page "המשפחה שלי" (which offers "לא אתם? החלפת משפחה"); the header ☰ menu reaches every place two taps away (this group's events, family, cars and settings with sign out; my other groups; all groups; a new group).
-- **Seating and unseating act on tap** (no confirmation sheet; a second tap while the request is in flight is ignored): tap a waiting kid then an empty seat (or "אני לוקח/ת") to seat, tap a seated kid to take them off. Destructive or broad writes (cancel event, remove offer, delete group) still confirm. After any write, a 10 s undo toast.
+- **Seating and unseating act on tap** (no confirmation sheet; a second tap while the request is in flight is ignored): tap a waiting kid then an empty seat (or "אני לוקח/ת") to seat, tap a seated kid to take them off. Destructive or broad writes (cancel event, remove offer, delete group) still confirm. After any write, a 5 s undo toast.
 - **Gap meter per leg**, in three states:
   - "חסרים N מקומות" (amber)
   - "יש מקום לכולם · N ממתינים לשיבוץ"

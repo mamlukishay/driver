@@ -1600,7 +1600,7 @@ a.who:hover {
   block-size: 3px;
   background: var(--accent);
   inline-size: 100%;
-  animation: tb 10s linear forwards;
+  animation: tb 5s linear forwards;
 }
 @keyframes tb {
   to {

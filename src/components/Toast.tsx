@@ -1,4 +1,4 @@
-/** Global toast with an optional undo countdown (10 s). Undo calls POST /undo with the logId. */
+/** Global toast with an optional undo countdown (5 s). Undo calls POST /undo with the logId. */
 import { useEffect, useState } from "preact/hooks";
 import type { EventView } from "../../shared/types.ts";
 import { api, ApiError } from "../api.ts";
@@ -6,7 +6,7 @@ import { errorText, he } from "../i18n/he.ts";
 import { keys, setData } from "../store.ts";
 import { useForce } from "../util.ts";
 
-const UNDO_MS = 10_000;
+const UNDO_MS = 5_000;
 
 interface ToastState {
   id: number;
