@@ -141,6 +141,12 @@ export function logLine(ev: EventView, entry: EventView["log"][number]): string 
     case "setArrived":
       text = L.setArrived(idx.kidName(a.kidId), a.arrived);
       break;
+    case "setEta":
+      text = L.setEta(a.kidIds.map(idx.kidName).join(", "), a.minutes);
+      break;
+    case "endRun":
+      text = L.endRun(a.ended);
+      break;
     case "editEvent": {
       const changes = Object.keys(a.prev ?? {}).map((k) => {
         const from = a.prev?.[k as keyof typeof a.prev];
