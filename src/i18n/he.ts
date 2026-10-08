@@ -127,6 +127,7 @@ export const he = {
     event_cancelled: "האירוע בוטל, אז ההסעות מוקפאות. אפשר לשחזר אותו מתפריט האירוע.",
     network: "אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.",
     unknown: "משהו השתבש. נסו שוב בעוד רגע.",
+    kid_slug_taken: "הכתובת הזו כבר תפוסה בקבוצה",
   } satisfies Record<ClientErrorCode, string>,
 
   home: {
@@ -212,6 +213,11 @@ export const he = {
     plateInvalid: "עד 3 ספרות",
     less: "פחות",
     more: "יותר",
+    kidSlugLabel: (kid: string) => (kid ? `כתובת הקישור של ${kid}` : "כתובת הקישור של הילד/ה"),
+    kidSlugSuggested: "הצעה אוטומטית, אפשר לשנות",
+    kidSlugInvalid: "רק אותיות אנגליות קטנות, ספרות ומקף, 2–30 תווים",
+    kidSlugTaken: "הכתובת הזו כבר תפוסה בקבוצה",
+    suggestingKidSlug: "מציע כתובת…",
   },
 
   group: {
@@ -259,6 +265,8 @@ export const he = {
     cover: "תמונת ההזמנה",
     removeCover: "הסרת התמונה",
     submit: "צור אירוע",
+    slugWordSuggested: "הצעה אוטומטית, אפשר לשנות",
+    suggestingSlugWord: "מציע מילה…",
   },
 
   event: {

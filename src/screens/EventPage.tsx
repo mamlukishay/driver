@@ -107,12 +107,12 @@ function KidRsvp({
 }
 
 /** WhatsApp text for a kid: the event, one line per leg they need, and their per-event live link. */
-function kidEventText(group: string, ev: EventView, kid: { id: string; name: string }): string {
+function kidEventText(group: string, ev: EventView, kid: { id: string; name: string; slug?: string }): string {
   const idx = eventIndex(ev);
   const plan = ev.kidPlans[kid.id];
   const legs = LEGS.filter((leg) => plan?.[leg]).map((leg) => {
     const o = ev.offers[leg].find((x) => x.kidIds.includes(kid.id));
     return he.wa.legLine(leg, o ? { family: idx.famLabel(o.familyId), departAt: o.departAt } : null);
   });
-  return he.wa.kidEvent({ kid: kid.name, title: ev.title, date: fmtDate(ev.date), legs, url: appUrl(kidPath(group, kid.id, ev.id)) });
+  return he.wa.kidEvent({ kid: kid.name, title: ev.title, date: fmtDate(ev.date), legs, url: appUrl(kidPath(group, kid, ev.id)) });
 }

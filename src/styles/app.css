@@ -724,6 +724,42 @@ a.who:hover {
     transform: rotate(360deg);
   }
 }
+/* A link field: the fixed start of the URL (muted mono; cut from its start when the row is narrow) and the
+   editable last part, read left to right. The spinner moves to the input's right, its empty side here. */
+.urlbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  direction: ltr;
+}
+.urlbox-pre {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.urlbox .inwrap {
+  flex: 1 0 8em;
+  min-inline-size: 8em;
+}
+.urlbox input,
+.fld .urlbox input[dir="ltr"] {
+  font-family: var(--ff-mono);
+  text-align: start;
+}
+.urlbox .inwrap.busy input {
+  padding-left: 12px;
+  padding-right: 38px;
+}
+.urlbox .spin {
+  left: auto;
+  right: 13px;
+}
 .fld.err .hint,
 .hint.bad {
   color: var(--bad);

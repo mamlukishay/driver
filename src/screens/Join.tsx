@@ -17,7 +17,7 @@ import { Header, useMe, whoUrl } from "../components/Header.tsx";
 import { Sheet } from "../components/Sheet.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
-import { api } from "../api.ts";
+import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { myGroupsByLastUsed, setBrowsing, setIdentity } from "../identity.ts";
 import { useLeave, useReplaceLink, useSheet, withQuery } from "../nav.ts";
@@ -75,7 +75,7 @@ function prefillDraft(src: Source): { draft: FamilyDraft; kids: KidChoice[] } {
   const p = prefillFrom(src.me);
   const kids = p.kids.map((k) => ({ name: k.name, phone: k.phone ? (formatPhoneLocal(k.phone) ?? k.phone) : "" }));
   const draft = draftFrom(p.family);
-  if (kids.length === 0) draft.kids = [{ name: "", phone: "" }];
+  if (kids.length === 0) draft.kids = [{ name: "", phone: "", rk: "r0" }];
   return { draft, kids };
 }
 
@@ -87,7 +87,7 @@ export function Join({ group }: { group: string }) {
   const { route, query } = useLocation();
   const me = useMe(group);
   const grp = useGroup(group);
-  const { places } = useConfig();
+  const { places, slugSuggest } = useConfig();
   const sheet = useSheet();
   const leave = useLeave();
   const replaceLink = useReplaceLink();
@@ -109,7 +109,8 @@ export function Join({ group }: { group: string }) {
   // Same-name families already in the group (oldest first), while the "זו המשפחה שלכם?" sheet is open.
   const dups: FamilyPublic[] = sheet.name === "dup" && pending ? sameNameFamilies(pending.name, byCreation(families)) : [];
 
-  const register = async (d: FamilyDraft) => {
+  /** `fromForm`: a taken kid link name is rethrown so the form marks the field (from the sheet it is a toast). */
+  const register = async (d: FamilyDraft, fromForm = false) => {
     try {
       const input = draftToInput({ ...d, cars: d.cars.map(({ photoId: _p, ...c }) => c) });
       const r = await api.register(group, input);
@@ -122,6 +123,7 @@ export function Join({ group }: { group: string }) {
             const withPhotos = await uploadCarPhotos(group, d);
             const ids = g2.me.cars.map((c) => c.id);
             const again = draftToInput({ ...withPhotos, cars: withPhotos.cars.map((c, i) => ({ ...c, id: ids[i] })) });
+            // Kids as just stored (no `slug`: their link names stay as they are).
             await api.updateMe(group, { ...again, kids: g2.me.kids.map((k) => ({ id: k.id, name: k.name, ...(k.phone ? { phone: k.phone } : {}) })) });
           }
         } catch (e) {
@@ -130,6 +132,7 @@ export function Join({ group }: { group: string }) {
       }
       leave(next);
     } catch (e) {
+      if (fromForm && e instanceof ApiError && e.code === "kid_slug_taken") throw e;
       toast.error(e);
     }
   };
@@ -141,7 +144,7 @@ export function Join({ group }: { group: string }) {
       sheet.open("dup");
       return;
     }
-    await register(d);
+    await register(d, true);
   };
 
   const pickExisting = (f: FamilyPublic) => {
@@ -194,6 +197,7 @@ export function Join({ group }: { group: string }) {
               kidChoices={pre?.kids}
               submitLabel={he.join.submit}
               places={places}
+              slugSuggest={slugSuggest}
               onSubmit={submit}
             />
           </>
