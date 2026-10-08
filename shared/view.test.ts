@@ -17,8 +17,8 @@ function chain(steps: [string, Action][], start: EventState = baseEvent()): Even
 
 /** A (host) drives out with b1 + a1; B drives back with c1. D is unrelated. */
 const state = chain([
-  ["fama", { type: "offerCar", leg: "out", carId: "cara", seats: 4, departAt: "09:30" }],
-  ["famb", { type: "offerCar", leg: "back", carId: "carb", seats: 3, departAt: "13:00" }],
+  ["fama", { type: "offerCar", leg: "out", carId: "cara", driverId: "p-fama", seats: 4, departAt: "09:30" }],
+  ["famb", { type: "offerCar", leg: "back", carId: "carb", driverId: "p-famb", seats: 3, departAt: "13:00" }],
   ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],
   ["fama", { type: "seatKid", offerId: "o1", kidId: "a1" }],
   ["famc", { type: "seatKid", offerId: "o2", kidId: "c1" }],
@@ -114,7 +114,7 @@ describe("kidView: live fields and per-event focus", () => {
   const group = { id: "grp", name: "Class", createdAt: 0, version: 1 };
   // A drives out: seating order b1 (Levi), a1 (Cohen), c1 (Mizrahi).
   const s0 = chain([
-    ["fama", { type: "offerCar", leg: "out", carId: "cara", seats: 4, departAt: "09:30" }],
+    ["fama", { type: "offerCar", leg: "out", carId: "cara", driverId: "p-fama", seats: 4, departAt: "09:30" }],
     ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],
     ["fama", { type: "seatKid", offerId: "o1", kidId: "a1" }],
     ["famc", { type: "seatKid", offerId: "o1", kidId: "c1" }],
@@ -170,7 +170,7 @@ describe("kidLegStatus", () => {
   const r = (over: Partial<KidRide> = {}): KidRide => ({
     offerId: "o1",
     departAt: "09:30",
-    driver: { familyId: "fama", name: "Cohen", color: 0, parents: A.parents },
+    driver: { familyId: "fama", name: "Cohen", color: 0, parents: A.parents, person: A.parents[0]! },
     car: A.cars[0]!,
     started: false,
     picked: false,

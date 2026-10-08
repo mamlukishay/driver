@@ -13,6 +13,7 @@ import { useLive } from "../live.ts";
 import { useSheet } from "../nav.ts";
 import { useEvent } from "../store.ts";
 import { addMinutes, cx, eventIndex } from "../util.ts";
+import { lastDriver, setLastDriver } from "../identity.ts";
 import { askText, runAction } from "./eventCommon.tsx";
 import { EventFrame } from "./EventFrame.tsx";
 
@@ -42,10 +43,13 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   const [sel, setSel] = useState<string | null>(null);
   const me = ev.me;
   const offers = ev.offers[leg];
-  const myOffer = offers.find((o) => o.familyId === me);
+  // A family may drive several cars on a leg (one per driver); "אני לוקח/ת" fills the first with room.
+  const myOffers = offers.filter((o) => o.familyId === me);
+  const myOffer = myOffers.find((o) => o.seats > o.kidIds.length) ?? myOffers[0];
   const myFam = me ? idx.fam(me) : undefined;
   const waiting = ev.waiting[leg];
   const myFree = myOffer ? myOffer.seats - myOffer.kidIds.length : 0;
+  const canOffer = !!myFam && freeForOffer(ev, leg, myFam.id).ok;
 
   // Drop a selection that is no longer waiting (seated by someone else, plan changed).
   useEffect(() => {
@@ -152,6 +156,7 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               offer={o}
               car={idx.car(o.familyId, o.carId)}
               familyLabel={idx.famLabel(o.familyId)}
+              driverName={idx.driver(o)?.name}
               color={fam?.color ?? 0}
               mine={mine}
               armed={!!sel && (mine || kidMine(sel))}
@@ -163,14 +168,14 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               })}
               onEmptySeat={() => onEmpty(o)}
               onKid={(kidId) => onSeated(o, kidId)}
-              driveHref={mine && !frozen ? `/g/${group}/e/${ev.id}/drive/${leg}` : undefined}
+              driveHref={mine && !frozen ? `/g/${group}/e/${ev.id}/drive/${leg}${myOffers.length > 1 ? `?offer=${o.id}` : ""}` : undefined}
               onEdit={mine && !frozen ? () => sheet.open("car", { offer: o.id }) : undefined}
             />
           );
         })}
-        {me && !frozen && !myOffer && myFam && myFam.cars.length > 0 && (
+        {me && !frozen && canOffer && (
           <button type="button" class="btn ghost big" onClick={() => sheet.open("car")}>
-            {he.board.offer(leg)}
+            {myOffer ? he.board.offerAnother(leg) : he.board.offer(leg)}
           </button>
         )}
         {me && !frozen && !myOffer && myFam && myFam.cars.length === 0 && (
@@ -185,6 +190,20 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   );
 }
 
+/**
+ * The cars and people of `familyId` still free on `leg`: a car is offered at most once per leg, and a
+ * person drives at most one of the family's cars per leg. `except` is the offer being edited.
+ */
+function freeForOffer(ev: EventView, leg: Leg, familyId: string, except?: string) {
+  const idx = eventIndex(ev);
+  const fam = idx.fam(familyId);
+  const others = ev.offers[leg].filter((o) => o.id !== except);
+  const cars = (fam?.cars ?? []).filter((c) => !others.some((o) => o.carId === c.id));
+  const busy = new Set(others.filter((o) => o.familyId === familyId).map((o) => idx.driver(o)?.id));
+  const people = (fam?.parents ?? []).filter((p) => !busy.has(p.id));
+  return { cars, people, ok: cars.length > 0 && people.length > 0 };
+}
+
 function useOfferFromQuery(ev: EventView, leg: Leg, id: string | undefined) {
   return id ? ev.offers[leg].find((o) => o.id === id) : undefined;
 }
@@ -194,8 +213,11 @@ function CarSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }
   const idx = eventIndex(ev);
   const open = sheet.name === "car" && !!ev.me;
   const editing = useOfferFromQuery(ev, leg, sheet.query.offer);
-  const cars = (ev.me && idx.fam(ev.me)?.cars) || [];
+  const people = (ev.me && idx.fam(ev.me)?.parents) || [];
+  const free = ev.me ? freeForOffer(ev, leg, ev.me, editing?.id) : { cars: [], people: [] };
+  const cars = editing ? (ev.me && idx.fam(ev.me)?.cars) || [] : free.cars;
   const [carId, setCarId] = useState("");
+  const [driverId, setDriverId] = useState("");
   const [seats, setSeats] = useState(4);
   const [depart, setDepart] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -205,11 +227,14 @@ function CarSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }
     if (!open) return;
     setConfirmRemove(false);
     if (editing) {
+      setDriverId(idx.driver(editing)?.id ?? "");
       setCarId(editing.carId);
       setSeats(editing.seats);
       setDepart(editing.departAt);
     } else {
       const c = cars[0];
+      const last = lastDriver(group);
+      setDriverId((free.people.find((p) => p.id === last) ?? free.people[0])?.id ?? "");
       setCarId(c?.id ?? "");
       setSeats(c?.seats ?? 4);
       setDepart(leg === "out" ? addMinutes(ev.start, -30) : ev.returnTime);
@@ -217,18 +242,28 @@ function CarSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }
   }, [open, editing?.id]);
 
   const car = cars.find((c) => c.id === carId);
+  const driver = free.people.find((p) => p.id === driverId);
   const maxSeats = car?.seats ?? 8;
   const minSeats = Math.max(1, editing?.kidIds.length ?? 1);
 
   const submit = async (e: Event) => {
     e.preventDefault();
-    if (!car || !/^\d{2}:\d{2}$/.test(depart)) return;
+    if (!car || !driver || !/^\d{2}:\d{2}$/.test(depart)) return;
     setBusy(true);
+    const driverChanged = !!editing && driver.id !== idx.driver(editing)?.id;
     const ok = editing
-      ? await runAction(group, ev, { type: "updateOffer", offerId: editing.id, seats, departAt: depart }, he.toast.offerUpdated)
-      : await runAction(group, ev, { type: "offerCar", leg, carId: car.id, seats, departAt: depart }, he.toast.offered(leg));
+      ? await runAction(
+          group,
+          ev,
+          { type: "updateOffer", offerId: editing.id, seats, departAt: depart, ...(driverChanged ? { driverId: driver.id } : {}) },
+          he.toast.offerUpdated,
+        )
+      : await runAction(group, ev, { type: "offerCar", leg, carId: car.id, driverId: driver.id, seats, departAt: depart }, he.toast.offered(leg));
     setBusy(false);
-    if (ok) sheet.close();
+    if (ok) {
+      setLastDriver(group, driver.id);
+      sheet.close();
+    }
   };
   const remove = async () => {
     if (!editing) return;
@@ -241,6 +276,19 @@ function CarSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }
   return (
     <Sheet open={open} title={editing ? he.carSheet.titleEdit : he.carSheet.titleNew(leg)} onClose={sheet.close}>
       <form class="stack-form" onSubmit={submit}>
+        {people.length > 1 && (
+          <fieldset class="pills">
+            <legend class="small muted">{he.carSheet.driver}</legend>
+            {people.map((p) => {
+              const can = free.people.some((x) => x.id === p.id);
+              return (
+                <button type="button" class="pill" aria-pressed={p.id === driverId} disabled={!can} onClick={() => setDriverId(p.id)}>
+                  {p.name}
+                </button>
+              );
+            })}
+          </fieldset>
+        )}
         {!editing && cars.length > 1 && (
           <fieldset class="pills">
             <legend class="small muted">{he.carSheet.car}</legend>
@@ -277,7 +325,7 @@ function CarSheet({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }
           <label for="offer-depart">{he.carSheet.depart}</label>
           <input id="offer-depart" type="time" value={depart} required onInput={(e) => setDepart((e.currentTarget as HTMLInputElement).value)} />
         </div>
-        <button type="submit" class="btn big" disabled={busy || !car} data-autofocus>
+        <button type="submit" class="btn big" disabled={busy || !car || !driver} data-autofocus>
           {busy ? he.common.saving : editing ? he.carSheet.save : he.carSheet.submit}
         </button>
         {editing &&

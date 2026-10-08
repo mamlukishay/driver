@@ -68,8 +68,46 @@ describe("buildFamily", () => {
     const first = buildFamily(v.value, base, null, gen);
     expect(first.kids.map((k) => k.id)).toEqual(["id1", "id2"]);
     const edited = buildFamily({ ...v.value, kids: [{ id: "id2", name: "Tali" }, { name: "New" }] }, base, first, gen);
-    expect(edited.kids).toEqual([{ id: "id2", name: "Tali" }, { id: "id4", name: "New" }]);
+    expect(edited.kids).toEqual([{ id: "id2", name: "Tali" }, { id: "id5", name: "New" }]);
     expect("keyHash" in edited).toBe(false);
+  });
+
+  test("people (drivers) keep their ids through an edit; unknown or repeated ids get fresh ones", () => {
+    let n = 0;
+    const gen = { id: () => `g${++n}` };
+    const base = { id: "fam1", color: 0, createdAt: 0 };
+    const v = validateFamilyInput({ ...input, parents: [{ name: "Dana", phone: "050-1234567" }, { name: "Avi", phone: "052-1234567" }] });
+    if (!v.ok) throw new Error();
+    const first = buildFamily(v.value, base, null, gen);
+    const [dana, avi] = first.parents;
+    expect(dana!.id).toBeTruthy();
+    expect(avi!.id).not.toBe(dana!.id);
+    // Round trip: Dana removed, Avi renamed, a new person added, a foreign id and a repeat ignored.
+    const again = validateFamilyInput({
+      ...input,
+      parents: [
+        { id: avi!.id, name: "Avi K", phone: "052-1234567" },
+        { name: "Savta", phone: "053-1234567" },
+        { id: "nope", name: "Nanny", phone: "054-1234567" },
+        { id: avi!.id, name: "Twin", phone: "055-1234567" },
+      ],
+    });
+    if (!again.ok) throw new Error();
+    expect(again.value.parents[0]).toEqual({ id: avi!.id, name: "Avi K", phone: "+972521234567" });
+    const edited = buildFamily(again.value, base, first, gen);
+    expect(edited.parents[0]).toEqual({ id: avi!.id, name: "Avi K", phone: "+972521234567" });
+    const ids = edited.parents.map((p) => p.id);
+    expect(new Set(ids).size).toBe(4);
+    expect(ids).not.toContain("nope");
+    expect(ids).not.toContain(dana!.id);
+  });
+
+  test("up to 6 people; ids must be short strings", () => {
+    const person = (i: number) => ({ name: `P${i}`, phone: "050-1234567" });
+    expect(validateFamilyInput({ ...input, parents: [1, 2, 3, 4, 5, 6].map(person) }).ok).toBe(true);
+    expect(validateFamilyInput({ ...input, parents: [1, 2, 3, 4, 5, 6, 7].map(person) }).ok).toBe(false);
+    expect(validateFamilyInput({ ...input, parents: [{ ...person(1), id: 5 }] }).ok).toBe(false);
+    expect(validateFamilyInput({ ...input, parents: [{ ...person(1), id: "x".repeat(65) }] }).ok).toBe(false);
   });
 });
 

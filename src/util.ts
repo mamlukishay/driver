@@ -1,5 +1,6 @@
 import { useReducer, useRef } from "preact/hooks";
-import type { EventView, FamilyView, Leg } from "../shared/types.ts";
+import type { EventView, FamilyView, Leg, Offer } from "../shared/types.ts";
+import { offerDriver } from "../shared/drivers.ts";
 import { familyDisplayName, familyLabel, type LabelFamily } from "../shared/familyLabel.ts";
 import { he } from "./i18n/he.ts";
 
@@ -87,6 +88,8 @@ export function eventIndex(ev: EventView) {
     /** "משפחת X", disambiguated when names collide. */
     famLabel: (id: string) => famLabel(famById.get(id), ev.families),
     car: (familyId: string, carId: string) => famById.get(familyId)?.cars.find((c) => c.id === carId),
+    /** The person driving an offer (legacy offers: the family's first person). */
+    driver: (o: Pick<Offer, "familyId" | "driverId">) => offerDriver(o, famById.get(o.familyId)),
   };
 }
 

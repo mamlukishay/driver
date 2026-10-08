@@ -112,7 +112,8 @@ function kidEventText(group: string, ev: EventView, kid: { id: string; name: str
   const plan = ev.kidPlans[kid.id];
   const legs = LEGS.filter((leg) => plan?.[leg]).map((leg) => {
     const o = ev.offers[leg].find((x) => x.kidIds.includes(kid.id));
-    return he.wa.legLine(leg, o ? { family: idx.famLabel(o.familyId), departAt: o.departAt } : null);
+    const driver = o && idx.driver(o)?.name;
+    return he.wa.legLine(leg, o ? { family: idx.famLabel(o.familyId), departAt: o.departAt, ...(driver ? { driver } : {}) } : null);
   });
   return he.wa.kidEvent({ kid: kid.name, title: ev.title, date: fmtDate(ev.date), legs, url: appUrl(kidPath(group, kid, ev.id)) });
 }

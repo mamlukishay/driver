@@ -72,10 +72,12 @@ async function scene(page: Page): Promise<Scene> {
   // Seating order = pickup order: the driver's own kid, נועה, then the siblings.
   const order = [DRIVER.kid, NOA, "מאיה", "יואב"].map((n) => kids[n]!);
   for (const k of order) await act(page, s, famOf[k]!, { type: "setKidPlan", kidId: k, rsvp: "yes", out: true, back: true });
-  const carId = ev0.families.find((f) => f.id === driverId)!.cars[0]!.id;
+  const mineFam = ev0.families.find((f) => f.id === driverId)!;
+  const carId = mineFam.cars[0]!.id;
+  const person = mineFam.parents[0]!.id;
   const offer = {} as Record<Leg, string>;
   for (const leg of ["out", "back"] as const) {
-    const ev = await act(page, s, driverId, { type: "offerCar", leg, carId, seats: 6, departAt: leg === "out" ? "16:00" : "18:45" });
+    const ev = await act(page, s, driverId, { type: "offerCar", leg, carId, driverId: person, seats: 6, departAt: leg === "out" ? "16:00" : "18:45" });
     offer[leg] = ev.offers[leg].find((o) => o.familyId === driverId)!.id;
     for (const k of order) await act(page, s, driverId, { type: "seatKid", offerId: offer[leg], kidId: k });
   }

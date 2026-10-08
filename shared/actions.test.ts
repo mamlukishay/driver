@@ -19,8 +19,8 @@ function run(steps: [string, Action][], start = baseEvent(), c: ActionCtx = ctx(
   return steps.reduce((s, [actor, a]) => ok(applyAction(s, c, a, actor, NOW)), start);
 }
 
-const offerA = (leg: "out" | "back" = "out", seats = 4): [string, Action] => ["fama", { type: "offerCar", leg, carId: "cara", seats, departAt: "09:30" }];
-const offerB = (leg: "out" | "back" = "out", seats = 3): [string, Action] => ["famb", { type: "offerCar", leg, carId: "carb", seats, departAt: "09:40" }];
+const offerA = (leg: "out" | "back" = "out", seats = 4): [string, Action] => ["fama", { type: "offerCar", leg, carId: "cara", driverId: "p-fama", seats, departAt: "09:30" }];
+const offerB = (leg: "out" | "back" = "out", seats = 3): [string, Action] => ["famb", { type: "offerCar", leg, carId: "carb", driverId: "p-famb", seats, departAt: "09:40" }];
 const seat = (actor: string, offerId: string, kidId: string): [string, Action] => [actor, { type: "seatKid", offerId, kidId }];
 
 /** Strips the version so states before an action and after its undo compare equal. */
@@ -82,9 +82,9 @@ describe("setKidPlan", () => {
 describe("offerCar", () => {
   test("own car allowed; someone else's car forbidden; unknown car not_found", () => {
     const s = run([offerA()]);
-    expect(s.offers.out).toEqual([{ id: "o1", familyId: "fama", carId: "cara", seats: 4, departAt: "09:30", kidIds: [] }]);
+    expect(s.offers.out).toEqual([{ id: "o1", familyId: "fama", carId: "cara", driverId: "p-fama", seats: 4, departAt: "09:30", kidIds: [] }]);
     expect(err(applyAction(baseEvent(), ctx(), offerA()[1], "famb", NOW))).toBe("forbidden");
-    expect(err(applyAction(baseEvent(), ctx(), { type: "offerCar", leg: "out", carId: "x", seats: 1, departAt: "09:00" }, "fama", NOW))).toBe("not_found");
+    expect(err(applyAction(baseEvent(), ctx(), { type: "offerCar", leg: "out", carId: "x", driverId: "p-fama", seats: 1, departAt: "09:00" }, "fama", NOW))).toBe("not_found");
   });
 
   test("one offer per family per leg; the other leg is fine", () => {
@@ -171,7 +171,7 @@ describe("seatKid", () => {
   });
 });
 
-const offerD = (): [string, Action] => ["famd", { type: "offerCar", leg: "out", carId: "card", seats: 2, departAt: "09:00" }];
+const offerD = (): [string, Action] => ["famd", { type: "offerCar", leg: "out", carId: "card", driverId: "p-famd", seats: 2, departAt: "09:00" }];
 
 describe("unseatKid", () => {
   const s = run([offerA(), seat("famb", "o1", "b1")]);
@@ -461,7 +461,7 @@ describe("cancel / restore", () => {
     const s = run([offerA("out"), seat("fama", "o1", "a1"), ["famc", { type: "editEvent", patch: { start: "10:30" } }], ["famb", { type: "cancelEvent" }]]);
     const blocked: [string, Action][] = [
       ["famb", { type: "setKidPlan", kidId: "b1", rsvp: "no", out: false, back: false }],
-      ["famb", { type: "offerCar", leg: "out", carId: "carb", seats: 2, departAt: "09:00" }],
+      ["famb", { type: "offerCar", leg: "out", carId: "carb", driverId: "p-famb", seats: 2, departAt: "09:00" }],
       ["fama", { type: "updateOffer", offerId: "o1", seats: 3 }],
       ["fama", { type: "removeOffer", offerId: "o1" }],
       ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],

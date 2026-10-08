@@ -34,7 +34,13 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
 
 /* ---------- families ---------- */
 
+/**
+ * A parent or any other adult who drives the family's kids (grandma, nanny): "הורים ונהגים".
+ * Anyone on the list can drive any of the family's cars.
+ */
 export interface Parent {
+  /** Stable within the family. Families stored before drivers have none; the worker assigns `p0`, `p1`, … on read. */
+  id: string;
   name: string;
   /** Normalized `+9725XXXXXXXX`. */
   phone: string;
@@ -93,9 +99,16 @@ export interface CarInput {
   photoId?: string;
 }
 
+export interface ParentInput {
+  /** Present when editing an existing person (keeps their id, and so the rides they drive). */
+  id?: string;
+  name: string;
+  phone: string;
+}
+
 export interface FamilyInput {
   name: string;
-  parents: Parent[];
+  parents: ParentInput[];
   address: string;
   kids: KidInput[];
   cars: CarInput[];
@@ -115,6 +128,8 @@ export type FamilyPrivate = Family;
 /** The minimum the reducer needs to know about families. */
 export interface FamilyRef {
   id: string;
+  /** The family's people (drivers); the first is the driver of offers without a valid `driverId`. */
+  parents: readonly { id: string }[];
   kids: readonly { id: string }[];
   cars: readonly { id: string; seats: number }[];
 }
@@ -167,6 +182,11 @@ export interface Offer {
   id: string;
   familyId: string;
   carId: string;
+  /**
+   * Who drives: a person of the family (`Parent.id`). Absent on older offers, or naming someone no longer
+   * in the family → the family's first person (see `offerDriverId`).
+   */
+  driverId?: string;
   seats: number;
   /** `HH:MM` */
   departAt: string;
@@ -200,8 +220,9 @@ export type EventPatch = Partial<Omit<EventInput, "coverImageId">> & {
 
 export type PublicAction =
   | { type: "setKidPlan"; kidId: string; rsvp: Rsvp; out: boolean; back: boolean }
-  | { type: "offerCar"; leg: Leg; carId: string; seats: number; departAt: string }
-  | { type: "updateOffer"; offerId: string; seats?: number; departAt?: string }
+  | { type: "offerCar"; leg: Leg; carId: string; driverId: string; seats: number; departAt: string }
+  /** `prevDriverId` is filled in for the log when the driver changed (absent: the old offer had none); ignored on input. */
+  | { type: "updateOffer"; offerId: string; seats?: number; departAt?: string; driverId?: string; prevDriverId?: string }
   | { type: "removeOffer"; offerId: string }
   | { type: "seatKid"; offerId: string; kidId: string }
   | { type: "unseatKid"; offerId: string; kidId: string }
@@ -224,7 +245,9 @@ export type SystemAction =
   | { type: "clearKidPlan"; kidId: string }
   | { type: "restoreOffer"; leg: Leg; offer: Offer }
   | { type: "setRun"; offerId: string; run: Run | null }
-  | { type: "setDepartAtCheck"; offerId: string; check: boolean };
+  | { type: "setDepartAtCheck"; offerId: string; check: boolean }
+  /** Restores an offer's driver; `null` brings back "no driverId" (an older offer). */
+  | { type: "setOfferDriver"; offerId: string; driverId: string | null };
 
 export type Action = PublicAction | SystemAction;
 export type ActionType = Action["type"];
@@ -289,7 +312,7 @@ export interface FamilyView {
   id: string;
   name: string;
   color: number;
-  parents: { name: string; phone?: string }[];
+  parents: { id: string; name: string; phone?: string }[];
   kids: { id: string; name: string; phone?: string; slug?: string }[];
   cars: CarPublic[];
   address?: string;
@@ -316,7 +339,14 @@ export interface EventView extends EventInput {
 export interface KidRide {
   offerId: string;
   departAt: string;
-  driver: { familyId: string; name: string; color: number; parents: Parent[] };
+  driver: {
+    familyId: string;
+    name: string;
+    color: number;
+    parents: Parent[];
+    /** The person driving this offer (see `offerDriver`); null only for a family with no people. */
+    person: { name: string; phone: string } | null;
+  };
   car: CarPublic;
   started: boolean;
   picked: boolean;

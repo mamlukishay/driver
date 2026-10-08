@@ -8,7 +8,7 @@ const fam = (id: string, kids: (Kid & { kidToken?: string })[]): Family => ({
   id,
   name: id,
   color: 0,
-  parents: [{ name: "P", phone: "+972501234567" }],
+  parents: [{ id: `${id}-p`, name: "P", phone: "+972501234567" }],
   address: "",
   kids,
   cars: [],

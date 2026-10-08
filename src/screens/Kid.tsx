@@ -127,8 +127,10 @@ function KidEvent({
   );
 }
 
-/** First name of the driver's parent, for "X יצא/ה לדרך" / "X למטה!". */
-const driverName = (r: KidRide) => r.driver.parents[0]?.name || he.family(familyDisplayName(r.driver));
+/** The person driving (a cached view from before drivers has no `person`: the first parent). */
+const driverPerson = (r: KidRide) => r.driver.person ?? r.driver.parents[0] ?? null;
+/** The driver's name, for "X יצא/ה לדרך" / "X למטה!". */
+const driverName = (r: KidRide) => driverPerson(r)?.name || he.family(familyDisplayName(r.driver));
 
 /** What a ticket says for a status: the road sign, the huge line (arrived), the hint, its small note, the stamp. */
 export interface TicketCopy {
@@ -237,7 +239,10 @@ function KidLeg({
   // The kid rides in their own family's car: no calling, no "find the car", no "ready".
   const own = r.driver.familyId === familyId;
   const arr = status === "arrived" && !own;
-  const caller = own || status === "picked" || status === "done" ? undefined : r.driver.parents.find((p) => p.phone);
+  // The call goes to the person driving; without their phone, to the first parent who has one.
+  const person = driverPerson(r);
+  const caller =
+    own || status === "picked" || status === "done" ? undefined : person?.phone ? person : r.driver.parents.find((p) => p.phone);
   const ready = async () => {
     setBusy(true);
     try {
@@ -282,7 +287,7 @@ function KidLeg({
                   <b class="tk-to">{leg === "out" ? e.place : home}</b>
                 </div>
               </div>
-              <p class="tk-who">{own ? he.kid.withFamily : <Who family={familyDisplayName(r.driver)} />}</p>
+              <p class="tk-who">{own ? he.kid.withFamily : <Who family={familyDisplayName(r.driver)} person={person?.name || undefined} />}</p>
               {copy.hint && <p class={cx("tk-hint", copy.note && "tk-eta")}>{copy.hint}</p>}
               {copy.note && <small class="tk-note">{copy.note}</small>}
               {copy.stamp && (
@@ -326,8 +331,9 @@ function KidLeg({
   );
 }
 
-function Who({ family }: { family: string }) {
-  const [pre, name, post] = he.kid.driverParts(family);
+/** "דני ממשפחת **כהן** אוסף/ת אותך" (the family alone when the person is unknown). */
+function Who({ family, person }: { family: string; person?: string }) {
+  const [pre, name, post] = he.kid.driverParts(family, person);
   return (
     <>
       {pre}

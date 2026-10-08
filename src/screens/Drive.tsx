@@ -6,6 +6,7 @@
  */
 import type { JSX } from "preact";
 import { useState } from "preact/hooks";
+import { useLocation } from "preact-iso";
 import type { EventView, FamilyView, Leg, Offer, PublicAction } from "../../shared/types.ts";
 import { familyDisplayName } from "../../shared/familyLabel.ts";
 import { formatPhoneLocal, telHref } from "../../shared/phone.ts";
@@ -49,7 +50,10 @@ export function Drive({ group, event, leg }: { group: string; event: string; leg
 }
 
 function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }) {
-  const offer = ev.offers[leg].find((o) => o.familyId === ev.me);
+  // A family with several cars on this leg: the board links each with `?offer=<id>`.
+  const want = useLocation().query.offer;
+  const mine = ev.offers[leg].filter((o) => o.familyId === ev.me);
+  const offer = mine.find((o) => o.id === want) ?? mine[0];
   if (!offer)
     return (
       <>
@@ -60,7 +64,7 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
         </a>
       </>
     );
-  return <DriveRun group={group} ev={ev} leg={leg} offer={offer} />;
+  return <DriveRun key={offer.id} group={group} ev={ev} leg={leg} offer={offer} />;
 }
 
 /* ---------- model ---------- */
@@ -187,7 +191,7 @@ function DriveRun({ group, ev, leg, offer }: { group: string; ev: EventView; leg
   const frozen = !!ev.cancelled;
   const offerId = offer.id;
   const driverFam = idx.fam(offer.familyId);
-  const driver = driverFam?.parents[0]?.name || he.family(driverFam ? familyDisplayName(driverFam) : "");
+  const driver = idx.driver(offer)?.name || he.family(driverFam ? familyDisplayName(driverFam) : "");
   const venueAddr = ev.address || ev.place;
   const times = pickTimes(ev);
 
@@ -283,6 +287,9 @@ function DriveRun({ group, ev, leg, offer }: { group: string; ev: EventView; leg
   const head = (
     <>
       <EventHead group={group} ev={ev} />
+      {(idx.fam(offer.familyId)?.parents.length ?? 0) > 1 && (
+        <p class="small muted">{he.drive.driverLine(idx.driver(offer)?.name ?? "?", idx.car(offer.familyId, offer.carId)?.label ?? "")}</p>
+      )}
       {frozen && (
         <p class="note cancel-note" role="status">
           <b>{he.manage.cancelled}</b>

@@ -99,7 +99,7 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     const outStatus = kid.page.getByRole("status", { name: he.kid.statusLabel("out") });
     const backStatus = kid.page.getByRole("status", { name: he.kid.statusLabel("back") });
     await expect(outStatus).toHaveAttribute("data-status", "assigned");
-    await expect(outStatus).toContainText(he.kid.driver(B.name));
+    await expect(outStatus).toContainText(he.kid.driver(B.name, B.parent));
     await expect(backStatus).toHaveAttribute("data-status", "waiting");
     await expect(backStatus).toContainText(he.kid.status.waiting);
     await expect(kid.page.getByRole("button", { name: he.kid.ready })).toBeVisible();
