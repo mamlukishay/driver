@@ -271,3 +271,15 @@ test("navigation app: the selector switches the logo, survives a reload and matc
   await page.goto(`/g/${s.groupId}/e/${s.eventId}/drive/out`);
   await expect(page.getByRole("link", { name: he.drive.navIn(NOA, "Waze") })).toBeVisible();
 });
+
+test("the back arrow in driver mode returns to the leg tab it was opened from", async () => {
+  const { page } = user;
+  const s = await scene(page);
+  await page.goto("/");
+  await page.evaluate(([g, id]) => localStorage.setItem("trempush.identities", JSON.stringify({ [g!]: id })), [s.groupId, s.driverId]);
+  await page.goto(`/g/${s.groupId}/e/${s.eventId}/back`);
+  await page.locator("a.drive-go").click();
+  await expect(page).toHaveURL(new RegExp(`/drive/back$`));
+  await page.getByRole("button", { name: he.common.back }).click();
+  await expect(page).toHaveURL(new RegExp(`/g/${s.groupId}/e/${s.eventId}/back$`));
+});

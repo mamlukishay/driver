@@ -109,16 +109,26 @@ function restoreScroll(y: number) {
   requestAnimationFrame(go);
 }
 
+/** `prev` is one of the tabs (`up` itself or `up`/out, `up`/back) of the event page `up` points at. */
+function isEventTabOf(prev: string, up: string): boolean {
+  const base = up.split("?")[0]!;
+  if (!/\/e\/[^/]+$/.test(base)) return false;
+  const path = prev.split("?")[0]!;
+  return path === base || path === `${base}/out` || path === `${base}/back`;
+}
+
 /**
  * The header back arrow always goes "up" to `up`, the screen's parent (board/drive/invite → event,
  * event → group, group → my groups): when the previous in-app entry IS the parent it steps back
  * (so history and the browser's back agree); otherwise it replaces this entry with the parent, so
- * the arrow keeps walking up the hierarchy and never returns to where it started.
+ * the arrow keeps walking up the hierarchy and never returns to where it started. An event's tabs
+ * (`/e/<id>`, `/out`, `/back`) are all the "event" parent, so coming from any of them steps back to it.
  */
 export function useBack(up: string): () => void {
   const { route } = useLocation();
   return () => {
-    if (state()?.prev === up) history.back();
+    const prev = state()?.prev;
+    if (prev === up || (prev && isEventTabOf(prev, up))) history.back();
     else route(up, true);
   };
 }
