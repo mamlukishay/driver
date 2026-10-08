@@ -176,14 +176,15 @@ export const he = {
   form: {
     familyName: "שם משפחה",
     familyNameHint: (name: string) => `יופיע כ"משפחת ${name}"`,
-    parents: "הורים",
-    parentName: "שם הורה",
+    parents: "הורים ונהגים",
+    parentsHint: "גם סבתא, בייביסיטר וכל מי שמסיע/ה את הילדים",
+    parentName: "שם",
     parentPhone: "טלפון נייד",
     phoneHintRequired: "חובה · לדוגמה 050-1234567",
     phoneHintOptional: "רשות · לדוגמה 050-1234567",
     phoneInvalid: "זה לא נראה כמו נייד ישראלי. לדוגמה 050-1234567",
-    addParent: "+ הורה נוסף",
-    removeParent: "הסרת ההורה",
+    addParent: "+ הוספת הורה או נהג/ת",
+    removeParent: "הסרה מהרשימה",
     address: "כתובת הבית",
     addressHint: "גלויה לכל המשפחות בקבוצה",
     addressSuggestions: "הצעות כתובת",
@@ -304,6 +305,7 @@ export const he = {
     cars: "רכבים",
     noCars: "עוד אין רכבים בכיוון הזה.",
     offer: (leg: Leg) => `+ אני נוהג/ת ב${legName[leg]}`,
+    offerAnother: (leg: Leg) => `+ עוד רכב שלנו ב${legName[leg]}`,
     noCar: "כדי להציע הסעה, הוסיפו רכב.",
     addCarLink: "להוספת רכב",
     history: "היסטוריה",
@@ -326,6 +328,7 @@ export const he = {
   carSheet: {
     titleNew: (leg: Leg) => `אני נוהג/ת ב${legName[leg]}`,
     titleEdit: "עריכת ההצעה",
+    driver: "מי נוהג/ת?",
     car: "רכב",
     seats: "מקומות לילדים",
     seatsMin: (n: number) => `כבר יושבים ${n}, אי אפשר פחות מזה`,
@@ -364,6 +367,7 @@ export const he = {
         : `רשמו את ${kid}${out && back ? ", הלוך וחזור" : out ? ", הלוך בלבד" : back ? ", חזור בלבד" : ", בלי הסעה"}`,
     offerCar: (leg: Leg, seats: number) => `הציעו רכב ב${legName[leg]} · ${seatsText(seats)}`,
     updateOffer: "עדכנו את ההצעה",
+    driverChanged: (from: string, to: string) => `החליפו נהג/ת: ${from} → ${to}`,
     removeOffer: "הסירו את ההצעה",
     seatKid: (kid: string, family: string) => `הושיבו את ${kid} ברכב של ${family}`,
     unseatKid: (kid: string) => `הורידו את ${kid} מהרכב`,
@@ -382,6 +386,7 @@ export const he = {
 
   drive: {
     title: (leg: Leg) => `מצב נהג · ${legName[leg]}`,
+    driverLine: (name: string, car: string) => `נוהג/ת: ${name} · ${car}`,
     noOffer: "אין לך הצעה בכיוון הזה.",
     toBoard: "ללוח השיבוץ",
     start: "יצאתי",
@@ -440,7 +445,7 @@ export const he = {
     pickup: (leg: Leg) => (leg === "out" ? "הלוך · אוספים אותך מהבית" : "חזור · איסוף הביתה"),
     notNeeded: "לא צריך הסעה בכיוון הזה",
     noRide: "עוד אין לך הסעה",
-    driver: (family: string) => `משפחת ${family} אוספת אותך`,
+    driver: (family: string, person?: string) => (person ? `${person} ממשפחת ${family} אוסף/ת אותך` : `משפחת ${family} אוספת אותך`),
     at: (t: string) => `יציאה ב-${t}`,
     findCar: "חפשי/חפש את הרכב הזה",
     callDriver: (name: string) => `התקשרות ל${name}`,
@@ -535,14 +540,14 @@ export const he = {
       title: string;
       date: string;
       place: string;
-      legs: { leg: Leg; time: string; cars: { family: string; departAt: string; kids: string[] }[]; missing: number }[];
+      legs: { leg: Leg; time: string; cars: { family: string; driver?: string; departAt: string; kids: string[] }[]; missing: number }[];
       url: string;
     }) => {
       const lines = [`🎈 ${p.title} · ${p.date} · ${p.place}`];
       for (const l of p.legs) {
         const parts = l.cars.map(
           (c) =>
-            `${c.family.replace(/^משפחת /, "")}${c.departAt && c.departAt !== l.time ? ` ${c.departAt}` : ""}${c.kids.length ? ` (${c.kids.join(", ")})` : ""}`,
+            `${c.family.replace(/^משפחת /, "")}${c.driver ? ` – ${c.driver}` : ""}${c.departAt && c.departAt !== l.time ? ` ${c.departAt}` : ""}${c.kids.length ? ` (${c.kids.join(", ")})` : ""}`,
         );
         if (l.missing > 0) parts.push(l.missing === 1 ? "חסר מקום אחד" : `חסרים ${l.missing} מקומות`);
         if (parts.length) lines.push(`${legName[l.leg]} ${l.time}: ${parts.join(" · ")}`);
@@ -555,8 +560,10 @@ export const he = {
     /** Per-event message to a kid: event, one line per leg, and the live kid link. */
     kidEvent: (p: { kid: string; title: string; date: string; legs: string[]; url: string }) =>
       `היי ${p.kid} 💛 ${p.title} · ${p.date}\n${p.legs.join("\n")}\n${p.url}`,
-    legLine: (leg: Leg, ride: { family: string; departAt: string } | null) =>
-      ride ? `${legName[leg]} ${ride.departAt}: ${ride.family}` : `${legName[leg]}: עוד מחפשים הסעה`,
+    legLine: (leg: Leg, ride: { family: string; departAt: string; driver?: string } | null) =>
+      ride
+        ? `${legName[leg]} ${ride.departAt}: ${ride.driver ? `${ride.driver} · ${ride.family}` : ride.family}`
+        : `${legName[leg]}: עוד מחפשים הסעה`,
     trackRide: (url: string) => `אני בדרך לאסוף אותך 🚗 רואים כאן איפה אני:\n${url}`,
     kidLink: (kid: string, url: string) => `היי ${kid} 💛 כאן רואים מי אוסף אותך ומתי:\n${url}`,
   },

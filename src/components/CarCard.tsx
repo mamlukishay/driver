@@ -61,6 +61,8 @@ interface Props {
   car: CarPublic | undefined;
   /** Display label ("משפחת X", disambiguated). */
   familyLabel: string;
+  /** Who drives this car ("דני · משפחת כהן"); omitted → the family label alone. */
+  driverName?: string | undefined;
   color: number;
   mine: boolean;
   kids: SeatKid[];
@@ -78,7 +80,7 @@ interface Props {
   onConfirmDepart?: (() => void) | undefined;
 }
 
-export function CarCard({ group, offer, car, familyLabel, color, mine, kids, armed, onEmptySeat, onKid, driveHref, onEdit, departCheck, onConfirmDepart }: Props) {
+export function CarCard({ group, offer, car, familyLabel, driverName, color, mine, kids, armed, onEmptySeat, onKid, driveHref, onEdit, departCheck, onConfirmDepart }: Props) {
   const empty = Math.max(0, offer.seats - kids.length);
   return (
     <article class={cx("car", mine && "me")} style={{ "--fc": famColor(color) }}>
@@ -86,7 +88,7 @@ export function CarCard({ group, offer, car, familyLabel, color, mine, kids, arm
         {car ? <CarPic group={group} car={car} color={color} /> : <CarGlyph color={color} />}
         <div class="grow1">
           <div class="row">
-            <b>{familyLabel}</b>
+            <b>{driverName ? `${driverName} · ${familyLabel}` : familyLabel}</b>
             {mine && <span class="tag me">{he.common.mine}</span>}
           </div>
           <small class="muted">

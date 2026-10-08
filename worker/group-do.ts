@@ -17,6 +17,7 @@ import { FAMILY_ID_HEADER, LEGS, MAX_IMAGE_BYTES } from "../shared/types.ts";
 import { applyAction, loggedAction, undo } from "../shared/actions.ts";
 import { shownOnGroupHome } from "../shared/dates.ts";
 import type { ActionCtx } from "../shared/actions.ts";
+import { withParentIds } from "../shared/drivers.ts";
 import { eventSummary, familyPrivate, familyPublic, kidView, LOG_TAIL, viewFor } from "../shared/view.ts";
 import {
   buildFamily,
@@ -119,7 +120,13 @@ export class GroupDO extends DurableObject<Env> {
   }
 
   private async families(): Promise<Family[]> {
-    return [...(await this.ctx.storage.list<Family>({ prefix: "family:" })).values()];
+    return [...(await this.ctx.storage.list<Family>({ prefix: "family:" })).values()].map(withParentIds);
+  }
+
+  /** One stored family, people ids filled in for families stored before drivers (see `withParentIds`). */
+  private async family(id: string): Promise<Family | undefined> {
+    const f = await this.ctx.storage.get<Family>(`family:${id}`);
+    return f && withParentIds(f);
   }
 
   private async events(): Promise<EventState[]> {
@@ -147,7 +154,7 @@ export class GroupDO extends DurableObject<Env> {
     await this.meta();
     const header = request.headers.get(FAMILY_ID_HEADER);
     if (header === null || header === "") return null;
-    const family = isId(header) ? await this.ctx.storage.get<Family>(`family:${header}`) : undefined;
+    const family = isId(header) ? await this.family(header) : undefined;
     if (!family) throw new ApiError("forbidden");
     return family;
   }
@@ -287,7 +294,7 @@ export class GroupDO extends DurableObject<Env> {
     const input = validateFamilyInput(await readJson(request));
     if (!input.ok) throw new ApiError("invalid");
 
-    const prev = await this.ctx.storage.get<Family>(`family:${auth.id}`);
+    const prev = await this.family(auth.id);
     if (!prev) throw new ApiError("forbidden");
     const meta = await this.meta();
     const family = buildFamily(

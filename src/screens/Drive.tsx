@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
+import { useLocation } from "preact-iso";
 import type { EventView, FamilyView, Leg, Offer } from "../../shared/types.ts";
 import { formatPhoneLocal, telHref } from "../../shared/phone.ts";
 import { pickupStops } from "../../shared/view.ts";
@@ -47,7 +48,10 @@ const wazeUrl = (addr: string) => `https://waze.com/ul?q=${encodeURIComponent(ad
 
 function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg }) {
   const idx = eventIndex(ev);
-  const offer = ev.offers[leg].find((o) => o.familyId === ev.me);
+  // A family with several cars on this leg: the board links each with `?offer=<id>`.
+  const want = useLocation().query.offer;
+  const mine = ev.offers[leg].filter((o) => o.familyId === ev.me);
+  const offer = mine.find((o) => o.id === want) ?? mine[0];
   const [busy, setBusy] = useState(false);
   const [justStarted, setJustStarted] = useState(false);
   const shareRef = useRef<HTMLElement>(null);
@@ -106,6 +110,9 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
   return (
     <>
       <EventHead group={group} ev={ev} />
+      {(idx.fam(offer.familyId)?.parents.length ?? 0) > 1 && (
+        <p class="small muted">{he.drive.driverLine(idx.driver(offer)?.name ?? "?", idx.car(offer.familyId, offer.carId)?.label ?? "")}</p>
+      )}
       {frozen && (
         <p class="note cancel-note" role="status">
           <b>{he.manage.cancelled}</b>

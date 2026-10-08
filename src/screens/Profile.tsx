@@ -51,7 +51,8 @@ export function Profile({ group }: { group: string }) {
 
 function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNullable<GroupResponse["me"]>; places: boolean; data: GroupResponse }) {
   // Re-mount the form when the server copy changes version-wise (e.g. after save).
-  const [initial] = useState<FamilyDraft>(() => draftFrom(fam));
+  const [initial, setInitial] = useState<FamilyDraft>(() => draftFrom(fam));
+  const [formKey, setFormKey] = useState(0);
   // `?focus=kid-<kidId>-phone` (from "+ הוספת טלפון ל…"): scroll to that kid's phone field and focus it.
   const focus = useLocation().query.focus;
   useEffect(() => {
@@ -71,6 +72,9 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
       const input = draftToInput({ ...d, cars: draftFrom(fam).cars });
       const r = await api.updateMe(group, input);
       setData<GroupResponse>(keys.group(group), { ...data, me: r.me });
+      // New people and kids got ids on the server: edit the saved copy from now on, so they keep them.
+      setInitial(draftFrom(r.me));
+      setFormKey((k) => k + 1);
       toast.info(he.profile.saved);
     } catch (e) {
       toast.error(e);
@@ -78,7 +82,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
   };
   return (
     <>
-      <FamilyForm group={group} initial={initial} submitLabel={he.common.save} places={places} cars={false} revealErrors={!initial.name} onSubmit={save} />
+      <FamilyForm key={formKey} group={group} initial={initial} submitLabel={he.common.save} places={places} cars={false} revealErrors={!initial.name} onSubmit={save} />
       <section class="card" aria-labelledby="cars-sum-h">
         <h2 class="hs" id="cars-sum-h">
           {he.cars.summary}

@@ -66,6 +66,7 @@ export function summaryText(group: string, ev: EventView): string {
       missing: ev.gaps[leg].missing,
       cars: ev.offers[leg].map((o) => ({
         family: idx.famLabel(o.familyId),
+        driver: idx.driver(o)?.name,
         departAt: o.departAt,
         kids: o.kidIds.map(idx.kidName),
       })),
@@ -115,9 +116,14 @@ export function logLine(ev: EventView, entry: EventView["log"][number]): string 
     case "offerCar":
       text = L.offerCar(a.leg, a.seats);
       break;
-    case "updateOffer":
-      text = L.updateOffer;
+    case "updateOffer": {
+      // A driver change reads "החליפו נהג/ת: דני → רותי"; no prevDriverId: an older offer, driven by the first person.
+      const fam = idx.fam(entry.familyId);
+      const to = a.driverId ? fam?.parents.find((p) => p.id === a.driverId) : undefined;
+      const from = a.driverId ? idx.driver({ familyId: entry.familyId, ...(a.prevDriverId ? { driverId: a.prevDriverId } : {}) }) : undefined;
+      text = to && from ? L.driverChanged(from.name, to.name) : L.updateOffer;
       break;
+    }
     case "removeOffer":
       text = L.removeOffer;
       break;

@@ -31,7 +31,7 @@ describe("prefillFrom", () => {
     const p = prefillFrom({
       name: "כהן",
       address: "הרצל 1",
-      parents: [{ name: "רונית", phone: "+972521111111" }],
+      parents: [{ id: "p1", name: "רונית", phone: "+972521111111" }],
       kids: [
         { id: "k1", name: "נועה", phone: "+972501234567" },
         { id: "k2", name: "איתי" },

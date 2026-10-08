@@ -1,10 +1,11 @@
-import type { Car, EventInput, EventState, Family, FamilyInput, Kid, Parent } from "./types.ts";
+import type { Car, EventInput, EventState, Family, FamilyInput, Kid, Parent, ParentInput } from "./types.ts";
 import { normalizePhone } from "./phone.ts";
 
 export const MAX_SEATS = 12;
 export const MAX_KIDS = 12;
 export const MAX_CARS = 5;
-export const MAX_PARENTS = 4;
+/** People per family: parents and other adults who drive ("הורים ונהגים"). */
+export const MAX_PARENTS = 6;
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; error: "invalid" };
 
@@ -61,13 +62,18 @@ export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
   if (!Array.isArray(input.kids) || input.kids.length > MAX_KIDS) return invalid;
   if (!Array.isArray(input.cars ?? []) || (input.cars as unknown[] | undefined ?? []).length > MAX_CARS) return invalid;
 
-  const parents: Parent[] = [];
+  const parents: ParentInput[] = [];
   for (const p of input.parents) {
     if (!isObj(p)) return invalid;
     const pname = cleanName(p.name);
     const phone = typeof p.phone === "string" ? normalizePhone(p.phone) : null;
     if (!pname || !phone) return invalid;
-    parents.push({ name: pname, phone });
+    const parent: ParentInput = { name: pname, phone };
+    if (p.id !== undefined) {
+      if (typeof p.id !== "string" || p.id.length > 64) return invalid;
+      parent.id = p.id;
+    }
+    parents.push(parent);
   }
 
   const kids: FamilyInput["kids"] = [];
@@ -116,8 +122,8 @@ export interface FamilyBase {
 }
 
 /**
- * Builds the stored Family from validated input. Kids/cars whose `id` matches `prev` keep
- * their id (so kid links keep working); everything else gets fresh ids.
+ * Builds the stored Family from validated input. People/kids/cars whose `id` matches `prev` keep
+ * their id (so kid links and the rides a person drives keep working); everything else gets fresh ids.
  */
 export function buildFamily(
   input: FamilyInput,
@@ -139,7 +145,14 @@ export function buildFamily(
     if (c.photoId) car.photoId = c.photoId;
     return car;
   });
-  return { ...base, name: input.name, parents: input.parents.map((p) => ({ ...p })), address: input.address, kids, cars };
+  const used = new Set<string>();
+  const parents: Parent[] = input.parents.map((p) => {
+    const old = p.id && !used.has(p.id) ? prev?.parents.find((x) => x.id === p.id) : undefined;
+    const id = old?.id ?? gen.id();
+    used.add(id);
+    return { id, name: p.name, phone: p.phone };
+  });
+  return { ...base, name: input.name, parents, address: input.address, kids, cars };
 }
 
 export function validateEventInput(input: unknown): Validated<EventInput> {

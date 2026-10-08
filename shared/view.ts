@@ -16,6 +16,7 @@ import type {
   LogEntryView,
 } from "./types.ts";
 import { gapsFor, waitingKids } from "./gaps.ts";
+import { offerDriver } from "./drivers.ts";
 
 export const LOG_TAIL = 50;
 
@@ -25,7 +26,7 @@ export function familyPublic(f: Family): FamilyPublic {
     id: f.id,
     name: f.name,
     color: f.color,
-    parents: f.parents.map((p) => ({ name: p.name, phone: p.phone })),
+    parents: f.parents.map((p) => ({ id: p.id, name: p.name, phone: p.phone })),
     address: f.address,
     kids: f.kids.map((k) => (k.phone ? { id: k.id, name: k.name, phone: k.phone } : { id: k.id, name: k.name })),
     cars: f.cars.map((c) => ({ ...c })),
@@ -79,7 +80,7 @@ export function viewFor(
       id: f.id,
       name: f.name,
       color: f.color,
-      parents: f.parents.map((p) => ({ name: p.name, phone: p.phone })),
+      parents: f.parents.map((p) => ({ id: p.id, name: p.name, phone: p.phone })),
       kids: f.kids.map((k) => (k.phone ? { id: k.id, name: k.name, phone: k.phone } : { id: k.id, name: k.name })),
       cars: f.cars.map((c) => ({ ...c })),
       createdAt: f.createdAt,
@@ -208,12 +209,19 @@ export function kidView(
     const car = driver?.cars.find((c) => c.id === offer!.carId);
     if (!offer || !driver || !car) return { needed, ride: null };
     const picked = offer.run?.picked ?? [];
+    const person = offerDriver(offer, driver);
     return {
       needed,
       ride: {
         offerId: offer.id,
         departAt: offer.departAt,
-        driver: { familyId: driver.id, name: driver.name, color: driver.color, parents: driver.parents.map((p) => ({ ...p })) },
+        driver: {
+          familyId: driver.id,
+          name: driver.name,
+          color: driver.color,
+          parents: driver.parents.map((p) => ({ ...p })),
+          person: person ? { name: person.name, phone: person.phone } : null,
+        },
         car: { ...car },
         started: !!offer.run,
         picked: picked.includes(kid.id),

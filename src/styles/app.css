@@ -863,6 +863,9 @@ a.who:hover {
   font-size: 14.5px;
   font-weight: 500;
 }
+.pill:disabled {
+  opacity: 0.45;
+}
 .pill[aria-pressed="true"] {
   border-color: var(--ink);
   background: var(--ink);

@@ -110,8 +110,12 @@ function KidEvent({ group, token, focused, e, next }: { group: string; token: st
   );
 }
 
-/** First name of the driver's parent, for "X יצא/ה לדרך" / "X למטה!". */
-const driverName = (r: KidRide) => r.driver.parents[0]?.name || he.family(familyDisplayName(r.driver));
+/** The person driving (a cached view from before drivers has no `person`: the first parent). */
+const driverPerson = (r: KidRide) => r.driver.person ?? r.driver.parents[0] ?? null;
+/** The driver's name, for "X יצא/ה לדרך" / "X למטה!". */
+const driverName = (r: KidRide) => driverPerson(r)?.name || he.family(familyDisplayName(r.driver));
+/** "דני ממשפחת כהן אוסף/ת אותך" (the family alone when the person is unknown). */
+const driverLine = (r: KidRide) => he.kid.driver(familyDisplayName(r.driver), driverPerson(r)?.name || undefined);
 
 /** The big, glanceable status line of a leg. */
 function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ride: KidRide | null }) {
@@ -122,7 +126,7 @@ function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ri
       main = he.kid.status.waiting;
       break;
     case "assigned":
-      main = he.kid.driver(familyDisplayName(ride!.driver));
+      main = driverLine(ride!);
       hint = he.kid.at(ride!.departAt);
       break;
     case "onTheWay":
@@ -184,7 +188,7 @@ function KidLeg({
         <StatusBlock leg={leg} status={status} ride={r} />
       </div>
     );
-  const driver = r.driver.parents.find((p) => p.phone);
+  const driver = driverPerson(r);
   const ready = async () => {
     setBusy(true);
     try {
@@ -203,7 +207,7 @@ function KidLeg({
       <StatusBlock leg={leg} status={status} ride={r} />
       {status !== "assigned" && (
         <span class="small">
-          {he.kid.driver(familyDisplayName(r.driver))} · <span class="num">{he.kid.at(r.departAt)}</span>
+          {driverLine(r)} · <span class="num">{he.kid.at(r.departAt)}</span>
         </span>
       )}
       <CarPic group={group} car={r.car} color={r.driver.color} big />

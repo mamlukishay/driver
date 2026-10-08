@@ -1,8 +1,8 @@
-/** Registration / profile form: family name, parents + phones, address, kids, cars. */
+/** Registration / profile form: family name, parents and drivers + phones, address, kids, cars. */
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { FamilyInput, FamilyPrivate } from "../../shared/types.ts";
 import { formatPhoneLocal, normalizePhone } from "../../shared/phone.ts";
-import { isJunkName } from "../../shared/validate.ts";
+import { isJunkName, MAX_PARENTS } from "../../shared/validate.ts";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { getIdentity } from "../identity.ts";
@@ -23,7 +23,8 @@ export interface CarDraft {
 
 export interface FamilyDraft {
   name: string;
-  parents: { name: string; phone: string }[];
+  /** Parents and other drivers; `id` keeps a stored person (and the rides they drive) through an edit. */
+  parents: { id?: string; name: string; phone: string }[];
   address: string;
   kids: { id?: string; name: string; phone: string }[];
   cars: CarDraft[];
@@ -43,7 +44,9 @@ export function draftFrom(f: FamilyInput | FamilyPrivate): FamilyDraft {
   return {
     name: nameField(f.name),
     address: f.address ?? "",
-    parents: f.parents.length ? f.parents.map((p) => ({ name: nameField(p.name), phone: local(p.phone) })) : [{ name: "", phone: "" }],
+    parents: f.parents.length
+      ? f.parents.map((p) => ({ ...(p.id ? { id: p.id } : {}), name: nameField(p.name), phone: local(p.phone) }))
+      : [{ name: "", phone: "" }],
     kids: f.kids.map((k) => ({
       ...("id" in k && k.id ? { id: k.id } : {}),
       name: nameField(k.name),
@@ -64,7 +67,7 @@ export function draftToInput(d: FamilyDraft): FamilyInput {
   return {
     name: d.name.trim(),
     address: d.address.trim(),
-    parents: d.parents.map((p) => ({ name: p.name.trim(), phone: normalizePhone(p.phone) ?? p.phone })),
+    parents: d.parents.map((p) => ({ ...(p.id ? { id: p.id } : {}), name: p.name.trim(), phone: normalizePhone(p.phone) ?? p.phone })),
     kids: d.kids
       .filter((k) => k.name.trim())
       .map((k) => ({
@@ -180,6 +183,7 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, re
 
       <section class="card" aria-labelledby="parents-h">
         <h2 class="hs" id="parents-h">{he.form.parents}</h2>
+        <p class="small muted">{he.form.parentsHint}</p>
         {d.parents.map((p, i) => (
           <div class="sub">
             <Field id={`parent-${i}-name`} label={he.form.parentName} value={p.name} error={err(`parent-${i}-name`)} autoComplete="given-name" onInput={(v) => up((x) => (x.parents[i]!.name = v, x))} />
@@ -191,7 +195,7 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, re
             )}
           </div>
         ))}
-        {d.parents.length < 4 && (
+        {d.parents.length < MAX_PARENTS && (
           <button type="button" class="mini" onClick={() => up((x) => (x.parents.push({ name: "", phone: "" }), x))}>
             {he.form.addParent}
           </button>

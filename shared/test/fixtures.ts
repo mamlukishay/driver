@@ -13,7 +13,7 @@ const fam = (id: string, name: string, color: number, kids: Family["kids"], cars
   id,
   name,
   color,
-  parents: [{ name: `parent-${id}`, phone }],
+  parents: [{ id: `p-${id}`, name: `parent-${id}`, phone }],
   address: `address-${id}`,
   kids,
   cars,

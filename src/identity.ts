@@ -165,3 +165,31 @@ export function setBrowsing(group: string, on: boolean): void {
     /* ignore */
   }
 }
+
+/* ---------- the last driver picked in the car sheet, per group (`{ [groupSlug]: personId }`) ---------- */
+
+const DRIVER_KEY = "trempush.lastDriver";
+
+function lastDrivers(): Record<string, string> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DRIVER_KEY) ?? "{}") as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const [g, v] of Object.entries(raw ?? {})) if (typeof v === "string") out[g] = v;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** Who last drove from this device in `group` ("מי נוהג/ת?" preselects them), or null. */
+export function lastDriver(group: string): string | null {
+  return lastDrivers()[group] ?? null;
+}
+
+export function setLastDriver(group: string, personId: string): void {
+  try {
+    localStorage.setItem(DRIVER_KEY, JSON.stringify({ ...lastDrivers(), [group]: personId }));
+  } catch {
+    /* private mode: no preselection next time */
+  }
+}

@@ -13,6 +13,7 @@ import type {
 } from "./types.ts";
 import { LEGS, UNDO_WINDOW_MS } from "./types.ts";
 import { newId } from "./ids.ts";
+import { offerDriverId } from "./drivers.ts";
 import { isDate, isTime, MAX_SEATS, cleanText } from "./validate.ts";
 
 export interface ActionCtx {
@@ -164,6 +165,19 @@ function unseatFromLeg(s: EventState, kidId: string, leg: Leg): Inverse {
   return reseatInverse(o.id, kidId, removeKidFromOffer(o, kidId));
 }
 
+/**
+ * Why `offer` can't be on `leg` next to the other offers there: a car is offered at most once per leg,
+ * and within a family each person drives at most one car per leg (legacy offers count as their
+ * effective driver, see `offerDriverId`). `offer` itself is skipped by id.
+ */
+function legConflict(s: EventState, ctx: ActionCtx, leg: Leg, offer: Pick<Offer, "id" | "familyId" | "carId" | "driverId">): boolean {
+  const family = ctx.families.find((f) => f.id === offer.familyId);
+  const driver = offerDriverId(offer, family);
+  return s.offers[leg].some(
+    (o) => o.id !== offer.id && (o.carId === offer.carId || (o.familyId === offer.familyId && offerDriverId(o, family) === driver)),
+  );
+}
+
 const isSeats = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= MAX_SEATS;
 const isLeg = (l: unknown): l is Leg => l === "out" || l === "back";
 const isStr = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 64;
@@ -193,9 +207,17 @@ function legsTouched(changed: readonly string[]): Leg[] {
 
 /**
  * The action as it goes into the log. `editEvent` keeps only the fields that changed and gains
- * `prev` (their old values), so history and the "עודכן" banner can say "10:00 → 10:30".
+ * `prev` (their old values), so history and the "עודכן" banner can say "10:00 → 10:30"; likewise
+ * `updateOffer` keeps `driverId` only when the driver changed, and gains `prevDriverId`.
  */
 export function loggedAction(action: Action, inverse: Inverse): Action {
+  if (action.type === "updateOffer") {
+    // The driver is logged only when it changed, with the previous one (absent: an older offer without one).
+    const { prevDriverId: _ignored, driverId, ...rest } = action;
+    const inv = inverse.find((x): x is Extract<Action, { type: "setOfferDriver" }> => x.type === "setOfferDriver");
+    if (!inv || driverId === undefined) return rest;
+    return inv.driverId ? { ...rest, driverId, prevDriverId: inv.driverId } : { ...rest, driverId };
+  }
   if (action.type !== "editEvent") return action;
   const inv = inverse.find((x): x is Extract<Action, { type: "editEvent" }> => x.type === "editEvent");
   if (!inv) return action;
@@ -245,29 +267,40 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
 
     case "offerCar": {
       if (!isLeg(a.leg) || !isStr(a.carId) || !isSeats(a.seats) || !isTime(a.departAt)) return fail("invalid");
+      if (a.driverId !== undefined && !isStr(a.driverId)) return fail("invalid");
       const owner = ctx.families.find((f) => f.cars.some((c) => c.id === a.carId));
       if (!owner) return fail("not_found");
       if (!sys && owner.id !== actor) return fail("forbidden");
       const car = owner.cars.find((c) => c.id === a.carId)!;
       if (a.seats > car.seats) return fail("invalid");
-      if (s.offers[a.leg].some((o) => o.familyId === owner.id)) return fail("invalid");
+      // A client from before drivers sends no driverId: the family's first person drives.
+      const driverId = a.driverId ?? owner.parents[0]?.id;
+      if (!driverId || !owner.parents.some((p) => p.id === driverId)) return fail("invalid");
       const id = (ctx.newId ?? (() => newId(8)))();
       if (findOffer(s, id)) return fail("invalid");
-      s.offers[a.leg].push({ id, familyId: owner.id, carId: a.carId, seats: a.seats, departAt: a.departAt, kidIds: [] });
+      const offer: Offer = { id, familyId: owner.id, carId: a.carId, driverId, seats: a.seats, departAt: a.departAt, kidIds: [] };
+      if (legConflict(s, ctx, a.leg, offer)) return fail("invalid");
+      s.offers[a.leg].push(offer);
       return { ok: true, inverse: [{ type: "removeOffer", offerId: id }] };
     }
 
     case "updateOffer": {
       const found = findOffer(s, a.offerId);
       if (!found) return fail("not_found");
-      const { offer } = found;
+      const { leg, offer } = found;
       if (!sys && offer.familyId !== actor) return fail("forbidden");
-      if (a.seats === undefined && a.departAt === undefined) return fail("invalid");
+      if (a.seats === undefined && a.departAt === undefined && a.driverId === undefined) return fail("invalid");
       if (a.seats !== undefined && !isSeats(a.seats)) return fail("invalid");
       if (a.departAt !== undefined && !isTime(a.departAt)) return fail("invalid");
+      const family = ctx.families.find((f) => f.id === offer.familyId);
+      if (a.driverId !== undefined) {
+        if (!isStr(a.driverId)) return fail("invalid");
+        if (!family?.parents.some((p) => p.id === a.driverId)) return fail("invalid");
+        if (legConflict(s, ctx, leg, { ...offer, driverId: a.driverId })) return fail(sys ? "stale" : "invalid");
+      }
       if (a.seats !== undefined) {
         if (a.seats < offer.kidIds.length) return fail("invalid");
-        const car = ctx.families.find((f) => f.id === offer.familyId)?.cars.find((c) => c.id === offer.carId);
+        const car = family?.cars.find((c) => c.id === offer.carId);
         if (car && a.seats > car.seats) return fail("invalid");
       }
       const inv: Extract<Action, { type: "updateOffer" }> = { type: "updateOffer", offerId: offer.id };
@@ -275,7 +308,11 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
         inv.seats = offer.seats;
         offer.seats = a.seats;
       }
-      const inverse: Inverse = [inv];
+      const inverse: Inverse = [];
+      if (a.driverId !== undefined && a.driverId !== offerDriverId(offer, family)) {
+        inverse.push({ type: "setOfferDriver", offerId: offer.id, driverId: offer.driverId ?? null });
+        offer.driverId = a.driverId;
+      }
       if (a.departAt !== undefined) {
         inv.departAt = offer.departAt;
         offer.departAt = a.departAt;
@@ -285,7 +322,26 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
           inverse.push({ type: "setDepartAtCheck", offerId: offer.id, check: true });
         }
       }
+      if (inv.seats !== undefined || inv.departAt !== undefined) inverse.unshift(inv);
+      // Only the driver, and it is already them: nothing to do (and nothing to undo).
+      if (inverse.length === 0) return sys ? { ok: true, inverse } : fail("invalid");
       return { ok: true, inverse };
+    }
+
+    case "setOfferDriver": {
+      if (!sys) return fail("forbidden");
+      if (a.driverId !== null && !isStr(a.driverId)) return fail("invalid");
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { leg, offer } = found;
+      const was = offer.driverId ?? null;
+      const next: Offer = { ...offer };
+      if (a.driverId === null) delete next.driverId;
+      else next.driverId = a.driverId;
+      if (legConflict(s, ctx, leg, next)) return fail("stale");
+      if (a.driverId === null) delete offer.driverId;
+      else offer.driverId = a.driverId;
+      return { ok: true, inverse: [{ type: "setOfferDriver", offerId: offer.id, driverId: was }] };
     }
 
     case "confirmDeparture": {
@@ -335,7 +391,7 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       const o = a.offer;
       if (!isLeg(a.leg) || !o || !isStr(o.id) || !Array.isArray(o.kidIds)) return fail("invalid");
       if (findOffer(s, o.id)) return fail("stale");
-      if (s.offers[a.leg].some((x) => x.familyId === o.familyId)) return fail("stale");
+      if (legConflict(s, ctx, a.leg, o)) return fail("stale");
       if (o.kidIds.length > o.seats) return fail("car_full");
       for (const kidId of o.kidIds) {
         if (!needsLeg(s, kidId, a.leg)) return fail("stale");
