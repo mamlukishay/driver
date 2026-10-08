@@ -8,7 +8,8 @@
   --wa-bg:#EAE4DA; --wa-bubble:#D9FDD3; --wa-ink:#13261A;
   --device:#17191C; --app-bg:#F7F7F3; --inv-bg:#FFF6DC; --inv-ink:#3A2A10;
   --f1:#2F6FD6; --f2:#C2417F; --f3:#7A5AC8; --f4:#138A8A; --f5:#B5651D;
-  --car-red:#C0392B; --car-silver:#B8BEC4; --car-white:#F4F5F2; --car-blue:#3E6FB0; --car-green:#4C8B5E; --car-glass:#A9C6DA; --car-tire:#2B2F34; --car-hub:#B9BEC3;
+  --car-red:#C0392B; --car-silver:#B8BEC4; --car-white:#F4F5F2; --car-blue:#3E6FB0; --car-green:#4C8B5E; --car-black:#25282C; --car-grey:#7F868D; --car-neutral:#C9C3B6; --car-edge:#2B2F34; --car-glass:#A9C6DA; --car-tire:#2B2F34; --car-hub:#B9BEC3;
+  --plate:#F5C400; --plate-ink:#15171A; --plate-blue:#1F4E9E; --plate-il:#F4F5F2;
   --shadow:rgba(20,22,25,.14); --scrim:rgba(15,17,20,.45); --focus:#2F6FD6;
   --ff-display:"Secular One","Rubik",system-ui,sans-serif;
   --ff-body:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
@@ -24,7 +25,7 @@
   --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
   --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
   --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
-  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F; --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
+  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F; --car-black:#1A1C1F; --car-grey:#6E757C; --car-neutral:#8F8A80; --car-edge:#7E858C; --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
   --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
@@ -35,7 +36,7 @@
   --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
   --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
   --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
-  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F; --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
+  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F; --car-black:#1A1C1F; --car-grey:#6E757C; --car-neutral:#8F8A80; --car-edge:#7E858C; --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
   --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}
 
 

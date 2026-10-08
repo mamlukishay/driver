@@ -67,10 +67,17 @@ test("two drivers, two cars, one leg: the kid page names the chosen driver", asy
   // Every car and person is used on this leg: no third offer.
   await expect(page.getByRole("button", { name: he.board.offerAnother("out") })).toHaveCount(0);
 
-  // --- The kid page names Dad and calls Dad ---
+  // --- The kid view names Dad as the driver. The kid rides in their own family's car, so the
+  // ticket says "נוסעים עם המשפחה" with no call pill (another family's kid sees Dad's name and
+  // calls him: flow.spec.ts covers that ticket). ---
   const kidId = me.kids[0]!.id;
+  const kv = (await (await page.request.get(`/api/g/${scene.groupId}/kid/${kidId}`)).json()) as {
+    events: { id: string; legs: { out: { ride: { driver: { person: { name: string; phone: string } | null } } | null } } }[];
+  };
+  const person = kv.events.find((e) => e.id === scene.eventId)?.legs.out.ride?.driver.person;
+  expect(person).toEqual({ name: DAD.name, phone: "+972542222222" });
   await page.goto(`/g/${scene.groupId}/kid/${kidId}`);
   const out = page.getByRole("status", { name: he.kid.statusLabel("out") });
-  await expect(out).toContainText(he.kid.driver(FAMILY.name, DAD.name));
-  await expect(page.getByRole("link", { name: he.kid.callDriver(DAD.name) })).toHaveAttribute("href", "tel:+972542222222");
+  await expect(out).toContainText(he.kid.withFamily);
+  await expect(page.getByRole("link", { name: he.kid.callLabel(DAD.name) })).toHaveCount(0);
 });

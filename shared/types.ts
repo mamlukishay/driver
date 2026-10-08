@@ -14,7 +14,8 @@ export type ErrorCode =
   | "too_large"
   | "undo_expired"
   | "slug_taken"
-  | "event_cancelled";
+  | "event_cancelled"
+  | "kid_slug_taken";
 
 export const ERROR_STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
@@ -28,6 +29,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   undo_expired: 409,
   slug_taken: 409,
   event_cancelled: 409,
+  kid_slug_taken: 409,
 };
 
 /* ---------- families ---------- */
@@ -48,6 +50,10 @@ export interface Kid {
   id: string;
   name: string;
   phone?: string;
+  /** Link name chosen by the family (`/g/:group/kid/<slug>`, `isKidSlug`); unique among the group's kids. Absent → links use the id. */
+  slug?: string;
+  /** Earlier slugs (oldest first), still resolved and reserved for this kid so links already sent keep working. */
+  slugAliases?: string[];
 }
 
 export interface Car {
@@ -83,6 +89,8 @@ export interface KidInput {
   id?: string;
   name: string;
   phone?: string;
+  /** Link name: absent keeps the stored one, "" clears it (old slugs stay as aliases). */
+  slug?: string;
 }
 
 export interface CarInput {
@@ -311,7 +319,7 @@ export interface FamilyView {
   name: string;
   color: number;
   parents: { id: string; name: string; phone?: string }[];
-  kids: { id: string; name: string; phone?: string }[];
+  kids: { id: string; name: string; phone?: string; slug?: string }[];
   cars: CarPublic[];
   address?: string;
   city?: string;
@@ -382,7 +390,7 @@ export interface KidEventView {
 
 export interface KidView {
   group: { id: string; name: string };
-  kid: { id: string; name: string; familyId: string; familyName: string; color: number };
+  kid: { id: string; name: string; familyId: string; familyName: string; color: number; slug?: string };
   events: KidEventView[];
 }
 
@@ -398,6 +406,11 @@ export interface ConfigResponse {
 export interface SuggestSlugResponse {
   slug?: string;
 }
+/** `POST /api/g/:group/suggest-slug`: an English word for an event slug, or a kid's link name. */
+export type SuggestGroupSlugRequest =
+  | { kind: "event"; name: string }
+  /** `kidId`: the kid being edited (its own names don't count as taken); `taken`: names other rows of the form already use. */
+  | { kind: "kid"; name: string; kidId?: string; taken?: string[] };
 export interface CreateGroupRequest {
   name: string;
   /** English URL name (`SLUG_RE`). Omitted → a random one. */

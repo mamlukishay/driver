@@ -104,7 +104,7 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     await expect(backStatus).toContainText(he.kid.status.waiting);
     await expect(kid.page.getByRole("button", { name: he.kid.ready })).toBeVisible();
 
-    // --- Driver mode, "יצאתי": the kid page updates live (no reload). A is the only stop, so "next". ---
+    // --- Driver mode, "יצאתי": the kid page updates live (no reload). ---
     await b.page.goto(`${eventUrl}/drive/out`);
     await b.page.getByRole("button", { name: he.drive.start }).click();
     // The departure sheet: one message for A's family, to the kid's own phone, with the per-event kid link.
@@ -143,7 +143,7 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     await expect(outStatus).toContainText(he.kid.status.picked);
     await expect(backStatus).toHaveAttribute("data-status", "waiting");
 
-    // --- "הגענו" ends the run → "הגעתם ✓" ---
+    // --- "הגענו" ends the run → "הגעתם" ---
     await act({ type: "endRun", offerId, ended: true });
     await expect(outStatus).toHaveAttribute("data-status", "done");
     await expect(outStatus).toContainText(he.kid.status.endedOut);

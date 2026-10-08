@@ -754,7 +754,7 @@ function DepartBody({
           const kid = kids.map((k) => idx.kid(k)!).find((k) => k.phone);
           const parent = fam.parents.find((p) => p.phone);
           const to = kid ? { name: kid.name, phone: kid.phone!, parent: false, kidId: kid.id } : parent ? { name: parent.name, phone: parent.phone!, parent: true, kidId: kids[0]! } : null;
-          const text = to ? he.wa.departed(kids.map(idx.kidName), appUrl(kidPath(group, to.kidId, ev.id))) : "";
+          const text = to ? he.wa.departed(kids.map(idx.kidName), appUrl(kidPath(group, idx.kid(to.kidId) ?? to.kidId, ev.id))) : "";
           const done = sent.includes(fam.id);
           return (
             <li class="nrow">

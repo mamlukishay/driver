@@ -1,5 +1,7 @@
 import type { Car, EventInput, EventState, Family, FamilyInput, Kid, Parent, ParentInput } from "./types.ts";
+import { nextKidSlug } from "./kidSlug.ts";
 import { normalizePhone } from "./phone.ts";
+import { isKidSlug } from "./slug.ts";
 
 export const MAX_SEATS = 12;
 export const MAX_KIDS = 12;
@@ -92,6 +94,11 @@ export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
       if (!phone) return invalid;
       kid.phone = phone;
     }
+    if (k.slug !== undefined && k.slug !== null) {
+      // "" clears the link name; anything else must be a valid kid slug.
+      if (typeof k.slug !== "string" || (k.slug !== "" && !isKidSlug(k.slug))) return invalid;
+      kid.slug = k.slug;
+    }
     kids.push(kid);
   }
 
@@ -127,6 +134,7 @@ export interface FamilyBase {
 /**
  * Builds the stored Family from validated input. People/kids/cars whose `id` matches `prev` keep
  * their id (so kid links and the rides a person drives keep working); everything else gets fresh ids.
+ * A kid's link name follows `nextKidSlug` (absent keeps it, "" clears it, a replaced slug stays as an alias).
  */
 export function buildFamily(
   input: FamilyInput,
@@ -138,7 +146,7 @@ export function buildFamily(
     const old = k.id ? prev?.kids.find((p) => p.id === k.id) : undefined;
     const kid: Kid = { id: old?.id ?? gen.id(), name: k.name };
     if (k.phone) kid.phone = k.phone;
-    return kid;
+    return { ...kid, ...nextKidSlug(old, k.slug) };
   });
   const cars: Car[] = input.cars.map((c) => {
     const old = c.id ? prev?.cars.find((p) => p.id === c.id) : undefined;

@@ -2,10 +2,13 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { FamilyInput, FamilyPrivate } from "../../shared/types.ts";
 import { formatPhoneLocal, normalizePhone } from "../../shared/phone.ts";
+import { isKidSlug, KID_SLUG_MAX, slugify } from "../../shared/slug.ts";
 import { isJunkName, MAX_PARENTS } from "../../shared/validate.ts";
-import { api } from "../api.ts";
+import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { getIdentity } from "../identity.ts";
+import { toast } from "./Toast.tsx";
+import { cx } from "../util.ts";
 import { CarGlyph } from "./CarCard.tsx";
 import { Field, PhoneInput, phoneError, Stepper } from "./Field.tsx";
 import { ImagePicker } from "./ImagePicker.tsx";
@@ -21,6 +24,20 @@ export interface CarDraft {
   photoPreview?: string;
 }
 
+export interface KidDraft {
+  id?: string;
+  name: string;
+  phone: string;
+  /** Link name (`/g/:group/kid/<slug>`); "" = none (links use the id). */
+  slug?: string;
+  /** The slug is a suggestion (AI or from a Latin name), not typed. */
+  slugAuto?: boolean;
+  /** The user edited the slug: no more suggestions for this row. */
+  slugTouched?: boolean;
+  /** Stable row key for a kid without an id yet. */
+  rk?: string;
+}
+
 export interface FamilyDraft {
   name: string;
   /** Parents and other drivers; `id` keeps a stored person (and the rides they drive) through an edit. */
@@ -28,14 +45,17 @@ export interface FamilyDraft {
   /** Street + house number. */
   address: string;
   city: string;
-  kids: { id?: string; name: string; phone: string }[];
+  kids: KidDraft[];
   cars: CarDraft[];
 }
+
+let rowSeq = 0;
+const newKidRow = (): KidDraft => ({ name: "", phone: "", rk: `r${++rowSeq}` });
 
 const MAX_SEATS_UI = 8;
 
 export function emptyDraft(): FamilyDraft {
-  return { name: "", parents: [{ name: "", phone: "" }], address: "", city: "", kids: [{ name: "", phone: "" }], cars: [] };
+  return { name: "", parents: [{ name: "", phone: "" }], address: "", city: "", kids: [newKidRow()], cars: [] };
 }
 
 const local = (p?: string) => (p ? (formatPhoneLocal(p) ?? p) : "");
@@ -54,6 +74,7 @@ export function draftFrom(f: FamilyInput | FamilyPrivate): FamilyDraft {
       ...("id" in k && k.id ? { id: k.id } : {}),
       name: nameField(k.name),
       phone: local(k.phone),
+      slug: k.slug ?? "",
     })),
     cars: f.cars.map((c) => ({
       ...(c.id ? { id: c.id } : {}),
@@ -78,6 +99,8 @@ export function draftToInput(d: FamilyDraft): FamilyInput {
         ...(k.id ? { id: k.id } : {}),
         name: k.name.trim(),
         ...(k.phone.trim() ? { phone: normalizePhone(k.phone) ?? k.phone } : {}),
+        // Always sent: "" clears a stored link name (it stays reserved as an alias).
+        slug: (k.slug ?? "").trim(),
       })),
     cars: d.cars.map((c) => ({
       ...(c.id ? { id: c.id } : {}),
@@ -101,7 +124,8 @@ export function kidsWithChoices(d: FamilyDraft, choices: readonly KidChoice[], p
   return { ...d, kids: [...choices.filter((_, i) => picked[i]).map((k) => ({ ...k })), ...d.kids] };
 }
 
-function validate(d: FamilyDraft, pickedCount: number | null = null, withCars = true): Record<string, string> {
+/** `taken`: link names the server said belong to another kid (they stay marked until changed). */
+function validate(d: FamilyDraft, pickedCount: number | null = null, withCars = true, taken: readonly string[] = []): Record<string, string> {
   const e: Record<string, string> = {};
   if (!d.name.trim()) e["fam-name"] = he.form.requiredField;
   d.parents.forEach((p, i) => {
@@ -116,6 +140,12 @@ function validate(d: FamilyDraft, pickedCount: number | null = null, withCars = 
     if (!k.name.trim() && (k.phone.trim() || alone)) e[`kid-${i}-name`] = he.form.requiredField;
     const ke = phoneError(k.phone, false);
     if (ke) e[`kid-${i}-phone`] = ke;
+    const slug = (k.slug ?? "").trim();
+    if (slug && k.name.trim()) {
+      if (!isKidSlug(slug)) e[`kid-${i}-slug`] = he.form.kidSlugInvalid;
+      else if (taken.includes(slug) || d.kids.some((o, j) => j < i && o.name.trim() && (o.slug ?? "").trim() === slug))
+        e[`kid-${i}-slug`] = he.form.kidSlugTaken;
+    }
   });
   // With kid choices (copied from another group): at least one checked or added kid.
   if (pickedCount !== null && pickedCount + d.kids.filter((k) => k.name.trim()).length === 0) e["kid-pick-0"] = he.form.kidsPickRequired;
@@ -140,6 +170,8 @@ interface Props {
   initial: FamilyDraft;
   submitLabel: string;
   places: boolean;
+  /** Workers AI can suggest kid link names (`features.slugSuggest`). */
+  slugSuggest?: boolean;
   /** Kids from another group, shown as unchecked checkboxes; only checked or added kids are submitted. */
   kidChoices?: readonly KidChoice[];
   /** false: no car fields (the family page; cars live on `/g/:group/me/cars`). The draft's cars are submitted unchanged. */
@@ -148,10 +180,11 @@ interface Props {
   cities?: readonly string[];
   /** Show validation errors from the start (e.g. a stored family whose name is missing). */
   revealErrors?: boolean;
+  /** May throw `ApiError("kid_slug_taken")` (with `data.slug`): the form marks that kid's link field. */
   onSubmit: (d: FamilyDraft) => Promise<void>;
 }
 
-export function FamilyForm({ group, initial, submitLabel, places, kidChoices, cities, revealErrors, cars = true, onSubmit }: Props) {
+export function FamilyForm({ group, initial, submitLabel, places, slugSuggest = false, kidChoices, cities, revealErrors, cars = true, onSubmit }: Props) {
   const [d, setD] = useState<FamilyDraft>(initial);
   const choices = kidChoices?.length ? kidChoices : null;
   const [picked, setPicked] = useState<boolean[]>(() => (choices ? choices.map(() => false) : []));
@@ -159,11 +192,12 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, ci
   const [errors, setErrors] = useState<Record<string, string>>(() => (revealErrors ? validate(initial, pickedCount, cars) : {}));
   const [tried, setTried] = useState(!!revealErrors);
   const [busy, setBusy] = useState(false);
+  const [taken, setTaken] = useState<string[]>([]);
   const up = (f: (x: FamilyDraft) => FamilyDraft) => setD((x) => f(cloneDraft(x)));
 
   const submit = async (ev: Event) => {
     ev.preventDefault();
-    const e = validate(d, pickedCount, cars);
+    const e = validate(d, pickedCount, cars, taken);
     setErrors(e);
     setTried(true);
     const first = Object.keys(e)[0];
@@ -174,13 +208,25 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, ci
     setBusy(true);
     try {
       await onSubmit(choices ? kidsWithChoices(d, choices, picked) : d);
+    } catch (x) {
+      // A kid link name another kid already answers to: mark that field (onSubmit rethrows only this).
+      const slug = x instanceof ApiError && x.code === "kid_slug_taken" ? x.data?.slug : undefined;
+      const i = typeof slug === "string" ? d.kids.findIndex((k) => (k.slug ?? "").trim() === slug) : -1;
+      if (i < 0) {
+        toast.error(x);
+        return;
+      }
+      const t = [...taken, slug as string];
+      setTaken(t);
+      setErrors(validate(d, pickedCount, cars, t));
+      document.getElementById(`kid-${i}-slug`)?.focus();
     } finally {
       setBusy(false);
     }
   };
   const err = (id: string) => (tried ? (errors[id] ?? null) : null);
   useEffect(() => {
-    if (tried) setErrors(validate(d, pickedCount, cars));
+    if (tried) setErrors(validate(d, pickedCount, cars, taken));
   }, [d, picked]);
 
   return (
@@ -253,9 +299,26 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, ci
           </div>
         )}
         {d.kids.map((k, i) => (
-          <div class="sub">
+          <div class="sub" key={k.id ?? k.rk ?? i}>
             <Field id={`kid-${i}-name`} label={he.form.kidName} value={k.name} error={err(`kid-${i}-name`)} onInput={(v) => up((x) => (x.kids[i]!.name = v, x))} />
             <PhoneInput id={`kid-${i}-phone`} label={he.form.kidPhone} value={k.phone} showErrors={tried} onInput={(v) => up((x) => (x.kids[i]!.phone = v, x))} />
+            <KidSlugField
+              id={`kid-${i}-slug`}
+              group={group}
+              kid={k}
+              others={d.kids.filter((_, j) => j !== i).map((o) => (o.slug ?? "").trim()).filter(Boolean)}
+              suggest={slugSuggest}
+              error={err(`kid-${i}-slug`)}
+              onChange={(slug, auto) =>
+                up((x) => {
+                  const row = x.kids[i]!;
+                  row.slug = slug;
+                  row.slugAuto = auto;
+                  if (!auto) row.slugTouched = true;
+                  return x;
+                })
+              }
+            />
             {(choices || d.kids.length > 1) && (
               <button type="button" class="lnk bad" onClick={() => up((x) => (x.kids.splice(i, 1), x))}>
                 {he.form.removeKid}
@@ -264,7 +327,7 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, ci
           </div>
         ))}
         {d.kids.length + picked.filter(Boolean).length < 12 && (
-          <button type="button" class="mini" onClick={() => up((x) => (x.kids.push({ name: "", phone: "" }), x))}>
+          <button type="button" class="mini" onClick={() => up((x) => (x.kids.push(newKidRow()), x))}>
             {he.form.addKid}
           </button>
         )}
@@ -281,6 +344,127 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, ci
         {busy ? he.common.saving : submitLabel}
       </button>
     </form>
+  );
+}
+
+/** Typing helper: lowercase, spaces → hyphens, drop anything not URL-safe (keeps a trailing hyphen while typing). */
+const cleanKidSlugInput = (v: string) =>
+  v
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, KID_SLUG_MAX);
+
+const HEBREW = /[\u0590-\u05FF]/;
+/** Quiet time after the last name keystroke before asking the AI for a link name. */
+const SUGGEST_DEBOUNCE_MS = 500;
+
+/**
+ * "כתובת הקישור של {kid}": the URL start, then the kid's link name (LTR, mono). While the row's slug is empty
+ * or still a suggestion (and never typed), it follows the name: a Latin first name on the spot, a Hebrew one
+ * via `POST /api/g/:group/suggest-slug` (`kind: "kid"`, debounced, the previous request cancelled). The
+ * suggestion is marked as one; the family's own spelling is the real thing.
+ */
+function KidSlugField({
+  id,
+  group,
+  kid,
+  others,
+  suggest,
+  error,
+  onChange,
+}: {
+  id: string;
+  group: string;
+  kid: KidDraft;
+  /** Link names on the form's other rows (the suggestion skips them). */
+  others: string[];
+  suggest: boolean;
+  error: string | null;
+  onChange: (slug: string, auto: boolean) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const latest = useRef({ kid, others, onChange });
+  latest.current = { kid, others, onChange };
+  const slug = kid.slug ?? "";
+  const following = !kid.slugTouched && (!slug || !!kid.slugAuto);
+  const name = kid.name.trim();
+  useEffect(() => {
+    if (!following) return;
+    const apply = (s: string) => {
+      const cur = latest.current;
+      if ((cur.kid.slug ?? "") !== s) cur.onChange(s, !!s);
+    };
+    if (!name) {
+      if (kid.slugAuto) apply("");
+      return;
+    }
+    if (!HEBREW.test(name)) {
+      const s = slugify(name.split(" ")[0]!, 24);
+      apply(isKidSlug(s) && !latest.current.others.includes(s) ? s : "");
+      return;
+    }
+    if (!suggest) return;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => {
+      setBusy(true);
+      const { kid: k, others: o } = latest.current;
+      api
+        .suggestGroupSlug(group, { kind: "kid", name, ...(k.id ? { kidId: k.id } : {}), ...(o.length ? { taken: o } : {}) }, ctrl.signal)
+        .then((r) => {
+          if (!ctrl.signal.aborted && r.slug) apply(r.slug);
+        })
+        .catch(() => {
+          /* no suggestion: the field stays as it is */
+        })
+        .finally(() => {
+          if (!ctrl.signal.aborted) setBusy(false);
+        });
+    }, SUGGEST_DEBOUNCE_MS);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+      setBusy(false);
+    };
+  }, [group, name, suggest, following]);
+
+  const hintId = `${id}-hint`;
+  const hint = error ?? (kid.slugAuto && slug ? he.form.kidSlugSuggested : null);
+  return (
+    <div class={cx("fld", error && "err")}>
+      <label for={id}>{he.form.kidSlugLabel(name)}</label>
+      <div class="urlbox">
+        <span class="urlbox-pre" aria-hidden="true">
+          <bdi dir="ltr">{`${location.host}/g/${group}/kid/`}</bdi>
+        </span>
+        <span class={cx("inwrap", busy && "busy")}>
+          <input
+            id={id}
+            type="text"
+            value={slug}
+            dir="ltr"
+            autoComplete="off"
+            autoCapitalize="off"
+            spellcheck={false}
+            maxLength={KID_SLUG_MAX}
+            aria-invalid={error ? true : undefined}
+            aria-busy={busy || undefined}
+            aria-describedby={hint ? hintId : undefined}
+            onInput={(e) => onChange(cleanKidSlugInput((e.currentTarget as HTMLInputElement).value), false)}
+          />
+          {busy && <i class="spin" aria-hidden="true" />}
+        </span>
+      </div>
+      {hint && (
+        <span class="hint" id={hintId}>
+          {hint}
+        </span>
+      )}
+      <span class="vh" role="status">
+        {busy ? he.form.suggestingKidSlug : ""}
+      </span>
+    </div>
   );
 }
 

@@ -107,7 +107,7 @@ function KidRsvp({
 }
 
 /** WhatsApp text for a kid: the event, one line per leg they need, and their per-event live link. */
-function kidEventText(group: string, ev: EventView, kid: { id: string; name: string }): string {
+function kidEventText(group: string, ev: EventView, kid: { id: string; name: string; slug?: string }): string {
   const idx = eventIndex(ev);
   const plan = ev.kidPlans[kid.id];
   const legs = LEGS.filter((leg) => plan?.[leg]).map((leg) => {
@@ -115,5 +115,5 @@ function kidEventText(group: string, ev: EventView, kid: { id: string; name: str
     const driver = o && idx.driver(o)?.name;
     return he.wa.legLine(leg, o ? { family: idx.famLabel(o.familyId), departAt: o.departAt, ...(driver ? { driver } : {}) } : null);
   });
-  return he.wa.kidEvent({ kid: kid.name, title: ev.title, date: fmtDate(ev.date), legs, url: appUrl(kidPath(group, kid.id, ev.id)) });
+  return he.wa.kidEvent({ kid: kid.name, title: ev.title, date: fmtDate(ev.date), legs, url: appUrl(kidPath(group, kid, ev.id)) });
 }

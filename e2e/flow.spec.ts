@@ -137,7 +137,7 @@ test("main flow: two families, live seating, undo, driver phones, shared contact
     await kid.page.goto(`/g/${groupId}/kid/${kidId}`);
     await expect(kid.page.getByRole("heading", { name: he.kid.hi(A.kid) })).toBeVisible();
     await expect(kid.page.getByText(he.kid.driver(B.name, B.parent))).toBeVisible();
-    await expect(kid.page.getByRole("link", { name: he.kid.callDriver(B.parent) }).first()).toBeVisible();
+    await expect(kid.page.getByRole("link", { name: he.kid.callLabel(B.parent) }).first()).toBeVisible();
     await kid.page.getByRole("button", { name: he.kid.ready }).click();
     await expect(kid.page.getByText(he.kid.readyDone)).toBeVisible();
     // ...and the driver sees it live.

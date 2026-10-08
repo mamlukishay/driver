@@ -1,3 +1,4 @@
+import { carPaint } from "../../shared/carPaint.ts";
 import type { CarPublic, Offer } from "../../shared/types.ts";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
@@ -26,15 +27,51 @@ export function SteeringGlyph({ size = 22 }: { size?: number }) {
   );
 }
 
-/** Car photo thumbnail, or a family-tinted car glyph. `big` for the kid page. */
-export function CarPic({ group, car, color, big }: { group: string; car: CarPublic; color: number; big?: boolean }) {
+/** Car photo thumbnail, or a family-tinted car glyph. */
+export function CarPic({ group, car, color }: { group: string; car: CarPublic; color: number }) {
   return (
-    <span class={cx(big ? "cbig" : "cth", !car.photoId && "nop")}>
-      {car.photoId ? (
-        <img src={api.imageUrl(group, car.photoId)} alt={car.label} loading="lazy" />
-      ) : (
-        <CarGlyph color={color} size={big ? 72 : 26} />
-      )}
+    <span class={cx("cth", !car.photoId && "nop")}>
+      {car.photoId ? <img src={api.imageUrl(group, car.photoId)} alt={car.label} loading="lazy" /> : <CarGlyph color={color} />}
+    </span>
+  );
+}
+
+/** Side view of a car painted in its real color (from the color word; unknown → neutral). Kid page. */
+export function CarSide({ color, width = 104 }: { color?: string | undefined; width?: number }) {
+  return (
+    <svg
+      class="carside"
+      viewBox="0 0 120 56"
+      width={width}
+      height={Math.round((width * 56) / 120)}
+      aria-hidden="true"
+      style={{ "--cc": `var(--car-${carPaint(color)})` }}
+    >
+      <path
+        style={{ fill: "var(--cc)", stroke: "var(--car-edge)" }}
+        stroke-width="1.6"
+        stroke-linejoin="round"
+        d="M6 37c0-6 3-9 9-10l17-3 12-12c3-3 6-4 10-4h26c4 0 7 1 9 4l10 12 11 2c5 1 8 4 8 9v5c0 2-1 3-3 3H9c-2 0-3-1-3-3z"
+      />
+      <path style={{ fill: "var(--car-glass)" }} d="M37 24l10-10c2-2 4-3 7-3h10v13z" />
+      <path style={{ fill: "var(--car-glass)" }} d="M68 11h12c3 0 5 1 6 3l8 10H68z" />
+      <path style={{ fill: "var(--car-edge)" }} opacity=".35" d="M66 11h2v24h-2z" />
+      <rect x="6" y="31" width="7" height="4" rx="2" style={{ fill: "var(--accent)" }} />
+      <circle cx="30" cy="45" r="9" style={{ fill: "var(--car-tire)" }} />
+      <circle cx="30" cy="45" r="4" style={{ fill: "var(--car-hub)" }} />
+      <circle cx="92" cy="45" r="9" style={{ fill: "var(--car-tire)" }} />
+      <circle cx="92" cy="45" r="4" style={{ fill: "var(--car-hub)" }} />
+    </svg>
+  );
+}
+
+/** Israeli yellow plate chip (blue "IL" strip + the last digits). Kid page; the board keeps `Plate`. */
+export function PlateIL({ plate }: { plate?: string | undefined }) {
+  if (!plate) return null;
+  return (
+    <span class="plate-il" dir="ltr" role="img" aria-label={he.kid.plateLabel(plate)}>
+      <i aria-hidden="true">IL</i>
+      <span aria-hidden="true">…{plate}</span>
     </span>
   );
 }

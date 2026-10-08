@@ -7,6 +7,7 @@ import type {
   FamilyPublic,
   FamilyView,
   GroupMeta,
+  Kid,
   KidEventView,
   KidLegStatus,
   KidLegView,
@@ -21,7 +22,15 @@ import { offerDriver } from "./drivers.ts";
 
 export const LOG_TAIL = 50;
 
-/** A clean copy of a family; strips fields older versions stored (`keyHash`, `kidToken`). */
+/** A kid as clients see it: id, name, and phone / link name when set (no aliases, no legacy token). */
+function kidPublic(k: Kid): { id: string; name: string; phone?: string; slug?: string } {
+  const v: { id: string; name: string; phone?: string; slug?: string } = { id: k.id, name: k.name };
+  if (k.phone) v.phone = k.phone;
+  if (k.slug) v.slug = k.slug;
+  return v;
+}
+
+/** A clean copy of a family; strips fields older versions stored (`keyHash`, `kidToken`) and kid slug aliases. */
 export function familyPublic(f: Family): FamilyPublic {
   const out: FamilyPublic = {
     id: f.id,
@@ -29,7 +38,7 @@ export function familyPublic(f: Family): FamilyPublic {
     color: f.color,
     parents: f.parents.map((p) => ({ id: p.id, name: p.name, phone: p.phone })),
     address: f.address,
-    kids: f.kids.map((k) => (k.phone ? { id: k.id, name: k.name, phone: k.phone } : { id: k.id, name: k.name })),
+    kids: f.kids.map(kidPublic),
     cars: f.cars.map((c) => ({ ...c })),
     createdAt: f.createdAt,
   };
@@ -84,7 +93,7 @@ export function viewFor(
       name: f.name,
       color: f.color,
       parents: f.parents.map((p) => ({ id: p.id, name: p.name, phone: p.phone })),
-      kids: f.kids.map((k) => (k.phone ? { id: k.id, name: k.name, phone: k.phone } : { id: k.id, name: k.name })),
+      kids: f.kids.map(kidPublic),
       cars: f.cars.map((c) => ({ ...c })),
       createdAt: f.createdAt,
     };
@@ -255,7 +264,14 @@ export function kidView(
 
   return {
     group: { id: group.id, name: group.name },
-    kid: { id: kid.id, name: kid.name, familyId: family.id, familyName: family.name, color: family.color },
+    kid: {
+      id: kid.id,
+      name: kid.name,
+      familyId: family.id,
+      familyName: family.name,
+      color: family.color,
+      ...(kid.slug ? { slug: kid.slug } : {}),
+    },
     events: upcoming,
   };
 }

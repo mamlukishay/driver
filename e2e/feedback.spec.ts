@@ -216,7 +216,7 @@ test("mic denied falls back to text; removing the screenshot; back closes the sh
   await expect(page.getByText(he.feedback.thanks)).toBeVisible();
 });
 
-test("button floats over other sheets and on the kid page (smaller, no family attribution)", async ({ browser }) => {
+test("button floats over other sheets and on the kid page (same tab, no family attribution)", async ({ browser }) => {
   user = await newUser(browser);
   const page = user.page;
   const scene = await soloScene(page, { ...FAMILY, car: { label: "סובארו", seats: 4 } }, "קבוצת כפתור", "יום ספורט");
@@ -234,12 +234,13 @@ test("button floats over other sheets and on the kid page (smaller, no family at
   expect(onTop).toBe(true);
   const fullHeight = (await fab(page).boundingBox())!.height;
 
-  // Kid page: smaller button; feedback is not attributed to the device's family.
+  // Kid page: the same floating tab; feedback is not attributed to the device's family.
   const group = await apiGroup(page, scene.groupId, await familyIdOf(page, scene.groupId));
   const kidId = group.me!.kids[0]!.id;
   await page.goto(`/g/${scene.groupId}/kid/${kidId}`);
   await expect(fab(page)).toBeVisible();
-  expect((await fab(page).boundingBox())!.height).toBeLessThan(fullHeight);
+  expect((await fab(page).boundingBox())!.height).toBe(fullHeight);
+  expect(await fab(page).evaluate((el) => getComputedStyle(el).position)).toBe("fixed");
   await fab(page).click();
   const dialog = page.getByRole("dialog", { name: he.feedback.title });
   await dialog.getByLabel(he.feedback.textLabel).fill("לא רואים את הנהג");

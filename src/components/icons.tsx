@@ -75,3 +75,11 @@ export function PlusIcon({ size }: { size: number }) {
     </svg>
   );
 }
+
+export function CheckIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path {...stroke} stroke-width="3" d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}

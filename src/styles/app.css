@@ -724,6 +724,42 @@ a.who:hover {
     transform: rotate(360deg);
   }
 }
+/* A link field: the fixed start of the URL (muted mono; cut from its start when the row is narrow) and the
+   editable last part, read left to right. The spinner moves to the input's right, its empty side here. */
+.urlbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  direction: ltr;
+}
+.urlbox-pre {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.urlbox .inwrap {
+  flex: 1 0 8em;
+  min-inline-size: 8em;
+}
+.urlbox input,
+.fld .urlbox input[dir="ltr"] {
+  font-family: var(--ff-mono);
+  text-align: start;
+}
+.urlbox .inwrap.busy input {
+  padding-left: 12px;
+  padding-right: 38px;
+}
+.urlbox .spin {
+  left: auto;
+  right: 13px;
+}
 .fld.err .hint,
 .hint.bad {
   color: var(--bad);
@@ -1342,22 +1378,11 @@ a.who:hover {
   background: transparent;
   border-color: transparent;
 }
-.cth img,
-.cbig img {
+.cth img {
   display: block;
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
-}
-.cbig {
-  inline-size: 100%;
-  block-size: 180px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--sunk);
-  border: 1px solid var(--line);
-  display: grid;
-  place-items: center;
 }
 .plate {
   font-family: var(--ff-mono);
@@ -2212,130 +2237,416 @@ a.who:hover {
   gap: 24px;
 }
 
-/* ---------- kid page ---------- */
+/* ---------- kid page (design A, "ticket": docs/kid-workshop.html#a) ---------- */
+/* Asphalt ground in both themes; one ticket per leg; family colors don't appear here. */
+html:has(.kidpage),
+body:has(.kidpage) {
+  background: var(--asphalt);
+}
 .kidpage {
   gap: 18px;
-  padding-block: calc(env(safe-area-inset-top, 0px) + 22px) 24px;
+  color: var(--on-asphalt);
+  /* Room under the last ready button / call pill for the floating feedback tab. */
+  padding-block: calc(env(safe-area-inset-top, 0px) + 22px) calc(84px + env(safe-area-inset-bottom, 0px));
 }
 .kid-hdr {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  border-inline-start: 6px solid var(--fc);
-  padding-inline-start: 14px;
+  gap: 2px;
 }
 .kid-hdr .display {
-  font-size: 36px;
+  font-size: 34px;
+  line-height: 1.15;
 }
-.kidpage .muted {
-  font-size: 17px;
-}
-.kidpage .kid-grp {
+.kid-grp {
   font-size: 14px;
-  margin: 0;
+  color: var(--on-asphalt-2);
 }
-.legc {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 16px;
+.kid-ev {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  inline-size: 100%;
-  border-inline-start: 6px solid var(--fc, var(--line));
+  gap: 16px;
+  min-inline-size: 0;
 }
-.legc .k {
+.kidpage .evh-t small {
+  color: var(--on-asphalt-2);
+}
+.kidpage .evh .cov {
+  border-color: var(--asphalt-2);
+}
+.kidpage .skel i {
+  background: var(--asphalt-2);
+}
+/* A quiet line on the asphalt: not needed, not coming, cancelled, no events. */
+.kline {
   font-size: 15px;
+  color: var(--on-asphalt-2);
+}
+.kid-all.btn.ghost {
+  background: transparent;
+  color: var(--on-asphalt);
+  border-color: var(--on-asphalt-2);
+  align-self: center;
+}
+.kleg {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* the ticket */
+.tk {
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+.tk-main {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 16px 16px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+.tk-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.tk-leg {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
   color: var(--ink-2);
 }
-.legc.wait {
-  border-style: dashed;
-  border-inline-start-width: 1px;
+/* yellow road sign */
+.sign {
+  font-family: var(--ff-display);
+  font-size: 16px;
+  line-height: 1.4;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 7px;
+  padding: 3px 10px;
+  box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 0 3.5px var(--on-accent);
+  white-space: nowrap;
 }
-.legc.dim {
-  opacity: 0.7;
-  border-inline-start-width: 1px;
+.sign.out {
+  background: transparent;
+  color: var(--on-asphalt);
+  box-shadow: inset 0 0 0 1.5px var(--on-asphalt-2);
+  white-space: normal;
+  text-align: center;
 }
-.big-t {
+.tk-route {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+.tk-route small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+.tk-time {
+  display: block;
+  font-family: var(--ff-display);
+  font-size: 48px;
+  line-height: 0.95;
+}
+.tk-dest {
+  text-align: end;
+  min-inline-size: 0;
+}
+.tk-to {
+  display: block;
+  font-family: var(--ff-display);
+  font-weight: 400;
   font-size: 22px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
 }
-.big-time {
-  font-size: 28px;
+.tk-path {
+  block-size: 2px;
+  margin-block-end: 12px;
+  background: repeating-linear-gradient(to left, var(--ink-3) 0 5px, transparent 5px 10px);
+  position: relative;
+}
+.tk-path .carside {
+  position: absolute;
+  inset-inline-start: 18%;
+  inset-block-end: 2px;
+}
+.carside {
+  display: block;
+  overflow: visible;
+  flex: none;
+}
+.tk-who {
+  font-size: 15px;
+}
+.tk-who b {
   font-weight: 700;
 }
-.gapc {
-  color: var(--gap);
-  font-size: 20px;
+.tk-hint {
+  font-size: 14.5px;
+  color: var(--ink-2);
 }
+/* onTheWay with the driver's ETA: the clock time is the line the kid looks for */
+.tk-hint.tk-eta {
+  font-family: var(--ff-display);
+  font-size: 21px;
+  color: var(--ink);
+}
+.tk-eta + .tk-note {
+  margin-block-start: -10px;
+}
+.tk-note {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+/* perforated tear line with half-circle notches in the ground color */
+.tk-perf {
+  position: relative;
+  block-size: 0;
+  border-block-start: 2px dashed var(--line);
+  margin-inline: 14px;
+}
+.tk-perf::before,
+.tk-perf::after {
+  content: "";
+  position: absolute;
+  inset-block-start: -12px;
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: 50%;
+  background: var(--asphalt);
+}
+.tk-perf::before {
+  inset-inline-start: -26px;
+}
+.tk-perf::after {
+  inset-inline-end: -26px;
+}
+.tk-stub {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tk-car {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.tk-car .meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-inline-size: 0;
+  flex: 1;
+}
+.tk-car b {
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: 21px;
+  line-height: 1.1;
+}
+.tk-car small {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.tk-photo {
+  display: block;
+  inline-size: 100%;
+  block-size: 150px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--sunk);
+}
+/* Israeli plate, kid-page variant (the board keeps .plate) */
+.plate-il {
+  display: inline-flex;
+  align-items: stretch;
+  align-self: flex-start;
+  unicode-bidi: isolate;
+  border: 1.5px solid var(--plate-ink);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--plate);
+  color: var(--plate-ink);
+  font-family: var(--ff-mono);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1;
+  flex: none;
+}
+.plate-il i {
+  font-style: normal;
+  background: var(--plate-blue);
+  color: var(--plate-il);
+  font-family: var(--ff-body);
+  font-size: 8px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  padding-inline: 3px;
+}
+.plate-il span {
+  padding: 5px 7px 4px;
+  letter-spacing: 0.04em;
+}
+/* call pill: one tel: link */
+.kcall {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  text-decoration: none;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 14px 6px 8px;
+  min-block-size: var(--tap);
+  font-size: 15px;
+}
+.kcall .ic {
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--surface);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.kcall .ic svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
+.kcall b {
+  font-weight: 700;
+}
+.kcall .num {
+  font-family: var(--ff-mono);
+  font-size: 13.5px;
+  color: var(--ink-2);
+  unicode-bidi: isolate;
+}
+/* arrived: the whole top part is the sign */
+.tk.arr .tk-main {
+  background: var(--accent);
+  color: var(--on-accent);
+  gap: 6px;
+  animation: kpulse 1.2s ease-in-out 3;
+}
+.tk.arr .tk-leg {
+  color: var(--on-accent);
+}
+.tk-big {
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: 52px;
+  line-height: 1;
+}
+.tk-go {
+  font-size: 18px;
+  font-weight: 500;
+}
+.tk-find {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+@keyframes kpulse {
+  50% {
+    transform: scale(1.025);
+  }
+}
+/* picked / done: a rotated stamp over the top part */
+.stamp {
+  position: absolute;
+  inset-inline-end: 18px;
+  inset-block-start: 62px;
+  transform: rotate(-9deg);
+  border: 3px solid var(--ok);
+  color: var(--ok);
+  border-radius: 10px;
+  padding: 2px 12px;
+  font-family: var(--ff-display);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+.tk.pk .tk-route,
+.tk.pk .tk-who {
+  opacity: 0.45;
+}
+.tk.done {
+  opacity: 0.6;
+}
+.tk.done .stamp {
+  border-color: var(--ink-3);
+  color: var(--ink-3);
+}
+/* the driver ended the run ("הגענו"): a finished ride, not a faded one */
+.tk.done.ended {
+  opacity: 1;
+}
+.tk.done.ended .stamp {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+/* waiting: an outline ticket, still to be printed */
+.tk.wait {
+  background: transparent;
+  color: var(--on-asphalt);
+  box-shadow: none;
+  border: 1.5px dashed var(--on-asphalt-2);
+}
+.tk.wait .tk-leg,
+.tk.wait .tk-route small,
+.tk.wait .tk-hint {
+  color: var(--on-asphalt-2);
+}
+.tk.wait .tk-hint {
+  font-size: 14px;
+}
+/* "אני מוכן/ה" under its ticket */
 .readybtn {
-  padding: 20px;
-  border-radius: 18px;
+  inline-size: 100%;
+  padding: 12px;
+  border-radius: 16px;
   border: 0;
   background: var(--accent);
   color: var(--on-accent);
   font-size: 22px;
   font-family: var(--ff-display);
-  min-block-size: 64px;
+  min-block-size: 60px;
 }
 .readybtn:disabled {
   opacity: 0.5;
 }
-.kstat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border-radius: 14px;
-  padding: 14px 16px;
-  background: var(--sunk);
+.ksent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--on-asphalt-2);
 }
-.kstat-main {
-  font-family: var(--ff-display);
-  font-size: 26px;
-  line-height: 1.25;
-}
-.kstat-hint {
-  font-size: 17px;
-  color: var(--ink-2);
-}
-.kstat-waiting {
-  background: var(--gap-soft);
-  color: var(--gap);
-}
-.kstat-assigned {
-  background: transparent;
-  padding: 0;
-}
-.kstat-onTheWay {
-  background: var(--accent-soft);
-}
-.kstat-arrived {
-  background: var(--accent);
-  color: var(--on-accent);
-  animation: kpulse 1.2s ease-in-out 3;
-}
-.kstat-arrived .kstat-main {
-  font-size: 38px;
-}
-.kstat-arrived .kstat-hint {
-  color: var(--on-accent);
-}
-.kstat-picked {
-  background: var(--ok-soft);
+.ksent svg {
   color: var(--ok);
-}
-.kstat-done {
-  background: transparent;
-  padding: 0;
-}
-.kstat-done .kstat-main {
-  font-size: 20px;
-  color: var(--ink-2);
-}
-@keyframes kpulse {
-  50% {
-    transform: scale(1.03);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

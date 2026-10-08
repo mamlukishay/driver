@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { aiReplyPayload } from "./aiReply.ts";
-import { type AiRunner, parseSlugReply, SLUG_SUGGEST_PROMPT, suggestSlugWithAI } from "./slugSuggest.ts";
+import { eventSlugBase } from "./slug.ts";
+import {
+  type AiRunner,
+  EVENT_SLUG_SUGGEST_PROMPT,
+  KID_SLUG_SUGGEST_PROMPT,
+  parseSlugReply,
+  SLUG_SUGGEST_PROMPT,
+  suggestSlugWithAI,
+} from "./slugSuggest.ts";
 
 const ai = (reply: unknown): AiRunner & { calls: { model: string; input: unknown }[] } => {
   const calls: { model: string; input: unknown }[] = [];
@@ -107,5 +115,27 @@ describe("suggestSlugWithAI", () => {
     const t0 = Date.now();
     expect(await suggestSlugWithAI(slow, M, "x", free, deadline)).toBeNull();
     expect(Date.now() - t0).toBeLessThan(150);
+  });
+});
+
+describe("event and kid kinds", () => {
+  test("event: the event prompt, a word of at most 20 chars (what eventSlugBase keeps)", async () => {
+    const a = ai({ response: { slug: "tamir-bar-mitzvah" } });
+    expect(await suggestSlugWithAI(a, M, "בר המצווה של תמיר", free, undefined, undefined, "event")).toBe("tamir-bar-mitzvah");
+    const input = a.calls[0]!.input as { messages: { role: string; content: string }[] };
+    expect(input.messages[0]!.content).toBe(EVENT_SLUG_SUGGEST_PROMPT);
+    expect(eventSlugBase("2026-10-09", "tamir-bar-mitzvah")).toBe("oct-9-tamir-bar-mitzvah");
+    expect(parseSlugReply({ response: { slug: "tamir-bar-mitzvah-party-time" } }, "event")).toBe("tamir-bar-mitzvah");
+    expect(parseSlugReply({ response: { slug: "x" } }, "event")).toBeNull();
+  });
+  test("kid: the kid prompt, 2-letter names allowed, at most 24 chars, taken → -2", async () => {
+    const a = ai({ response: { slug: "Tuni" } });
+    const taken = new Set(["tuni"]);
+    expect(await suggestSlugWithAI(a, M, "תוני", async (s) => taken.has(s), undefined, undefined, "kid")).toBe("tuni-2");
+    expect((a.calls[0]!.input as { messages: { content: string }[] }).messages[0]!.content).toBe(KID_SLUG_SUGGEST_PROMPT);
+    expect(parseSlugReply({ response: { slug: "or" } }, "kid")).toBe("or");
+    expect(parseSlugReply({ response: { slug: "or" } })).toBeNull(); // groups need 3+
+    expect(parseSlugReply({ response: { slug: "a".repeat(40) } }, "kid")).toBe("a".repeat(24));
+    expect(parseSlugReply({ response: { slug: "תוני" } }, "kid")).toBeNull();
   });
 });

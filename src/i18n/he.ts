@@ -129,6 +129,7 @@ export const he = {
     event_cancelled: "האירוע בוטל, אז ההסעות מוקפאות. אפשר לשחזר אותו מתפריט האירוע.",
     network: "אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.",
     unknown: "משהו השתבש. נסו שוב בעוד רגע.",
+    kid_slug_taken: "הכתובת הזו כבר תפוסה בקבוצה",
   } satisfies Record<ClientErrorCode, string>,
 
   home: {
@@ -218,6 +219,11 @@ export const he = {
     plateInvalid: "עד 3 ספרות",
     less: "פחות",
     more: "יותר",
+    kidSlugLabel: (kid: string) => (kid ? `כתובת הקישור של ${kid}` : "כתובת הקישור של הילד/ה"),
+    kidSlugSuggested: "הצעה אוטומטית, אפשר לשנות",
+    kidSlugInvalid: "רק אותיות אנגליות קטנות, ספרות ומקף, 2–30 תווים",
+    kidSlugTaken: "הכתובת הזו כבר תפוסה בקבוצה",
+    suggestingKidSlug: "מציע כתובת…",
   },
 
   group: {
@@ -265,6 +271,8 @@ export const he = {
     cover: "תמונת ההזמנה",
     removeCover: "הסרת התמונה",
     submit: "צור אירוע",
+    slugWordSuggested: "הצעה אוטומטית, אפשר לשנות",
+    suggestingSlugWord: "מציע מילה…",
   },
 
   event: {
@@ -434,7 +442,7 @@ export const he = {
     done: "הגענו ✓",
     doneLabel: "הנסיעה הסתיימה",
     pax: (n: number) => (n === 1 ? "נוסע אחד" : `${n} נוסעים`),
-    doneKids: (leg: Leg) => (leg === "out" ? "בדפי הילדים: «הגעתם ✓»" : "בדפי הילדים: «הנסיעה הסתיימה»"),
+    doneKids: (leg: Leg) => (leg === "out" ? "בדפי הילדים: «הגעתם»" : "בדפי הילדים: «הנסיעה הסתיימה»"),
     toEvent: "חזרה לאירוע",
     resume: "חזרה לנסיעה",
     departTitle: "לעדכן את הנוסעים?",
@@ -479,32 +487,47 @@ export const he = {
   kid: {
     hi: (name: string) => `היי ${name}!`,
     noEvents: "עוד אין הסעות.",
-    pickup: (leg: Leg) => (leg === "out" ? "הלוך · אוספים אותך מהבית" : "חזור · איסוף הביתה"),
+    /** Ticket label of a leg. */
+    legLabel: (leg: Leg) => (leg === "out" ? "הלוך · מהבית" : "חזור · הביתה"),
     notNeeded: "לא צריך הסעה בכיוון הזה",
     noRide: "עוד אין לך הסעה",
     driver: (family: string, person?: string) => (person ? `${person} ממשפחת ${family} אוסף/ת אותך` : `משפחת ${family} אוספת אותך`),
-    at: (t: string) => `יציאה ב-${t}`,
+    /** `driver` with the family name bold. */
+    driverParts: (family: string, person?: string): [string, { b: string }, string] =>
+      person ? [`${person} ממשפחת `, { b: family }, " אוסף/ת אותך"] : ["משפחת ", { b: family }, " אוספת אותך"],
+    withFamily: "נוסעים עם המשפחה",
+    departs: "יציאה",
+    from: "מ",
+    to: "אל",
+    home: "הבית",
     findCar: "חפשי/חפש את הרכב הזה",
-    callDriver: (name: string) => `התקשרות ל${name}`,
+    carMeta: (color: string | undefined, seats: number) => `${color ? `${color} · ` : ""}${seats} מקומות`,
+    plateLabel: (plate: string) => `לוחית מסתיימת ב-${plate}`,
+    callLabel: (name: string) => `חיוג ל${name}`,
     ready: "אני מוכן/ה",
-    readyDone: "שלחת \"אני מוכן/ה\" ✓",
+    readyDone: "שלחת \"אני מוכן/ה\"",
     notComing: "סומן שלא מגיע/ה",
     allRides: "כל ההסעות שלי",
     statusLabel: (leg: Leg) => `מצב ההסעה ב${legName[leg]}`,
     status: {
       waiting: "עוד מחפשים לך הסעה",
+      waitingHint: "הכרטיס יודפס כאן כשיימצא רכב.",
+      assigned: "יש לך הסעה",
+      onTheWaySign: "בדרך",
       onTheWay: (driver: string) => `${driver} יצא/ה לדרך`,
       /** The driver's ETA for this kid, as a local clock time. */
       eta: (time: string) => `הגעה בערך ב-${time}`,
       /** Shown instead of the time once the ETA has passed (never an overdue count). */
       etaSoon: "עוד רגע",
       etaUpdated: (time: string) => `עודכן ב-${time}`,
-      arrived: (driver: string) => `${driver} למטה! 🚗`,
+      arrived: (driver: string) => `${driver} למטה!`,
       arrivedHint: "צאו לרכב",
-      picked: "עלית לרכב ✓",
+      picked: "עלית לרכב",
+      pickedStamp: "עלית",
       done: "ההסעה הזאת הסתיימה",
-      /** The driver tapped "הגענו" on the out leg. */
-      endedOut: "הגעתם ✓",
+      doneStamp: "הסתיימה",
+      /** The driver tapped "הגענו" on the out leg (the ticket draws the check). */
+      endedOut: "הגעתם",
       /** The driver tapped "הגענו" on the back leg. */
       endedBack: "הנסיעה הסתיימה",
     },

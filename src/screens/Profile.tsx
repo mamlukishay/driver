@@ -6,7 +6,7 @@ import { Header, useIdentity, whoUrl } from "../components/Header.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
 import { WaButton } from "../components/WaButton.tsx";
-import { api } from "../api.ts";
+import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { keys, setData, useGroup } from "../store.ts";
 import type { GroupResponse } from "../../shared/types.ts";
@@ -16,7 +16,7 @@ import { useConfig } from "./Join.tsx";
 export function Profile({ group }: { group: string }) {
   const me = useIdentity(group);
   const res = useGroup(group);
-  const { places } = useConfig();
+  const { places, slugSuggest } = useConfig();
   const fam = res.data?.me;
   return (
     <>
@@ -41,7 +41,7 @@ export function Profile({ group }: { group: string }) {
                 {he.profile.switchFamily}
               </a>
             </p>
-            <ProfileBody group={group} fam={fam} places={places} data={res.data!} />
+            <ProfileBody group={group} fam={fam} places={places} slugSuggest={slugSuggest} data={res.data!} />
           </>
         )}
       </main>
@@ -49,7 +49,19 @@ export function Profile({ group }: { group: string }) {
   );
 }
 
-function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNullable<GroupResponse["me"]>; places: boolean; data: GroupResponse }) {
+function ProfileBody({
+  group,
+  fam,
+  places,
+  slugSuggest,
+  data,
+}: {
+  group: string;
+  fam: NonNullable<GroupResponse["me"]>;
+  places: boolean;
+  slugSuggest: boolean;
+  data: GroupResponse;
+}) {
   // Re-mount the form when the server copy changes version-wise (e.g. after save).
   const [initial, setInitial] = useState<FamilyDraft>(() => draftFrom(fam));
   const [formKey, setFormKey] = useState(0);
@@ -77,12 +89,13 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
       setFormKey((k) => k + 1);
       toast.info(he.profile.saved);
     } catch (e) {
+      if (e instanceof ApiError && e.code === "kid_slug_taken") throw e; // shown on the kid's link field
       toast.error(e);
     }
   };
   return (
     <>
-      <FamilyForm key={formKey} group={group} initial={initial} submitLabel={he.common.save} places={places} cities={data.families.filter((f) => f.id !== fam.id).map((f) => f.city ?? "")} cars={false} revealErrors={!initial.name} onSubmit={save} />
+      <FamilyForm key={formKey} group={group} initial={initial} submitLabel={he.common.save} places={places} slugSuggest={slugSuggest} cities={data.families.filter((f) => f.id !== fam.id).map((f) => f.city ?? "")} cars={false} revealErrors={!initial.name} onSubmit={save} />
       <section class="card" aria-labelledby="cars-sum-h">
         <h2 class="hs" id="cars-sum-h">
           {he.cars.summary}
@@ -114,7 +127,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
           </h2>
           {fam.kids.map((k, i) =>
             k.phone ? (
-              <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(kidPath(group, k.id)))}>
+              <WaButton class="btn wa" phone={k.phone} text={he.wa.kidLink(k.name, appUrl(kidPath(group, k)))}>
                 {he.profile.sendKidLink(k.name)}
               </WaButton>
             ) : (

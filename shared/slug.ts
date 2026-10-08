@@ -57,3 +57,11 @@ export async function firstFreeSlugAsync(base: string, taken: (slug: string) => 
   }
   return null;
 }
+
+/** A kid's link name (`/g/:group/kid/<slug>`): 2–30 chars of [a-z0-9-], no leading/trailing hyphen. */
+export const KID_SLUG_MAX = 30;
+export const KID_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,28}[a-z0-9]$/;
+
+export function isKidSlug(value: unknown): value is string {
+  return typeof value === "string" && KID_SLUG_RE.test(value);
+}
