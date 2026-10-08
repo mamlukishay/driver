@@ -168,7 +168,7 @@ export const seatedKid = (page: Page, kid: string) => page.getByRole("button", {
 /** The empty-seat button of a family's car. */
 export const emptySeat = (page: Page, family: string) => page.getByRole("button", { name: he.board.emptySeat(he.family(family)) }).first();
 
-/** The 10-second undo button in the toast. */
+/** The 5-second undo button in the toast. */
 export const undoButton = (page: Page) => page.getByRole("status").getByRole("button", { name: new RegExp(`^${he.common.undo}`) });
 
 /** Israeli mobile phone pattern as shown in the UI (050-123-4567) or raw (+972…). */
