@@ -1516,6 +1516,42 @@ a.who:hover {
     opacity: 0.4;
   }
 }
+/* `slide` sheets (the ☰ menu): in from fully below the screen, back down on close. */
+.ov.slide .sheet {
+  animation: slide-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ov.slide .scrim {
+  animation: fade-in 0.2s ease-out;
+}
+.ov.closing {
+  pointer-events: none;
+}
+.ov.closing .sheet {
+  animation: slide-out 0.17s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+.ov.closing .scrim {
+  animation: fade-out 0.17s ease-in forwards;
+}
+@keyframes slide-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes slide-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
 .grab {
   inline-size: 40px;
   block-size: 4px;
