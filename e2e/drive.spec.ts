@@ -191,7 +191,7 @@ test("out leg: time chip, own kid auto-picked, הגענו and back to the ride",
 
   // "כמה זמן עד שאגיע?" → the line shows what the kid page now says.
   await expect(page.getByTestId("kid-sees")).toHaveText(he.drive.kidSeesNoEta(NOA));
-  const chip = page.getByRole("group", { name: he.drive.etaLabel(NOA) }).getByRole("button", { name: he.drive.etaChip(5) });
+  const chip = page.getByRole("group", { name: he.drive.etaLabel(NOA) }).getByRole("button", { name: he.drive.etaChip(5), exact: true });
   await chip.click();
   await expect(chip).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("kid-sees")).toContainText(he.drive.kidSeesEta(""));
