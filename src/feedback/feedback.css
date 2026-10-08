@@ -37,6 +37,10 @@
 body:has(.sticky-cta) .fb-fab {
   inset-block-end: calc(76px + env(safe-area-inset-bottom, 0px));
 }
+/* Driver mode: above the fixed bottom bar. */
+body:has(.drv-bar) .fb-fab {
+  inset-block-end: calc(96px + env(safe-area-inset-bottom, 0px));
+}
 /* While another sheet is open its buttons sit at the bottom: move the tab up, over the scrim. */
 body:has(.ov) .fb-fab {
   inset-block-end: auto;
