@@ -1,0 +1,703 @@
+<title>סדנת עמוד הילד</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Secular+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sibling of events-workshop.html. Intro, "today" frame + complaints, then per alternative a
+   horizontally scrolling row of phone frames with short notes, comparison table, slug section.
+   Tokens ported from src/styles/tokens.css, plus car paint, plate and photo-placeholder tokens. */
+:root{
+  --bg:#F3F3EE; --surface:#FFFFFF; --sunk:#E8E9E3; --line:#D4D6CF;
+  --ink:#1C1F23; --ink-2:#555B62; --ink-3:#80868C;
+  --asphalt:#2B2F34; --asphalt-2:#3B4047; --on-asphalt:#EEF0EA; --on-asphalt-2:#AEB4B9;
+  --accent:#F2B705; --accent-soft:#FBEDB8; --on-accent:#1C1F23;
+  --ok:#22804E; --ok-soft:#DCF0E3; --gap:#C0570A; --gap-soft:#FCE6D2; --bad:#B8382A; --bad-soft:#F8DEDA;
+  --device:#17191C; --app-bg:#F7F7F3; --inv-bg:#FFF6DC; --inv-ink:#3A2A10;
+  --f1:#2F6FD6; --f2:#C2417F;
+  --car-red:#C0392B; --car-silver:#B8BEC4; --car-white:#F4F5F2; --car-blue:#3E6FB0; --car-green:#4C8B5E;
+  --car-black:#25282C; --car-grey:#7F868D; --car-neutral:#C9C3B6; --car-edge:#2B2F34;
+  --car-glass:#A9C6DA; --car-tire:#2B2F34; --car-hub:#B9BEC3;
+  --plate:#F5C400; --plate-ink:#15171A; --plate-blue:#1F4E9E; --plate-il:#F4F5F2;
+  --ph-sky:#CFDCE6; --ph-far:#B3C3AE; --ph-ground:#A3A49B;
+  --shadow:rgba(20,22,25,.14); --focus:#2F6FD6;
+  --ff-display:"Secular One","Rubik",system-ui,sans-serif;
+  --ff-body:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --ff-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gutter:16px; --tap:44px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE;
+  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F;
+  --car-black:#1A1C1F; --car-grey:#6E757C; --car-neutral:#8F8A80; --car-edge:#7E858C;
+  --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
+  --ph-sky:#2A3A48; --ph-far:#2F4236; --ph-ground:#3A3D3F;
+  --shadow:rgba(0,0,0,.5); --focus:#8DB6FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE;
+  --car-red:#D8584A; --car-silver:#9EA5AC; --car-white:#E9ECE6; --car-blue:#6C95D0; --car-green:#6DAE7F;
+  --car-black:#1A1C1F; --car-grey:#6E757C; --car-neutral:#8F8A80; --car-edge:#7E858C;
+  --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
+  --ph-sky:#2A3A48; --ph-far:#2F4236; --ph-ground:#3A3D3F;
+  --shadow:rgba(0,0,0,.5); --focus:#8DB6FF; color-scheme:dark}
+/* A single phone forced to the dark palette (same values as above). */
+.dk{
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --car-white:#E9ECE6; --car-black:#1A1C1F; --car-edge:#7E858C;
+  --car-glass:#4F6E86; --car-tire:#0C0E10; --car-hub:#6E757C;
+  --ph-sky:#2A3A48; --ph-far:#2F4236; --ph-ground:#3A3D3F;
+  --shadow:rgba(0,0,0,.5); color-scheme:dark}
+
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ff-body);font-size:16px;line-height:1.5;overflow-x:clip}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{line-height:1.25;text-wrap:balance}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-radius:5px;padding:0 4px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.num,time{font-variant-numeric:tabular-nums}
+.ltr{direction:ltr;unicode-bidi:isolate}
+
+/* ---------- workshop page ---------- */
+.w-ctl{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);border-block-end:1px solid var(--line)}
+.w-seg{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;padding-block:8px;padding-inline:16px;max-inline-size:1180px;margin-inline:auto;scrollbar-width:none}
+.w-seg::-webkit-scrollbar{display:none}
+.w-seg a{flex:none;white-space:nowrap;text-decoration:none;border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 14px;font-size:14.5px;font-weight:500;min-block-size:38px;display:inline-flex;align-items:center;gap:6px}
+.w-seg a b{font-family:var(--ff-mono);font-weight:500}
+.w-wrap{max-inline-size:1180px;margin-inline:auto;padding-inline:16px;padding-block:20px 80px;display:flex;flex-direction:column;gap:44px}
+.w-intro{display:flex;flex-direction:column;gap:10px;max-inline-size:760px}
+.w-intro h1{font-family:var(--ff-display);font-weight:400;font-size:30px}
+.w-lane{block-size:10px;background:var(--asphalt);border-radius:3px;position:relative;max-inline-size:220px}
+.w-lane::after{content:"";position:absolute;inset-inline:8px;inset-block-start:4px;block-size:2px;background:repeating-linear-gradient(to left,var(--accent) 0 20px,transparent 20px 34px)}
+.w-sec{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 64px);display:flex;flex-direction:column;gap:16px;min-inline-size:0}
+.w-sec > h2{font-family:var(--ff-display);font-weight:400;font-size:26px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.w-sec > h2 .w-k{font-family:var(--ff-mono);font-size:15px;background:var(--accent);color:var(--on-accent);border-radius:6px;padding:0 8px}
+.w-sec > h2 .en{font-family:var(--ff-mono);font-size:13px;color:var(--ink-3)}
+.w-lead{color:var(--ink-2);max-inline-size:720px}
+.w-opt{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;align-items:start}
+.w-side{display:flex;flex-direction:column;gap:14px;min-inline-size:0}
+.w-ul{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px;font-size:15px;max-inline-size:760px}
+.w-ul b{font-weight:700}
+.w-q{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-inline-size:760px}
+.w-q li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:baseline}
+.w-q li > i{font-style:normal;font-family:var(--ff-mono);background:var(--ink);color:var(--bg);border-radius:6px;padding:0 7px;flex:none}
+.w-q small{display:block;color:var(--ink-2)}
+.w-url{font-family:var(--ff-mono);font-size:12.5px;color:var(--ink-2);direction:ltr;text-align:center;background:var(--sunk);border-radius:8px;padding:4px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-url b{color:var(--ink);font-weight:500}
+.w-tblw{overflow-x:auto}
+.w-tbl{border-collapse:collapse;inline-size:100%;min-inline-size:560px;font-size:14px;background:var(--surface);border-radius:12px;overflow:hidden}
+.w-tbl th,.w-tbl td{border-block-end:1px solid var(--line);padding:8px 10px;text-align:start;vertical-align:top}
+.w-tbl thead th{background:var(--sunk);font-weight:700}
+.w-tbl td.rec{background:var(--accent-soft)}
+.w-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.w-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-inline-size:0}
+.w-card h3{font-size:17px}
+.w-card .lbl{font-size:12px;font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.w-sep{background:var(--sunk);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;max-inline-size:760px}
+.urlx{font-family:var(--ff-mono);font-size:13.5px;direction:ltr;text-align:left;background:var(--sunk);border-radius:8px;padding:6px 10px;overflow-x:auto;white-space:nowrap}
+.urlx.old{color:var(--ink-3);text-decoration:line-through;text-decoration-thickness:1px}
+.urlx mark{background:var(--accent-soft);color:var(--ink);border-radius:3px;padding:0 2px}
+.fake-fld{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--ink-2)}
+.fake-in{font-family:var(--ff-mono);font-size:15px;color:var(--ink);direction:ltr;background:var(--surface);border:1.5px solid var(--accent);border-radius:10px;padding:8px 12px}
+.ai-tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:0 7px;align-self:flex-start}
+
+/* shared parts strip */
+.parts{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.part{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-inline-size:0;max-inline-size:100%}
+.part h3{font-size:14px;color:var(--ink-2);font-weight:700}
+.swatches{display:grid;grid-template-columns:repeat(4,minmax(0,64px));gap:8px 10px}
+.swatches figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;color:var(--ink-2)}
+
+/* ---------- frame rows ---------- */
+.w-row{display:flex;gap:18px;overflow-x:auto;padding-block:4px 14px;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:thin}
+.ph{flex:none;inline-size:330px;max-inline-size:100%;margin:0;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px}
+.ph-cap{font-size:14px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;min-block-size:24px}
+.ph-cap code{font-size:12px}
+.ph-cap span{color:var(--ink-2)}
+.dev{inline-size:100%;block-size:690px;background:var(--device);border-radius:34px;padding:8px;box-shadow:0 14px 34px var(--shadow)}
+.scr{position:relative;inline-size:100%;block-size:100%;border-radius:27px;overflow:hidden;background:var(--app-bg);color:var(--ink);display:flex;flex-direction:column;isolation:isolate}
+.dev.tall{block-size:auto}
+.dev.tall .scr-body{overflow:visible;padding-block-end:16px}
+.sbar{flex:none;block-size:26px;display:flex;justify-content:space-between;align-items:center;padding-inline:20px;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.sbar svg{display:block}
+.scr-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-inline:14px;padding-block:10px 64px;display:flex;flex-direction:column;gap:14px}
+.scr-body::-webkit-scrollbar{display:none}
+.demo-ctl{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--ink-2)}
+.demo-ctl button{border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:5px 14px;min-block-size:36px;font-weight:500;display:inline-flex;gap:6px;align-items:center}
+
+/* floating feedback tab: same look as .fb-fab, inside the phone */
+.fab{position:absolute;inset-inline-start:0;inset-block-end:12px;z-index:5;display:inline-flex;align-items:center;gap:5px;min-block-size:34px;padding:6px 10px 6px 9px;border:1px solid var(--line);border-inline-start:0;border-start-end-radius:999px;border-end-end-radius:999px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(6px);color:var(--ink-2);font-size:13px;font-weight:500;box-shadow:0 2px 8px var(--shadow);opacity:.92}
+
+/* ---------- shared app bits ---------- */
+.carsvg{display:block;overflow:visible;flex:none}
+.plate{display:inline-flex;align-items:stretch;direction:ltr;unicode-bidi:isolate;border:1.5px solid var(--plate-ink);border-radius:5px;overflow:hidden;background:var(--plate);color:var(--plate-ink);font-family:var(--ff-mono);font-weight:500;font-size:15px;line-height:1;flex:none;align-self:flex-start}
+.plate i{font-style:normal;background:var(--plate-blue);color:var(--plate-il);font-family:var(--ff-body);font-size:8px;font-weight:700;display:grid;place-items:center;padding-inline:3px}
+.plate span{padding:5px 7px 4px;letter-spacing:.04em}
+.plate.lg{font-size:20px}
+.plate.lg span{padding:7px 10px 6px}
+.plate.lg i{font-size:9.5px;padding-inline:4px}
+.call{display:inline-flex;align-items:center;gap:8px;text-decoration:none;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px 6px 8px;min-block-size:var(--tap);font-size:15px}
+.call .ic{inline-size:30px;block-size:30px;border-radius:50%;background:var(--ink);color:var(--surface);display:grid;place-items:center;flex:none}
+.call b{font-weight:700}
+.call .num{font-family:var(--ff-mono);font-size:13.5px;color:var(--ink-2);direction:ltr;unicode-bidi:isolate}
+.ready{border:0;inline-size:100%;background:var(--accent);color:var(--on-accent);border-radius:16px;font-family:var(--ff-display);font-size:22px;min-block-size:60px;padding:10px}
+.sent{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ink-2)}
+.sent svg{color:var(--ok)}
+.evh{display:flex;gap:10px;align-items:center;min-inline-size:0}
+.cov{inline-size:40px;block-size:52px;border-radius:7px;overflow:hidden;flex:none;border:1px solid var(--line);background:repeating-linear-gradient(135deg,var(--inv-bg) 0 7px,var(--accent-soft) 7px 14px);color:var(--inv-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--ff-display);font-size:9px;line-height:1.05;text-align:center}
+.evh-t{display:flex;flex-direction:column;min-inline-size:0;line-height:1.3}
+.evh-t b{font-size:15.5px}
+.evh-t small{font-size:12.5px;color:var(--ink-2)}
+.photo{position:relative;overflow:hidden;border-radius:14px;background:linear-gradient(var(--ph-sky) 0 52%,var(--ph-ground) 52%);display:grid;place-items:end center;padding-block-end:8%}
+.photo::before{content:"";position:absolute;inset-inline:0;inset-block-start:30%;block-size:24%;background:radial-gradient(60px 34px at 18% 100%,var(--ph-far) 98%,transparent),radial-gradient(80px 44px at 62% 100%,var(--ph-far) 98%,transparent),radial-gradient(50px 30px at 92% 100%,var(--ph-far) 98%,transparent)}
+.photo .carsvg{position:relative}
+.photo small{position:absolute;inset-block-start:6px;inset-inline-end:8px;font-size:10px;color:var(--ink-2);background:color-mix(in srgb,var(--surface) 80%,transparent);border-radius:5px;padding:0 5px}
+
+/* ---------- TODAY (reproduction) ---------- */
+.t-body{gap:16px}
+.t-hdr{border-inline-start:6px solid var(--f1);padding-inline-start:12px;display:flex;flex-direction:column;position:relative}
+.t-hdr h1{font-family:var(--ff-display);font-weight:400;font-size:30px;line-height:1.2}
+.t-hdr small{font-size:13px;color:var(--ink-2)}
+.t-ev b{display:block;font-size:15.5px}
+.t-ev small{font-size:12.5px;color:var(--ink-2)}
+.t-leg{position:relative;background:var(--surface);border:1px solid var(--line);border-inline-start:6px solid var(--f2);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.t-leg .k{font-size:13px;color:var(--ink-2)}
+.t-leg h2{font-size:19px}
+.t-leg .tm{font-size:24px;font-weight:700}
+.t-box{position:relative;block-size:130px;border-radius:12px;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center;color:var(--f2)}
+.t-row{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative}
+.t-call{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font-weight:700;font-size:14px;background:var(--surface)}
+.t-ok{background:var(--ok-soft);color:var(--ok);border-radius:11px;padding:10px 12px;font-weight:700;font-size:14px;position:relative}
+.t-plate{font-family:var(--ff-mono);font-size:13px;background:var(--accent-soft);border:1px solid var(--ink-3);border-radius:5px;padding:0 6px;direction:ltr}
+.t-wait{position:relative;border:1px dashed var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.t-wait .k{font-size:13px;color:var(--ink-2)}
+.t-wait b{background:var(--gap-soft);color:var(--gap);border-radius:12px;padding:12px;font-family:var(--ff-display);font-weight:400;font-size:20px}
+.t-fb{align-self:center;display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface);position:relative}
+.cm{position:absolute;z-index:3;inline-size:24px;block-size:24px;border-radius:50%;background:var(--bad);color:var(--surface);font-family:var(--ff-mono);font-size:13px;font-weight:500;display:grid;place-items:center;box-shadow:0 0 0 3px var(--app-bg);font-style:normal}
+
+/* ---------- A · ticket ---------- */
+.alt-a{background:var(--asphalt);color:var(--on-asphalt)}
+.alt-a .scr-body{gap:16px}
+.a-hi{display:flex;flex-direction:column;gap:2px}
+.a-hi h1{font-family:var(--ff-display);font-weight:400;font-size:30px;line-height:1.15}
+.a-hi small{font-size:13px;color:var(--on-asphalt-2)}
+.alt-a .evh-t small{color:var(--on-asphalt-2)}
+.alt-a .cov{border-color:var(--asphalt-2)}
+.tk{--notch:var(--asphalt);background:var(--surface);color:var(--ink);border-radius:16px;display:flex;flex-direction:column;position:relative;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.tk-main{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px;border-radius:16px 16px 0 0;position:relative;overflow:hidden}
+.tk-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tk-leg{font-family:var(--ff-mono);font-size:12px;letter-spacing:.08em;color:var(--ink-2)}
+.sign{font-family:var(--ff-display);font-size:16px;background:var(--accent);color:var(--on-accent);border-radius:7px;padding:3px 10px;box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 3.5px var(--on-accent);white-space:nowrap}
+.sign.out{background:transparent;color:var(--on-asphalt);box-shadow:inset 0 0 0 1.5px var(--on-asphalt-2)}
+.tk-route{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:end}
+.tk-route small{display:block;font-size:11.5px;color:var(--ink-2);letter-spacing:.02em}
+.tk-time{font-family:var(--ff-display);font-size:48px;line-height:.95}
+.tk-to{font-family:var(--ff-display);font-size:22px;line-height:1.1;text-align:end}
+.tk-path{block-size:2px;margin-block-end:12px;background:repeating-linear-gradient(to left,var(--ink-3) 0 5px,transparent 5px 10px);position:relative}
+.tk-path .carsvg{position:absolute;inset-inline-start:18%;inset-block-end:2px}
+.tk-who{font-size:15px}
+.tk-who b{font-weight:700}
+.tk-hint{font-size:14.5px;color:var(--ink-2)}
+.tk-perf{position:relative;block-size:0;border-block-start:2px dashed var(--line);margin-inline:14px}
+.tk-perf::before,.tk-perf::after{content:"";position:absolute;inset-block-start:-12px;inline-size:22px;block-size:22px;border-radius:50%;background:var(--notch)}
+.tk-perf::before{inset-inline-start:-26px}
+.tk-perf::after{inset-inline-end:-26px}
+.tk-stub{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.tk-car{display:flex;gap:12px;align-items:center}
+.tk-car b{font-family:var(--ff-display);font-weight:400;font-size:21px;line-height:1.1;display:block}
+.tk-car small{font-size:13px;color:var(--ink-2)}
+.tk-car .meta{display:flex;flex-direction:column;gap:5px;min-inline-size:0}
+.tk .photo{block-size:120px}
+/* arrived: the whole top half is the sign */
+.tk.arr .tk-main{background:var(--accent);color:var(--on-accent);gap:6px;animation:pulse 1.2s ease-in-out 3}
+.tk.arr .tk-leg{color:var(--on-accent)}
+.tk-big{font-family:var(--ff-display);font-size:52px;line-height:1;display:flex;align-items:center;gap:10px}
+.tk-big + p{font-size:18px;font-weight:500}
+.tk.arr .find{font-size:13.5px;font-weight:700;color:var(--ink)}
+/* picked: a stamp */
+.stamp{position:absolute;inset-inline-end:14px;inset-block-start:38px;transform:rotate(-9deg);border:3px solid var(--ok);color:var(--ok);border-radius:10px;padding:2px 12px;font-family:var(--ff-display);font-size:24px;display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.tk.pk .tk-route,.tk.pk .tk-who{opacity:.45}
+/* waiting: an outline ticket waiting to be printed */
+.tk.wait{background:transparent;color:var(--on-asphalt);box-shadow:none;border:1.5px dashed var(--on-asphalt-2)}
+.tk.wait .tk-leg{color:var(--on-asphalt-2)}
+.tk.wait .tk-to{color:var(--on-asphalt)}
+.tk.wait p{font-size:14px;color:var(--on-asphalt-2)}
+.tk.wait .tk-route small{color:var(--on-asphalt-2)}
+.alt-a .ready{box-shadow:0 0 0 0 transparent}
+.alt-a .sent{color:var(--on-asphalt-2)}
+.alt-a .fab{border-color:var(--asphalt-2)}
+
+/* ---------- B · road ---------- */
+.b-hi{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.b-hi h1{font-family:var(--ff-display);font-weight:400;font-size:24px}
+.b-hi small{font-size:12.5px;color:var(--ink-2)}
+.b-leg{display:flex;flex-direction:column;gap:12px}
+.b-k{font-size:13px;color:var(--ink-2);display:flex;gap:6px;align-items:center}
+.b-k b{color:var(--ink);font-weight:700}
+.b-st{font-family:var(--ff-display);font-weight:400;font-size:32px;line-height:1.1}
+.b-hint{font-size:16px;color:var(--ink-2);margin-block-start:2px}
+.b-hint b{color:var(--ink)}
+.road{position:relative;block-size:96px;margin-inline:2px;--car:10%}
+.rd{position:absolute;inset-inline:0;inset-block-start:26px;block-size:38px;background:var(--asphalt);border-radius:19px}
+.rd::after{content:"";position:absolute;inset-inline:16px;inset-block-start:18px;block-size:2px;background:repeating-linear-gradient(to left,var(--accent) 0 14px,transparent 14px 26px)}
+.stop{position:absolute;inset-inline-start:var(--x);inset-block-start:0;block-size:100%;transform:translateX(50%);display:flex;flex-direction:column;align-items:center;transition:opacity .4s}
+.stop i{position:absolute;inset-block-start:38px;inline-size:14px;block-size:14px;border-radius:50%;background:var(--on-asphalt-2);border:3px solid var(--asphalt)}
+.stop small{position:absolute;inset-block-start:70px;font-size:12px;white-space:nowrap;color:var(--ink-2)}
+.stop.gone{opacity:0}
+.stop.me i{inline-size:24px;block-size:24px;inset-block-start:33px;background:var(--accent);border-color:var(--on-accent)}
+.stop.me small{font-weight:700;color:var(--ink);font-size:13px}
+.stop.me.hot i{box-shadow:0 0 0 0 var(--accent);animation:ring 1.4s ease-out infinite}
+.stop.me.done i{background:var(--ok);border-color:var(--asphalt)}
+.stop.end i{inline-size:auto;block-size:auto;background:transparent;border:0;inset-block-start:4px;color:var(--ink)}
+.rcar{position:absolute;inset-inline-start:var(--car);inset-block-start:16px;transform:translateX(50%);transition:inset-inline-start 1.1s cubic-bezier(.5,0,.3,1);z-index:2;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+.road.dim .rd{background:transparent;border:2px dashed var(--line)}
+.road.dim .rd::after{background:repeating-linear-gradient(to left,var(--line) 0 14px,transparent 14px 26px)}
+.road.dim .stop i{background:var(--surface);border-color:var(--ink-3)}
+.road.dim .q{position:absolute;inset-inline-start:50%;inset-block-start:31px;transform:translateX(50%);font-family:var(--ff-display);font-size:20px;color:var(--ink-3)}
+.b-car{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.b-car .meta{display:flex;flex-direction:column;gap:4px;min-inline-size:0;flex:1}
+.b-car b{font-size:17px}
+.b-car small{font-size:12.5px;color:var(--ink-2)}
+.b-car .photo{inline-size:104px;block-size:70px;border-radius:10px;padding-block-end:4px;flex:none}
+.b-hr{block-size:1px;background:var(--line)}
+.b-leg.arr .b-st{font-size:44px}
+.b-arrbar{background:var(--accent);color:var(--on-accent);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;animation:pulse 1.2s ease-in-out 3}
+.b-arrbar .b-st{font-size:46px}
+.b-arrbar .b-hint{color:var(--on-accent);font-weight:500;font-size:18px}
+
+/* ---------- C · now card ---------- */
+.c-hi{display:flex;flex-direction:column}
+.c-hi b{font-family:var(--ff-display);font-weight:400;font-size:22px;line-height:1.2}
+.c-hi small{font-size:12.5px;color:var(--ink-2)}
+.now{border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);position:relative}
+.now-eb{font-size:13px;font-weight:500;color:var(--ink-2);display:flex;justify-content:space-between;gap:8px}
+.now-big{font-family:var(--ff-display);font-weight:400;font-size:46px;line-height:1}
+.now-big small{font-size:22px}
+.now-sub{font-size:17px}
+.now-sub b{font-weight:700}
+.now-car{display:flex;flex-direction:column;align-items:center;gap:8px;padding-block:6px 2px}
+.now-car .model{font-family:var(--ff-display);font-size:24px;line-height:1.1;text-align:center}
+.now-car .model small{display:block;font-family:var(--ff-body);font-size:13px;color:var(--ink-2)}
+.now-car .photo{inline-size:100%;block-size:150px}
+.now-act{display:flex;flex-direction:column;gap:10px}
+.now.wayc{background:var(--accent-soft);border-color:transparent}
+.now.wayc .now-eb,.now.wayc .now-car .model small{color:var(--ink)}
+.pips{display:flex;gap:6px;align-items:center;font-size:14px}
+.pips i{inline-size:22px;block-size:8px;border-radius:4px;background:var(--ink)}
+.pips i.me{background:var(--accent);box-shadow:inset 0 0 0 2px var(--ink)}
+.pips i.car{background:transparent;inline-size:auto;block-size:auto}
+.now.arr{background:var(--accent);color:var(--on-accent);border:0;margin-inline:-14px;border-radius:0;padding:20px 18px;gap:10px;animation:pulse 1.2s ease-in-out 3}
+.now.arr .now-eb,.now.arr .now-car .model small{color:var(--on-accent)}
+.now.arr .now-big{font-size:62px}
+.now.arr .now-sub{font-size:21px;font-weight:500}
+.now.arr .call{background:var(--on-accent);color:var(--accent);border-color:var(--on-accent)}
+.now.arr .call .ic{background:var(--accent);color:var(--on-accent)}
+.now.arr .call .num{color:var(--accent)}
+.find-tag{font-size:13px;font-weight:700;align-self:center}
+.now.pk{background:var(--ok-soft);border-color:transparent}
+.now.pk .now-big{color:var(--ok);display:flex;align-items:center;gap:8px}
+.c-rows{display:flex;flex-direction:column;border-block-start:1px solid var(--line)}
+.c-row{display:flex;align-items:center;gap:10px;padding-block:11px;border-block-end:1px solid var(--line);font-size:14.5px;min-inline-size:0}
+.c-row .k{font-weight:700;inline-size:42px;flex:none}
+.c-row .v{flex:1;min-inline-size:0;color:var(--ink-2)}
+.c-row .dot{inline-size:9px;block-size:9px;border-radius:50%;background:var(--gap);flex:none}
+.c-row .dot.ok{background:var(--ok)}
+
+@keyframes pulse{50%{transform:scale(1.025)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 80%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
+
+@media (max-width: 860px){ .w-opt{grid-template-columns:minmax(0,1fr)} }
+@media (max-width: 520px){ .w-intro h1{font-size:26px} }
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="car" viewBox="0 0 120 56">
+      <path style="fill:var(--cc);stroke:var(--car-edge)" stroke-width="1.6" stroke-linejoin="round" d="M6 37c0-6 3-9 9-10l17-3 12-12c3-3 6-4 10-4h26c4 0 7 1 9 4l10 12 11 2c5 1 8 4 8 9v5c0 2-1 3-3 3H9c-2 0-3-1-3-3z"/>
+      <path style="fill:var(--car-glass)" d="M37 24l10-10c2-2 4-3 7-3h10v13z"/>
+      <path style="fill:var(--car-glass)" d="M68 11h12c3 0 5 1 6 3l8 10H68z"/>
+      <path style="fill:var(--car-edge)" opacity=".35" d="M66 11h2v24h-2z"/>
+      <rect x="6" y="31" width="7" height="4" rx="2" style="fill:var(--accent)"/>
+      <circle cx="30" cy="45" r="9" style="fill:var(--car-tire)"/><circle cx="30" cy="45" r="4" style="fill:var(--car-hub)"/>
+      <circle cx="92" cy="45" r="9" style="fill:var(--car-tire)"/><circle cx="92" cy="45" r="4" style="fill:var(--car-hub)"/>
+    </symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2a1 1 0 011-.2 11.4 11.4 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.4 11.4 0 00.6 3.6 1 1 0 01-.3 1z"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path fill="currentColor" d="M5 3h2v18H5zM8 4h11l-2.5 4L19 12H8z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M17 5v14L6 12z"/></symbol>
+    <symbol id="i-sig" viewBox="0 0 24 14"><path fill="currentColor" d="M1 10h3v4H1zM6 7h3v7H6zM11 4h3v10h-3zM16 1h3v13h-3z"/></symbol>
+    <symbol id="i-bat" viewBox="0 0 26 14"><rect x="1" y="1" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="3" width="15" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="5" width="2" height="4" rx="1" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div dir="rtl" lang="he">
+<nav class="w-ctl" aria-label="חלקי הסדנה">
+  <div class="w-seg">
+    <a href="#today">היום</a>
+    <a href="#shared">משותף</a>
+    <a href="#a"><b>A</b> כרטיס נסיעה</a>
+    <a href="#b"><b>B</b> הכביש</a>
+    <a href="#c"><b>C</b> במבט אחד</a>
+    <a href="#compare">השוואה</a>
+    <a href="#slugs">כתובות</a>
+  </div>
+</nav>
+
+<main class="w-wrap">
+  <header class="w-intro">
+    <div class="w-lane" aria-hidden="true"></div>
+    <h1>עמוד הילד · סדנה</h1>
+    <p class="muted">העמוד שהילד/ה פותח/ת מהקישור בוואטסאפ: מי אוסף, מתי, איזה רכב, ומה קורה עכשיו. קודם העמוד של היום עם התלונות, אחר כך שלוש חלופות שונות זו מזו. בכל חלופה אותם נתונים: טוני, בר המצווה של תמיר, הלוך עם משפחת ממלוק, חזור עוד בלי רכב.</p>
+    <p class="w-lead" style="font-size:14px">הדף עוקב אחרי מצב התצוגה של הטלפון (בהיר/כהה). בכל חלופה יש גם טלפון אחד שמוצג תמיד בכהה. השורות של הטלפונים נגללות הצידה.</p>
+  </header>
+
+  <!-- ===== TODAY ===== -->
+  <section class="w-sec" id="today" aria-labelledby="today-h">
+    <h2 id="today-h">היום <span class="en">today</span></h2>
+    <div class="w-opt">
+      <div class="ph" id="today-ph"></div>
+      <div class="w-side">
+        <ol class="w-q">
+          <li><i>1</i><div>כפתור המשוב נמצא בסוף העמוד בתוך הזרימה, ולא הלשונית הצפה "משוב" שיש בכל מסך אחר.<small>בחלופות: הלשונית הצפה, באותו מראה, ולא מכסה את הכפתור הראשי.</small></div></li>
+          <li><i>2</i><div>פס צבע משפחה של 6px בצד הכותרת ובצד כל כרטיס. נראה גנרי, לא טרמפוש.<small>בחלופות: אין פסי צד בכלל.</small></div></li>
+          <li><i>3</i><div>בלי תמונת רכב: קופסה אפורה ענקית עם רכב כחול קטן.<small>בחלופות: הרכב מצויר בצבע האמיתי שלו, דגם גדול, לוחית צהובה. גם גרסה עם תמונה.</small></div></li>
+          <li><i>4</i><div>הכתובת <code class="ltr">/kid/x7f3k2q9</code> ושם האירוע בכתובת לא אומרים כלום.<small>החלטה נפרדת, <a href="#slugs">בסוף הדף</a>.</small></div></li>
+          <li><i>5</i><div>"התקשרות לישי": עברית לא טובה ומיותרת.<small>בחלופות: אייקון טלפון + "ישי" + המספר.</small></div></li>
+          <li><i>6</i><div>בלנדר של צבעים: כחול, ורוד, צהוב, ירוק, כתום.<small>בחלופות: אספלט, צהוב, ניטרליים חמים. ירוק/כתום רק כשהמצב דורש.</small></div></li>
+          <li><i>7</i><div>משעמם.<small>לכל חלופה רעיון משלה, ועדיין קריא ב-2 שניות: מצב, שעה, איזה רכב.</small></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SHARED ===== -->
+  <section class="w-sec" id="shared" aria-labelledby="shared-h">
+    <h2 id="shared-h">משותף לכל החלופות <span class="en">shared parts</span></h2>
+    <p class="w-lead">שלושת החלקים האלה זהים ב-A, B ו-C. כולם מנתונים שכבר יש ברכב (<code>label</code>, <code>color</code>, <code>plate</code>, <code>seats</code>, <code>photoId</code>) ובטלפון של ההורה. אין צורך בנתונים חדשים.</p>
+    <div class="parts">
+      <div class="part">
+        <h3>הרכב בצבע שלו (מתוך מילת הצבע)</h3>
+        <div class="swatches" id="swatches"></div>
+        <small class="w-lead" style="font-size:12.5px">צבע לא מוכר (למשל "בורדו") ← גוון ניטרלי.</small>
+      </div>
+      <div class="part">
+        <h3>לוחית רישוי</h3>
+        <div id="plates" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
+        <small class="w-lead" style="font-size:12.5px">צהובה כמו בכביש, בגופן mono. רק הספרות האחרונות.</small>
+      </div>
+      <div class="part">
+        <h3>טלפון לנהג/ת</h3>
+        <div id="callsample"></div>
+        <small class="w-lead" style="font-size:12.5px">שם + מספר, כפתור אחד. בלי "התקשרות ל…".</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== A ===== -->
+  <section class="w-sec" id="a" aria-labelledby="a-h">
+    <h2 id="a-h"><span class="w-k">A</span> כרטיס נסיעה <span class="en">ticket / boarding pass</span></h2>
+    <p class="w-lead">כל כיוון הוא כרטיס נסיעה על רקע אספלט: שעת יציאה ענקית, שלט צהוב עם המצב, קו תלישה, ובחלק התלוש הרכב והלוחית. כשהנהג/ת למטה, כל חלק הכרטיס העליון נצבע צהוב. אחרי העלייה מוטבעת חותמת "עלית".</p>
+    <div class="w-row" id="row-a"></div>
+    <ul class="w-ul">
+      <li><b>הרעיון:</b> כרטיס שאפשר "להחזיק" ולהראות. קרוב לכרטיסי הרכב ולמצב נהג (אספלט + צהוב).</li>
+      <li><b>מה משתנה:</b> אין פסי צד ואין קופסה אפורה. השעה עולה לראש, הרכב יורד לחלק התלוש. "אני מוכן/ה" מתחת לכרטיס, על האספלט.</li>
+      <li><b>עלות:</b> בינונית. <code>Kid.tsx</code> (מבנה חדש לכרטיס), <code>app.css</code> (כרטיס, קו תלישה, שלט, חותמת), <code>CarCard.tsx</code> (רכב צבוע + לוחית), <code>he.ts</code> (מחרוזות מצב קצרות). בלי נתונים חדשים.</li>
+      <li><b>סיכון:</b> רקע כהה גם במצב בהיר: שונה משאר האפליקציה. החותמת והחורים צריכים להיראות טוב גם בטלפונים קטנים.</li>
+    </ul>
+  </section>
+
+  <!-- ===== B ===== -->
+  <section class="w-sec" id="b" aria-labelledby="b-h">
+    <h2 id="b-h"><span class="w-k">B</span> הכביש <span class="en">the road / live tracker</span></h2>
+    <p class="w-lead">פס כביש עם קו צהוב מקווקו. הרכב נוסע עליו, התחנות שלפנייך הן נקודות (לפי <code>ahead</code>, בלי שמות), את/ה נקודה צהובה, ובסוף הדגל של המקום. בכל עדכון חי הרכב מתקדם. בחזור: תחנה אחת, במקום האירוע.</p>
+    <div class="w-row" id="row-b"></div>
+    <ul class="w-ul">
+      <li><b>הרעיון:</b> רואים את ההסעה מתקרבת. הכי כיפי לפתוח שוב ושוב; הכביש הוא סמל טרמפוש (כמו הפס בראש הדף).</li>
+      <li><b>מה משתנה:</b> הכותרת היא המצב עצמו ("עוד 2 תחנות לפניך"). הרכב והטלפון בשורה קטנה מתחת לכביש. ב"למטה!" פס צהוב גדול מעל.</li>
+      <li><b>עלות:</b> הגבוהה מהשלוש. רכיב כביש חדש ב-<code>Kid.tsx</code> (מיקום הרכב לפי סטטוס + <code>ahead</code>), <code>app.css</code> (כביש, תחנות, אנימציה), <code>CarCard.tsx</code>, <code>he.ts</code>. בלי נתונים חדשים: <code>ahead</code> כבר מגיע מהשרת.</li>
+      <li><b>סיכון:</b> המיקום הוא סמלי, לא GPS: ילד/ה עלול/ה לחשוב שזו מפה אמיתית. לפני היציאה (assigned) הכביש פחות אומר, אז השעה צריכה להיות גדולה.</li>
+    </ul>
+  </section>
+
+  <!-- ===== C ===== -->
+  <section class="w-sec" id="c" aria-labelledby="c-h">
+    <h2 id="c-h"><span class="w-k">C</span> במבט אחד <span class="en">big glance / now card</span></h2>
+    <p class="w-lead">כרטיס "עכשיו" ענק אחד להסעה הקרובה, שמחליף את כל המראה לפי המצב: רגוע עם ספירה לאחור, צהוב-רך בדרך, צהוב מקצה לקצה כשהנהג/ת למטה, ירקרק אחרי העלייה. שאר הכיוונים שורות שקטות מתחת.</p>
+    <div class="w-row" id="row-c"></div>
+    <ul class="w-ul">
+      <li><b>הרעיון:</b> דבר אחד בכל רגע. הכי מהיר לקרוא מכל השלוש; הרכב הגדול בצבע שלו הוא "התמונה" של העמוד.</li>
+      <li><b>מה משתנה:</b> במקום שני כרטיסים שווים, כרטיס ראשי ושורות. "בעוד 25 דק׳" במקום "יציאה ב-10:00" (השעה עדיין שם).</li>
+      <li><b>עלות:</b> הנמוכה. <code>Kid.tsx</code> (בחירת הכיוון הקרוב, שכבר קיימת ככפתור "מוכן"), <code>app.css</code> (ערכת צבע לכל מצב), <code>CarCard.tsx</code>, <code>he.ts</code> (ספירה לאחור). בלי נתונים חדשים.</li>
+      <li><b>סיכון:</b> הכי פחות "כיף" מהשלוש. הספירה לאחור תלויה בשעון של הטלפון (כבר נטען מחדש כל דקה).</li>
+    </ul>
+  </section>
+
+  <!-- ===== COMPARE ===== -->
+  <section class="w-sec" id="compare" aria-labelledby="cmp-h">
+    <h2 id="cmp-h">השוואה <span class="en">compare</span></h2>
+    <div class="w-tblw">
+      <table class="w-tbl">
+        <thead><tr><th></th><th>A · כרטיס נסיעה</th><th>B · הכביש</th><th>C · במבט אחד</th></tr></thead>
+        <tbody>
+          <tr><th>מבט של 2 שניות</th><td>טוב: שעה ענקית + שלט</td><td>טוב בנסיעה, פחות לפני היציאה</td><td class="rec">הכי טוב: מצב אחד ענק</td></tr>
+          <tr><th>כיף לפתוח</th><td>גבוה: כרטיס, חותמת</td><td class="rec">הכי גבוה: הרכב זז</td><td>בינוני</td></tr>
+          <tr><th>מתאים לטרמפוש</th><td class="rec">מאוד: אספלט וצהוב כמו מצב נהג</td><td class="rec">מאוד: הכביש הוא הסמל</td><td>טוב</td></tr>
+          <tr><th>עלות בנייה</th><td>בינונית</td><td>גבוהה יחסית</td><td class="rec">נמוכה</td></tr>
+          <tr><th>שני כיוונים ביחד</th><td>שני כרטיסים שווים</td><td>שני כבישים</td><td>ראשי + שורה</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="w-lead" style="font-size:14.5px">אפשר גם לשלב: הכרטיס של C עם פס הכביש של B כשהנהג/ת בדרך.</p>
+  </section>
+
+  <!-- ===== SLUGS ===== -->
+  <section class="w-sec" id="slugs" aria-labelledby="slug-h">
+    <h2 id="slug-h">כתובות בשפה של בני אדם <span class="en">slugs, separate decision</span></h2>
+    <div class="w-sep">
+      <p><b>החלטה נפרדת מעיצוב העמוד.</b> כמו שם הקבוצה היום (<code>shared/slugSuggest.ts</code>, <code>POST /api/groups/suggest-slug</code>), ה-AI מציע מילה באנגלית לפי השם בעברית. השדה נשאר לעריכה, ואם ה-AI לא עונה, הכתובת היא כמו היום.</p>
+    </div>
+    <div class="w-cards">
+      <div class="w-card">
+        <span class="lbl">אירוע · "בר המצווה של תמיר", 9.10</span>
+        <div class="urlx old">/g/class-4b/e/oct-9</div>
+        <div class="urlx">/g/class-4b/e/oct-9-<mark>tamir-bar-mitzvah</mark></div>
+        <div class="fake-fld">
+          <span>מילה באנגלית לכתובת (לא חובה)</span>
+          <div class="fake-in">tamir-bar-mitzvah</div>
+          <span class="ai-tag">הוצע לפי שם האירוע · אפשר לשנות</span>
+        </div>
+        <small class="w-lead" style="font-size:13px">היום המשתמש צריך להקליד את המילה בעצמו (<code>eventSlugBase</code>), ורוב האנשים משאירים ריק.</small>
+      </div>
+      <div class="w-card">
+        <span class="lbl">אופציה · קישור הילד</span>
+        <div class="urlx old">/g/class-4b/kid/x7f3k2q9</div>
+        <div class="urlx">/g/class-4b/kid/<mark>toni</mark></div>
+        <div class="urlx">/g/class-4b/kid/<mark>toni-2</mark> <span style="color:var(--ink-3)">← טוני שני בקבוצה</span></div>
+        <ul class="w-ul" style="font-size:14px">
+          <li><b>בעד:</b> קישור שילד/ה מבין/ה ואפשר להקליד.</li>
+          <li><b>נגד:</b> קל לנחש את הקישור של ילד אחר.</li>
+          <li><b>אבל:</b> לפי מודל האמון, מי שיש לו את קישור הקבוצה כבר רואה הכל. הקישור האקראי לא מגן על כלום שאי אפשר לראות ממילא.</li>
+          <li><b>עלות:</b> שמירת slug לכל ילד, הפניה מהקישור הישן (קישורים כבר נשלחו בוואטסאפ). שינוי אחסון: ענף נפרד.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(() => {
+  const D = { kid: "טוני", group: "מופת ח׳4", ev: "בר המצווה של תמיר", date: "יום שישי 9.10", start: "10:30", place: "קיסריה",
+    fam: "ממלוק", driver: "ישי", dep: "10:00", car: "סופר לאנסר", color: "לבן", plate: "0484", phone: "054-221-0484", seats: 4, ahead: 2 };
+  const CAR = { "לבן": "--car-white", "שחור": "--car-black", "אפור": "--car-grey", "כסוף": "--car-silver", "אדום": "--car-red", "כחול": "--car-blue", "ירוק": "--car-green" };
+  const paint = (w) => `var(${CAR[w] || "--car-neutral"})`;
+  const ic = (id, s = 18, cls = "") => `<svg class="${cls}" width="${s}" height="${s}" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const car = (w = D.color, s = 120) => `<svg class="carsvg" viewBox="0 0 120 56" width="${s}" height="${Math.round(s * 56 / 120)}" style="--cc:${paint(w)}" role="img" aria-label="רכב ${w}"><use href="#car"/></svg>`;
+  const plate = (lg) => `<span class="plate${lg ? " lg" : ""}" aria-label="לוחית מסתיימת ב-${D.plate}"><i>IL</i><span>…${D.plate}</span></span>`;
+  const photo = (s = 170) => `<div class="photo">${car(D.color, s)}<small>תמונה</small></div>`;
+  const call = () => `<a class="call" href="#" onclick="return false"><span class="ic">${ic("i-phone", 16)}</span><b>${D.driver}</b><span class="num">${D.phone}</span></a>`;
+  const fab = () => `<span class="fab" aria-hidden="true">${ic("i-chat", 16)}<span>משוב</span></span>`;
+  const sbar = (t) => `<div class="sbar"><span>${t}</span><span style="display:flex;gap:5px;align-items:center">${ic("i-sig", 16)}${ic("i-bat", 22)}</span></div>`;
+  const cov = () => `<span class="cov" aria-hidden="true">בר<br>מצווה</span>`;
+  const evh = () => `<div class="evh">${cov()}<div class="evh-t"><b>${D.ev}</b><small>${D.date} · <time>${D.start}</time> · ${D.place}</small></div></div>`;
+  const frame = (o) => `<figure class="ph"><figcaption class="ph-cap"><b>${o.title}</b>${o.code ? `<code>${o.code}</code>` : ""}${o.note ? `<span>${o.note}</span>` : ""}</figcaption>
+    <div class="dev${o.dark ? " dk" : ""}${o.tall ? " tall" : ""}"><div class="scr ${o.cls || ""}">${sbar(o.time)}<div class="scr-body ${o.bodyCls || ""}">${o.body}</div>${o.noFab ? "" : fab()}</div></div>${o.after || ""}</figure>`;
+
+  /* ---------- today ---------- */
+  const cm = (n, css) => `<i class="cm" style="${css}">${n}</i>`;
+  const oldGlyph = `<svg viewBox="0 0 24 24" width="60" height="60" aria-hidden="true"><path fill="currentColor" d="M5 11l1.6-4.2A2 2 0 018.5 5.5h7a2 2 0 011.9 1.3L19 11a2 2 0 011.5 1.9V17a1 1 0 01-1 1H18a1.5 1.5 0 01-3 0H9a1.5 1.5 0 01-3 0H4.5a1 1 0 01-1-1v-4.1A2 2 0 015 11z"/><path d="M7.5 11l1-2.6h7l1 2.6z" style="fill:var(--car-glass)"/></svg>`;
+  document.getElementById("today-ph").outerHTML = frame({
+    title: "היום", tall: true, code: "/kid/…/e/…", note: "שלחת \"מוכן\", לפני היציאה", time: "09:41", noFab: true, bodyCls: "t-body",
+    body: `<header class="t-hdr">${cm(7, "inset-inline-end:0;top:6px")}<h1>היי ${D.kid}!</h1><small>${D.group}</small></header>
+      <div class="t-ev"><b>${D.ev}</b><small>${D.date} · ${D.start} · ${D.place}</small></div>
+      <div class="t-leg">${cm(2, "inset-inline-start:-14px;top:-12px")}<span class="k">הלוך · אוספים אותך מהבית</span><h2>משפחת ${D.fam} אוספת אותך</h2><span class="tm num">יציאה ב-${D.dep}</span>
+        <div class="t-box">${cm(3, "inset-inline-end:8px;top:8px")}${oldGlyph}</div>
+        <span style="font-size:14px;color:var(--ink-2)">חפשי/חפש את הרכב הזה</span>
+        <div class="t-row"><b>${D.car} · ${D.color}</b><span class="t-plate">…${D.plate}</span></div>
+        <div class="t-row"><span class="t-call">${ic("i-phone", 16)}התקשרות ל${D.driver}</span>${cm(5, "inset-inline-start:118px;top:-8px")}<span class="ltr" style="font-family:var(--ff-mono);font-size:13px;text-decoration:underline">${D.phone}</span></div>
+        <div class="t-ok">שלחת "אני מוכן/ה" ✓${cm(6, "inset-inline-end:8px;top:8px")}</div>
+      </div>
+      <div class="t-wait"><span class="k">חזור · איסוף הביתה</span><b>עוד מחפשים לך הסעה</b></div>
+      <span class="t-fb">${ic("i-chat", 13)}משוב${cm(1, "inset-inline-end:-32px;top:0")}</span>`,
+    after: `<div class="w-url">trempush.com/g/class-4b/kid/<b>x7f3k2q9</b>/e/oct-9 &nbsp;④</div>`,
+  });
+
+  /* ---------- shared parts ---------- */
+  document.getElementById("swatches").innerHTML = ["לבן", "שחור", "אפור", "כסוף", "אדום", "כחול", "ירוק", "בורדו"]
+    .map((w) => `<figure>${car(w, 60)}<figcaption>${w}</figcaption></figure>`).join("");
+  document.getElementById("plates").innerHTML = plate(false) + plate(true);
+  document.getElementById("callsample").innerHTML = call();
+
+  /* ---------- A · ticket ---------- */
+  const STATUS = {
+    assigned: "יש לך הסעה", onTheWay: `${D.driver} יצא/ה לדרך`, next: "את/ה הבא/ה בתור",
+    arrived: `${D.driver} למטה!`, picked: "עלית לרכב", waiting: "עוד מחפשים לך הסעה",
+  };
+  const aOut = (st, o = {}) => {
+    const carBlock = o.photo
+      ? `${photo(170)}<div class="tk-car"><div class="meta"><b>${D.car}</b><small>${D.color} · ${D.seats} מקומות</small></div>${plate()}</div>`
+      : `<div class="tk-car">${car(D.color, 104)}<div class="meta"><b>${D.car}</b><small>${D.color} · ${D.seats} מקומות</small>${plate()}</div></div>`;
+    if (st === "arrived") {
+      return `<article class="tk arr"><div class="tk-main"><span class="tk-leg">הלוך · ${D.dep}</span>
+        <div class="tk-big">${D.driver} למטה!</div><p>צאו לרכב</p></div><div class="tk-perf"></div>
+        <div class="tk-stub"><span class="find">חפשי/חפש את הרכב הזה</span>${carBlock}${call()}</div></article>`;
+    }
+    const hint = st === "next" ? `<p class="tk-hint">תתכוננו, עוד רגע מגיעים</p>` : st === "onTheWay" ? `<p class="tk-hint">עוד ${D.ahead} תחנות לפניך</p>` : "";
+    return `<article class="tk${st === "picked" ? " pk" : ""}"><div class="tk-main">
+        <div class="tk-top"><span class="tk-leg">הלוך · מהבית</span><span class="sign">${STATUS[st]}</span></div>
+        <div class="tk-route"><div><small>יציאה</small><time class="tk-time">${D.dep}</time></div><div class="tk-path">${car(D.color, 34)}</div><div><small>אל</small><div class="tk-to">${D.place}</div></div></div>
+        <p class="tk-who">משפחת <b>${D.fam}</b> אוספת אותך</p>${hint}
+        ${st === "picked" ? `<span class="stamp">${ic("i-check", 22)}עלית</span>` : ""}
+      </div><div class="tk-perf"></div><div class="tk-stub">${carBlock}${st === "picked" ? "" : call()}</div></article>`;
+  };
+  const aBack = () => `<article class="tk wait"><div class="tk-main"><div class="tk-top"><span class="tk-leg">חזור · הביתה</span><span class="sign out">${STATUS.waiting}</span></div>
+      <div class="tk-route"><div><small>מ</small><div class="tk-to" style="text-align:start">${D.place}</div></div><div></div><div><small>אל</small><div class="tk-to">הבית</div></div></div>
+      <p>הכרטיס יודפס כאן כשיימצא רכב.</p></div></article>`;
+  const aReady = (st, sent) => (st === "arrived" || st === "picked") ? "" : sent
+    ? `<span class="sent">${ic("i-check", 16)}שלחת "אני מוכן/ה"</span>` : `<button class="ready" type="button">אני מוכן/ה</button>`;
+  const aBody = (st, o = {}) => `<div class="a-hi"><h1>היי ${D.kid}!</h1><small>${D.group}</small></div>${evh()}${aOut(st, o)}${aReady(st, o.sent)}${aBack()}`;
+  document.getElementById("row-a").innerHTML = [
+    frame({ title: "יש לך הסעה", code: "assigned", time: "09:35", cls: "alt-a", body: aBody("assigned") }),
+    frame({ title: "הבא/ה בתור", code: "next", note: "עם תמונת רכב", time: "09:58", cls: "alt-a", body: aBody("next", { photo: true, sent: true }) }),
+    frame({ title: "ישי למטה!", code: "arrived", time: "10:04", cls: "alt-a", body: aBody("arrived") }),
+    frame({ title: "עלית + חזור ממתין", code: "picked · waiting", time: "10:06", cls: "alt-a", body: aBody("picked") }),
+    frame({ title: "כהה", code: "assigned", time: "09:35", cls: "alt-a", dark: true, body: aBody("assigned") }),
+  ].join("");
+
+  /* ---------- B · road ---------- */
+  const ME = 70, STEP = 18;
+  const POS = { assigned: 8, onTheWay: 22, next: 58, arrived: ME, picked: 84 };
+  const aheadFor = { assigned: 2, onTheWay: 2, next: 0, arrived: 0, picked: 0 };
+  const road = (st) => {
+    const k = aheadFor[st];
+    const dots = [1, 2].map((i) => `<span class="stop${i > k ? " gone" : ""}" data-i="${i}" style="--x:${ME - STEP * i}%"><i></i></span>`).join("");
+    const meCls = st === "arrived" ? " hot" : st === "picked" ? " done" : "";
+    return `<div class="road" style="--car:${POS[st]}%" aria-hidden="true"><div class="rd"></div>${dots}
+      <span class="stop me${meCls}" style="--x:${ME}%"><i></i><small>את/ה</small></span>
+      <span class="stop end" style="--x:95%"><i>${ic("i-flag", 22)}</i><small>${D.place}</small></span>
+      <span class="rcar">${car(D.color, 50)}</span></div>`;
+  };
+  const bHead = (st) => ({
+    assigned: [`יציאה ב-${D.dep}`, `משפחת <b>${D.fam}</b> אוספת אותך · ${D.ahead} תחנות לפניך`],
+    onTheWay: [`${D.driver} יצא/ה לדרך`, `עוד <b>${D.ahead} תחנות</b> לפניך`],
+    next: ["את/ה הבא/ה בתור", "תתכוננו, עוד רגע מגיעים"],
+    arrived: [`${D.driver} למטה!`, "צאו לרכב"],
+    picked: ["עלית לרכב", `בדרך ל${D.place}`],
+  })[st];
+  const bCar = (o = {}) => `<div class="b-car">${o.photo ? photo(84) : car(D.color, 70)}<div class="meta"><b>${D.car}</b><small>${D.color} · משפחת ${D.fam}</small>${plate()}</div></div>`;
+  const bOut = (st, o = {}) => {
+    const [h, hint] = bHead(st);
+    const head = st === "arrived"
+      ? `<div class="b-arrbar"><span class="b-k" style="color:var(--on-accent)">הלוך · ${D.dep}</span><h2 class="b-st" data-h>${h}</h2><p class="b-hint" data-hint>${hint}</p></div>`
+      : `<div><span class="b-k"><b>הלוך</b> · ${st === "assigned" ? "מהבית ל" + D.place : "יציאה " + D.dep}</span><h2 class="b-st" data-h>${h}</h2><p class="b-hint" data-hint>${hint}</p></div>`;
+    const ready = (st === "arrived" || st === "picked") ? "" : o.sent ? `<span class="sent">${ic("i-check", 16)}שלחת "אני מוכן/ה"</span>` : `<button class="ready" type="button">אני מוכן/ה</button>`;
+    return `<section class="b-leg">${head}${road(st)}${bCar(o)}${st === "picked" ? "" : call()}${ready}</section>`;
+  };
+  const bBack = () => `<section class="b-leg"><div><span class="b-k"><b>חזור</b> · מ${D.place} הביתה</span><h2 class="b-st" style="font-size:22px">עוד מחפשים לך הסעה</h2></div>
+      <div class="road dim" aria-hidden="true" style="block-size:90px"><div class="rd"></div><span class="q">?</span>
+      <span class="stop me" style="--x:8%"><i></i><small>${D.place}</small></span><span class="stop end" style="--x:93%"><i>${ic("i-flag", 22)}</i><small>הבית</small></span></div></section>`;
+  const bBody = (st, o = {}) => `<div class="b-hi"><h1>היי ${D.kid}!</h1><small>${D.group}</small></div>${evh()}${bOut(st, o)}<div class="b-hr"></div>${bBack()}`;
+  document.getElementById("row-b").innerHTML = [
+    frame({ title: "הדגמה חיה", code: "assigned → picked", time: "09:35", body: `<div data-demo>${bBody("assigned")}</div>`,
+      after: `<div class="demo-ctl"><button type="button" id="b-play">${ic("i-play", 14)}<span>להפעיל</span></button><span id="b-state">assigned</span></div>` }),
+    frame({ title: "יצא לדרך", code: "onTheWay · ahead 2", note: "עם תמונת רכב", time: "09:52", body: bBody("onTheWay", { photo: true, sent: true }) }),
+    frame({ title: "ישי למטה!", code: "arrived", time: "10:04", body: bBody("arrived") }),
+    frame({ title: "עלית + חזור ממתין", code: "picked · waiting", time: "10:06", body: bBody("picked") }),
+    frame({ title: "כהה", code: "next", time: "10:01", dark: true, body: bBody("next", { sent: true }) }),
+  ].join("");
+
+  // Demo: step the first B phone through the statuses; the car glides along the road.
+  const demo = document.querySelector("[data-demo]");
+  const btn = document.getElementById("b-play"), lbl = document.getElementById("b-state");
+  const seq = ["assigned", "onTheWay", "next", "arrived", "picked"];
+  let i = 0, timer = null;
+  const show = (st) => {
+    const r = demo.querySelector(".road");
+    r.style.setProperty("--car", POS[st] + "%");
+    // ahead 2 → 1 → 0 between onTheWay and next
+    const k = st === "onTheWay" ? 2 : aheadFor[st];
+    r.querySelectorAll("[data-i]").forEach((s) => s.classList.toggle("gone", +s.dataset.i > k));
+    const me = r.querySelector(".stop.me");
+    me.classList.toggle("hot", st === "arrived");
+    me.classList.toggle("done", st === "picked");
+    const [h, hint] = bHead(st);
+    demo.querySelector("[data-h]").textContent = h;
+    demo.querySelector("[data-hint]").innerHTML = hint;
+    lbl.textContent = st;
+  };
+  const tick = () => {
+    i = (i + 1) % seq.length;
+    if (seq[i] === "next") { // pass through ahead=1 first
+      const r = demo.querySelector(".road");
+      r.style.setProperty("--car", "40%");
+      r.querySelector('[data-i="2"]').classList.add("gone");
+      demo.querySelector("[data-hint]").innerHTML = "עוד <b>תחנה אחת</b> לפניך";
+      lbl.textContent = "onTheWay · ahead 1";
+      timer = setTimeout(() => { show("next"); timer = setTimeout(tick, 1700); }, 1500);
+      return;
+    }
+    show(seq[i]);
+    timer = setTimeout(tick, 1700);
+  };
+  btn.addEventListener("click", () => {
+    if (timer) { clearTimeout(timer); timer = null; btn.querySelector("span").textContent = "להפעיל"; return; }
+    btn.querySelector("span").textContent = "לעצור";
+    tick();
+  });
+
+  /* ---------- C · now card ---------- */
+  const cOut = (st, o = {}) => {
+    const carBig = o.photo ? photo(200) : car(D.color, 220);
+    const model = `<div class="model">${D.car}<small>${D.color} · משפחת ${D.fam}</small></div>`;
+    const ready = o.sent ? `<span class="sent">${ic("i-check", 16)}שלחת "אני מוכן/ה"</span>` : `<button class="ready" type="button">אני מוכן/ה</button>`;
+    if (st === "assigned") return `<section class="now"><div class="now-eb"><span>הלוך · ${D.ev}</span><span class="num">יציאה ${D.dep}</span></div>
+        <h2 class="now-big">בעוד 25 <small>דק׳</small></h2><p class="now-sub">משפחת <b>${D.fam}</b> אוספת אותך</p>
+        <div class="now-car">${carBig}${plate(true)}${model}</div><div class="now-act">${call()}${ready}</div></section>`;
+    if (st === "onTheWay") return `<section class="now wayc"><div class="now-eb"><span>הלוך · עכשיו</span><span class="num">יציאה ${D.dep}</span></div>
+        <h2 class="now-big">${D.driver} בדרך</h2>
+        <div class="pips"><i class="car">${car(D.color, 34)}</i><i></i><i></i><i class="me"></i><span>&nbsp;עוד ${D.ahead} תחנות לפניך</span></div>
+        <div class="now-car">${carBig}<div style="display:flex;gap:10px;align-items:center">${plate(true)}</div>${model}</div><div class="now-act">${call()}${ready}</div></section>`;
+    if (st === "arrived") return `<section class="now arr"><div class="now-eb"><span>הלוך · עכשיו</span><span class="num">${D.dep}</span></div>
+        <h2 class="now-big">${D.driver} למטה!</h2><p class="now-sub">צאו לרכב</p>
+        <span class="find-tag">חפשי/חפש את הרכב הזה</span><div class="now-car">${carBig}${plate(true)}${model}</div>${call()}</section>`;
+    return `<section class="now pk"><div class="now-eb"><span>הלוך</span><span class="num">${D.dep}</span></div>
+        <h2 class="now-big">${ic("i-check", 40)}עלית לרכב</h2><p class="now-sub">בדרך ל${D.place} · מתחיל ב-${D.start}</p>
+        <div class="now-car">${car(D.color, 150)}${model}</div></section>`;
+  };
+  const cRows = (st) => `<div class="c-rows">
+      ${st === "picked" ? "" : ""}<div class="c-row"><span class="k">חזור</span><span class="v">עוד מחפשים לך הסעה</span><span class="dot" aria-hidden="true"></span></div>
+      <div class="c-row">${cov()}<span class="v"><b style="color:var(--ink)">${D.ev}</b><br>${D.date} · ${D.start} · ${D.place}</span></div></div>`;
+  const cBody = (st, o = {}) => `<div class="c-hi"><b>היי ${D.kid}!</b><small>${D.group}</small></div>${cOut(st, o)}${cRows(st)}`;
+  document.getElementById("row-c").innerHTML = [
+    frame({ title: "בעוד 25 דק׳", code: "assigned", time: "09:35", body: cBody("assigned") }),
+    frame({ title: "ישי בדרך", code: "onTheWay · ahead 2", note: "עם תמונת רכב", time: "09:52", body: cBody("onTheWay", { photo: true, sent: true }) }),
+    frame({ title: "ישי למטה!", code: "arrived", time: "10:04", body: cBody("arrived") }),
+    frame({ title: "עלית + חזור ממתין", code: "picked · waiting", time: "10:06", body: cBody("picked") }),
+    frame({ title: "כהה", code: "arrived", time: "10:04", dark: true, body: cBody("arrived") }),
+  ].join("");
+})();
+</script>
