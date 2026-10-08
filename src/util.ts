@@ -52,9 +52,12 @@ export function nowLocal(): string {
   return `${todayYmd()}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-/** The read-only kid page: permanent (next rides) or focused on one event. */
-export const kidPath = (group: string, kidId: string, event?: string) =>
-  `/g/${group}/kid/${kidId}${event ? `/e/${event}` : ""}`;
+/**
+ * The read-only kid page: permanent (next rides) or focused on one event. Takes the kid (its link name
+ * when it has one, else its id) or a ready URL param.
+ */
+export const kidPath = (group: string, kid: string | { id: string; slug?: string }, event?: string) =>
+  `/g/${group}/kid/${typeof kid === "string" ? kid : (kid.slug ?? kid.id)}${event ? `/e/${event}` : ""}`;
 
 export function addMinutes(hhmm: string, mins: number): string {
   const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
@@ -68,7 +71,7 @@ export const initial = (name: string) => [...name.trim()][0] ?? "?";
 /** Lookup helpers over an EventView. */
 export function eventIndex(ev: EventView) {
   const famById = new Map<string, FamilyView>();
-  const kidById = new Map<string, { id: string; name: string; phone?: string; family: FamilyView }>();
+  const kidById = new Map<string, { id: string; name: string; phone?: string; slug?: string; family: FamilyView }>();
   for (const f of ev.families) {
     famById.set(f.id, f);
     for (const k of f.kids) kidById.set(k.id, { ...k, family: f });

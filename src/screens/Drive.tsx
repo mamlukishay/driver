@@ -158,7 +158,7 @@ function DriveBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
               <div class="row sp">
                 <b>{k.name}</b>
                 {k.phone ? (
-                  <WaButton class="btn wa sm" phone={k.phone} text={he.wa.trackRide(appUrl(kidPath(group, kidId, ev.id)))}>
+                  <WaButton class="btn wa sm" phone={k.phone} text={he.wa.trackRide(appUrl(kidPath(group, k, ev.id)))}>
                     {he.drive.shareTo(k.name)}
                   </WaButton>
                 ) : k.family.id === ev.me ? (

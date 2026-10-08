@@ -13,10 +13,55 @@ import { useConfig } from "./Join.tsx";
 
 type Key = keyof Omit<EventInput, "coverImageId">;
 
+/** Quiet time after the last title change before asking the AI for the English word. */
+const SUGGEST_DEBOUNCE_MS = 500;
+const HEBREW = /[\u0590-\u05FF]/;
+
+/**
+ * The English word for the event slug, suggested from the title until the user edits the field: a title
+ * without Hebrew is slugified on the spot; a Hebrew one asks `POST /api/g/:group/suggest-slug` (`kind: "event"`)
+ * after a debounce, cancelling the previous request. No AI (or a failure) leaves the field as it is.
+ */
+function useSlugWordSuggestion(group: string, title: string, enabled: boolean, touched: boolean, apply: (word: string) => void) {
+  const [suggesting, setSuggesting] = useState(false);
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+  useEffect(() => {
+    const t = title.trim();
+    if (touched || !t) return;
+    if (!HEBREW.test(t)) {
+      applyRef.current(slugify(t, 20));
+      return;
+    }
+    if (!enabled) return;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => {
+      setSuggesting(true);
+      api
+        .suggestGroupSlug(group, { kind: "event", name: t }, ctrl.signal)
+        .then((r) => {
+          if (!ctrl.signal.aborted && r.slug) applyRef.current(r.slug);
+        })
+        .catch(() => {
+          /* no suggestion: keep the field */
+        })
+        .finally(() => {
+          if (!ctrl.signal.aborted) setSuggesting(false);
+        });
+    }, SUGGEST_DEBOUNCE_MS);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+      setSuggesting(false);
+    };
+  }, [group, title, enabled, touched]);
+  return suggesting;
+}
+
 export function NewEvent({ group }: { group: string }) {
   const { route } = useLocation();
   const me = useIdentity(group);
-  const { inviteParse } = useConfig();
+  const { inviteParse, slugSuggest } = useConfig();
   const [busyText, setBusyText] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [cover, setCover] = useState<string | undefined>();
@@ -34,6 +79,13 @@ export function NewEvent({ group }: { group: string }) {
   const [errs, setErrs] = useState<Partial<Record<Key, string>>>({});
   const [saving, setSaving] = useState(false);
   const [slugWord, setSlugWord] = useState("");
+  /** The user edited the word: stop suggesting. `slugAuto`: the current word is a suggestion. */
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [slugAuto, setSlugAuto] = useState(false);
+  const suggesting = useSlugWordSuggestion(group, f.title, slugSuggest, slugTouched, (w) => {
+    setSlugWord(w);
+    setSlugAuto(!!w);
+  });
   /** Start/return were filled by us (10:00/12:00 for a future date), not typed or parsed. */
   const [autoTimes, setAutoTimes] = useState(false);
 
@@ -222,13 +274,24 @@ export function NewEvent({ group }: { group: string }) {
             <Field
               id="ev-slug"
               label={he.newEvent.fSlugWord}
-              hint={he.newEvent.fSlugWordHint(eventSlugBase(f.date, slugWord))}
+              hint={
+                he.newEvent.fSlugWordHint(eventSlugBase(f.date, slugWord)) + (slugAuto ? ` · ${he.newEvent.slugWordSuggested}` : "")
+              }
               value={slugWord}
               dir="ltr"
               autoComplete="off"
               maxLength={20}
-              onInput={(v) => setSlugWord(v.toLowerCase().replace(/[^a-z0-9 -]/g, ""))}
-            />
+              busy={suggesting}
+              onInput={(v) => {
+                setSlugTouched(true);
+                setSlugAuto(false);
+                setSlugWord(v.toLowerCase().replace(/[^a-z0-9 -]/g, ""));
+              }}
+            >
+              <span class="vh" role="status">
+                {suggesting ? he.newEvent.suggestingSlugWord : ""}
+              </span>
+            </Field>
           </section>
           <button type="submit" class="btn big" disabled={saving}>
             {saving ? he.common.saving : he.newEvent.submit}

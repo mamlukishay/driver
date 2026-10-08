@@ -26,12 +26,14 @@ import {
   validateFamilyInput,
 } from "../shared/validate.ts";
 import { isId, newId } from "../shared/ids.ts";
-import { eventSlugBase, firstFreeSlug, isSlug, slugify } from "../shared/slug.ts";
+import { eventSlugBase, firstFreeSlug, isKidSlug, isSlug, slugify } from "../shared/slug.ts";
+import { kidSlugClash, resolveKid, takenKidKeys } from "../shared/kidSlug.ts";
 import { normalizeWaGroupUrl } from "../shared/whatsapp.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { createImageStore, IMAGE_MIMES } from "./images.ts";
 import { DEFAULT_INVITE_MODEL, parseInvite, parseInviteWithWorkersAI } from "./invite.ts";
 import { placesAutocomplete } from "./google.ts";
+import { aiSlugSuggestion } from "./slug-suggest.ts";
 
 const FAMILY_COLORS = 5;
 const MAX_FAMILIES = 100;
@@ -45,6 +47,13 @@ function todayIL(now = Date.now()): string {
   return new Date(now).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 }
 
+/** A kid link name already in use; the 409 names it so the form can mark the right field. */
+class KidSlugTaken extends ApiError {
+  constructor(readonly slug: string) {
+    super("kid_slug_taken");
+  }
+}
+
 /** One instance per group; the source of truth for its families, events, log and images. */
 export class GroupDO extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
@@ -56,6 +65,7 @@ export class GroupDO extends DurableObject<Env> {
     try {
       return await this.route(request);
     } catch (e) {
+      if (e instanceof KidSlugTaken) return json({ error: "kid_slug_taken", slug: e.slug }, 409);
       if (e instanceof ApiError) return errorResponse(e.code);
       console.error("GroupDO error", e);
       return json({ error: "invalid" }, 500);
@@ -78,7 +88,8 @@ export class GroupDO extends DurableObject<Env> {
 
     if (rest[0] === "kid") {
       const kid = rest[1];
-      if (!kid || kid.length > 64 || !/^[a-z0-9]+$/.test(kid)) throw new ApiError("not_found");
+      // A kid slug, an earlier slug, a kid id or a legacy token.
+      if (!kid || kid.length > 64 || !/^[a-z0-9-]+$/.test(kid)) throw new ApiError("not_found");
       if (rest.length === 2 && m === "GET") return this.kidGet(kid, url.searchParams.get("event"));
       if (rest.length === 3 && rest[2] === "ready" && m === "POST") return this.kidReady(request, kid);
       throw new ApiError("not_found");
@@ -107,6 +118,7 @@ export class GroupDO extends DurableObject<Env> {
     }
     if (rest[0] === "invite" && rest[1] === "parse" && rest.length === 2 && m === "POST") return this.inviteParse(request);
     if (rest[0] === "places" && rest.length === 1 && m === "GET") return this.places(request, url);
+    if (rest[0] === "suggest-slug" && rest.length === 1 && m === "POST") return this.suggestSlug(request);
     throw new ApiError("not_found");
   }
 
@@ -273,6 +285,7 @@ export class GroupDO extends DurableObject<Env> {
       null,
       { id: () => newId(8) },
     );
+    this.assertKidSlugsFree(families, family);
     const writes: Record<string, unknown> = { [`family:${id}`]: family };
     meta.version += 1;
     writes.meta = meta;
@@ -296,12 +309,19 @@ export class GroupDO extends DurableObject<Env> {
       prev,
       { id: () => newId(8) },
     );
+    this.assertKidSlugsFree(await this.families(), family);
     const writes: Record<string, unknown> = { [`family:${prev.id}`]: family };
     meta.version += 1;
     writes.meta = meta;
     await this.ctx.storage.put(writes);
     this.broadcast({ t: "group", version: meta.version });
     return json({ me: familyPrivate(family) });
+  }
+
+  /** 409 `{ error: "kid_slug_taken", slug }` when one of `family`'s kid link names is another kid's (now or earlier). */
+  private assertKidSlugsFree(families: readonly Family[], family: Family): void {
+    const slug = kidSlugClash(families, family);
+    if (slug) throw new KidSlugTaken(slug);
   }
 
   /* ---------- events ---------- */
@@ -401,15 +421,13 @@ export class GroupDO extends DurableObject<Env> {
   /* ---------- kid ---------- */
 
   /**
-   * Finds a kid by id. Links sent before kid ids were used carried a separate `kidToken`, which
-   * older stored families still have; it is accepted too so those links keep working.
+   * Finds a kid by its link name, an earlier link name, its id, or (links sent before kid ids were used)
+   * a legacy `kidToken` that older stored families still have; in that order (`resolveKid`).
    */
   private async kidFamily(kidParam: string): Promise<{ family: Family; kidId: string }> {
-    for (const family of await this.families()) {
-      const kid = family.kids.find((k) => k.id === kidParam || (k as { kidToken?: string }).kidToken === kidParam);
-      if (kid) return { family, kidId: kid.id };
-    }
-    throw new ApiError("not_found");
+    const hit = resolveKid(await this.families(), kidParam);
+    if (!hit) throw new ApiError("not_found");
+    return { family: hit.family, kidId: hit.kid.id };
   }
 
   /** `?event=<slug>` focuses the view on that one event (any date); 404 when it doesn't exist. */
@@ -552,6 +570,26 @@ export class GroupDO extends DurableObject<Env> {
     if (!img) throw new ApiError("not_found");
     if (apiKey) return json(await parseInvite(apiKey, img, todayIL()));
     return json(await parseInviteWithWorkersAI(ai!, this.env.INVITE_MODEL || DEFAULT_INVITE_MODEL, img, todayIL()));
+  }
+
+  /**
+   * `{ kind: "event", name }` → an English word for the event slug (no "taken" check: the full event slug is
+   * de-duplicated on create). `{ kind: "kid", name, kidId?, taken? }` → a link name that no other kid of the
+   * group answers to and that is not in `taken` (the form's other rows). No family needed (registration
+   * asks too). `{ slug? }`; any AI trouble → `{}`.
+   */
+  private async suggestSlug(request: Request): Promise<Response> {
+    await this.meta();
+    const body = await readJson(request);
+    if (!isObj(body)) throw new ApiError("invalid");
+    const name = cleanText(body.name, 100);
+    if (!name || (body.kind !== "event" && body.kind !== "kid")) throw new ApiError("invalid");
+    if (body.kind === "event") return json(await aiSlugSuggestion(this.env, name, "event", async () => false));
+    const kidId = typeof body.kidId === "string" ? body.kidId : undefined;
+    if (body.taken !== undefined && (!Array.isArray(body.taken) || body.taken.length > 20)) throw new ApiError("invalid");
+    const taken = takenKidKeys(await this.families(), kidId ? [kidId] : []);
+    for (const s of (body.taken as unknown[] | undefined) ?? []) if (isKidSlug(s)) taken.add(s);
+    return json(await aiSlugSuggestion(this.env, name, "kid", async (s) => taken.has(s)));
   }
 
   private async places(request: Request, url: URL): Promise<Response> {

@@ -14,6 +14,7 @@ import type {
   PlacesResponse,
   PublicAction,
   RegisterFamilyResponse,
+  SuggestGroupSlugRequest,
   SuggestSlugResponse,
   UndoResponse,
   UpdateGroupRequest,
@@ -111,6 +112,10 @@ export const api = {
 
   /** An English URL name for a (Hebrew) group name, from Workers AI; `{}` when it has none. */
   suggestSlug: (name: string, signal?: AbortSignal) => req<SuggestSlugResponse>("/api/groups/suggest-slug", { body: { name }, signal }),
+
+  /** An English event word or kid link name from Workers AI (`kind`); `{}` when it has none. */
+  suggestGroupSlug: (group: string, body: SuggestGroupSlugRequest, signal?: AbortSignal) =>
+    req<SuggestSlugResponse>(`${g(group)}/suggest-slug`, { body, signal }),
 
   /** A 404 for a group this device has a family in means it was deleted: forget it here. */
   getGroup: (group: string) =>
