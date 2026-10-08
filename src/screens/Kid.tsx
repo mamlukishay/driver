@@ -12,7 +12,7 @@ import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { keys, refetch, useKid } from "../store.ts";
-import { famColor, fmtDate, kidPath, nowLocal, todayYmd, useForce } from "../util.ts";
+import { famColor, fmtClock, fmtDate, kidPath, nowLocal, todayYmd, useForce } from "../util.ts";
 
 /**
  * The read-only kid page. Without `event`: the next upcoming rides (permanent link). With `event`:
@@ -129,13 +129,17 @@ function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ri
       main = driverLine(ride!);
       hint = he.kid.at(ride!.departAt);
       break;
-    case "onTheWay":
-      main = he.kid.status.onTheWay(driverName(ride!));
+    case "onTheWay": {
+      const eta = ride!.eta;
+      if (eta) {
+        // Once the ETA has passed, "עוד רגע" instead of a time (the page re-renders every minute).
+        main = Date.now() > eta.at ? he.kid.status.etaSoon : he.kid.status.eta(fmtClock(eta.at));
+        hint = he.kid.status.etaUpdated(fmtClock(eta.setAt));
+      } else {
+        main = he.kid.status.onTheWay(driverName(ride!));
+      }
       break;
-    case "next":
-      main = he.kid.status.next;
-      hint = he.kid.status.nextHint;
-      break;
+    }
     case "arrived":
       main = he.kid.status.arrived(driverName(ride!));
       hint = he.kid.status.arrivedHint;
@@ -144,7 +148,7 @@ function StatusBlock({ leg, status, ride }: { leg: Leg; status: KidLegStatus; ri
       main = he.kid.status.picked;
       break;
     case "done":
-      main = he.kid.status.done;
+      main = ride?.ended ? (leg === "out" ? he.kid.status.endedOut : he.kid.status.endedBack) : he.kid.status.done;
       break;
   }
   return (

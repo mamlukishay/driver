@@ -1647,87 +1647,569 @@ a.who:hover {
   }
 }
 
-/* ---------- driver mode ---------- */
-.live {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--ok-soft);
-  color: var(--ok);
-  font-weight: 700;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 15px;
-  align-self: flex-start;
-}
-.live::before {
-  content: "";
-  inline-size: 9px;
-  block-size: 9px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: pulse 1.4s infinite;
-}
-@keyframes pulse {
-  50% {
-    opacity: 0.25;
-  }
-}
-.stopc {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.chk {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 0;
-  background: transparent;
-  padding: 4px 2px;
-  inline-size: 100%;
-  text-align: start;
-  min-block-size: var(--tap);
-}
-.chk .bx {
-  inline-size: 26px;
-  block-size: 26px;
-  border-radius: 8px;
-  border: 2px solid var(--ink-3);
-  display: grid;
-  place-items: center;
-  flex: none;
-  font-size: 15px;
-  color: var(--surface);
-}
-.chk[aria-checked="true"] .bx {
-  background: var(--ok);
-  border-color: var(--ok);
-}
-.chk small {
-  display: block;
-  color: var(--ink-2);
-  font-size: 13px;
-}
-.chk:disabled {
-  cursor: default;
-  opacity: 1;
-}
-.ctc {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-block-start: 1px dashed var(--line);
-  padding-block-start: 8px;
+/* ---------- driver mode ("B · מסלול") ---------- */
+.content.drive {
+  padding-block-end: calc(128px + env(safe-area-inset-bottom, 0px));
 }
 .phone {
   font-family: var(--ff-mono);
   font-size: 15px;
   unicode-bidi: isolate;
+}
+.drv-prog {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.drv-prog b {
+  font-size: 16px;
+}
+.drv-prog .lnk,
+.drv-links .lnk,
+.lnk.center {
+  min-block-size: var(--tap);
+}
+.lnk.center {
+  align-self: center;
+}
+.own {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  background: var(--sunk);
+  border-radius: 22px;
+  padding-block: 4px;
+  padding-inline: 4px 12px;
+  align-self: flex-start;
+}
+.avs {
+  display: flex;
+  flex: none;
+}
+.avs .av + .av {
+  margin-inline-start: -10px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.av.lg {
+  inline-size: 44px;
+  block-size: 44px;
+  font-size: 19px;
+}
+/* The route: asphalt with a dashed yellow lane, one marker per node. */
+.rt {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rt::before {
+  content: "";
+  position: absolute;
+  inset-block: 12px;
+  inset-inline-start: 9px;
+  inline-size: 20px;
+  background: var(--asphalt);
+  border-radius: 10px;
+}
+.rt::after {
+  content: "";
+  position: absolute;
+  inset-block: 18px;
+  inset-inline-start: 18px;
+  inline-size: 2px;
+  background: repeating-linear-gradient(to bottom, var(--accent) 0 9px, transparent 9px 17px);
+}
+.rt-n {
+  position: relative;
+  padding-inline-start: 42px;
+  min-block-size: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-inline-size: 0;
+}
+.rt-m {
+  position: absolute;
+  inset-inline-start: 5px;
+  inset-block-start: 8px;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2.5px solid var(--ink-3);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rt-n.done .rt-m {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--surface);
+}
+.rt-n.cur .rt-m {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.rt-n.end .rt-m {
+  background: var(--asphalt);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.rt-n.rt-drop:not(.end) .rt-m {
+  inline-size: 16px;
+  block-size: 16px;
+  inset-inline-start: 11px;
+  inset-block-start: 18px;
+}
+.rt-t {
+  padding-block: 6px;
+}
+.rt-t b {
+  display: block;
+  font-size: 15px;
+}
+.rt-t small {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.rt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  text-align: start;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 6px 10px;
+  min-block-size: 52px;
+  font: inherit;
+  cursor: pointer;
+}
+.rt-row b {
+  font-size: 15px;
+}
+.rt-row small {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+.rt-n.done .rt-row {
+  background: transparent;
+  border-style: dashed;
+}
+.rt-n.done .rt-row b {
+  color: var(--ink-2);
+}
+.rt-n.sel .rt-row {
+  border: 2px solid var(--accent);
+}
+.rt-pend {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  min-inline-size: 0;
+}
+.rt-pend .rt-row {
+  flex: 1;
+  min-inline-size: 0;
+}
+.rt-pend .btn {
+  flex: none;
+  padding-inline: 12px;
+  align-self: center;
+}
+.rt-card {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-inline-size: 0;
+}
+.rt-names {
+  font-family: var(--ff-display);
+  font-weight: 400;
+  font-size: 23px;
+  line-height: 1.15;
+}
+.rt-addr {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 500;
+}
+.rt-addr svg {
+  flex: none;
+  color: var(--ink-3);
+}
+.rt-kids {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rt-kids li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 6px;
+}
+.rt-kids small {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+.rt-kids .btn[aria-pressed="true"] {
+  background: var(--ok);
+  color: var(--surface);
+}
+.rnd {
+  inline-size: 52px;
+  block-size: 52px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--sunk);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  flex: none;
+  cursor: pointer;
+}
+.rnd.sm {
+  inline-size: 44px;
+  block-size: 44px;
+}
+.rnd.wa {
+  background: var(--ok);
+  color: var(--surface);
+}
+.rnd.wa span:empty {
+  display: none;
+}
+.lbl2 {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.kidsee {
+  font-size: 13px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-radius: 10px;
+  padding: 5px 10px;
+  align-self: flex-start;
+}
+/* "כמה זמן עד שאגיע?" */
+.chips2 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+.chips2 .row {
+  gap: 6px;
+}
+.chip {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  min-block-size: var(--tap);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 22px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 0 2px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chip[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+/* Sticky bottom bar: "יצאתי", then the navigation button (+ "הגענו"). */
+.drv-bar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--app-bg) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border-block-start: 1px solid var(--line);
+  box-shadow: 0 -6px 16px var(--shadow);
+  padding-block: 10px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.drv-bar-in {
+  max-inline-size: 640px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.btn.xl {
+  inline-size: 100%;
+  min-block-size: 60px;
+  font-size: 20px;
+  border-radius: 16px;
+  padding: 10px 16px;
+}
+.brow {
+  display: flex;
+  gap: 8px;
+  inline-size: 100%;
+}
+.brow .btn.endb {
+  flex: none;
+  inline-size: auto;
+  padding-inline: 18px;
+  font-size: 18px;
+}
+.drv-noaddr {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-block-size: 60px;
+  border-radius: 16px;
+  background: var(--sunk);
+  color: var(--ink-2);
+  font-weight: 500;
+}
+/* One navigation button: app logo, label, and an attached ⌄ that picks the app. */
+.navb {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-inline-size: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.navb:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.navb-go {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-block-size: 60px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 18px;
+  color: inherit;
+  text-decoration: none;
+}
+.navb-go span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.navb-go:focus-visible,
+.navb-sel:focus-visible {
+  outline-offset: -4px;
+}
+.navb-sel {
+  flex: none;
+  inline-size: 48px;
+  min-block-size: var(--tap);
+  border: 0;
+  border-inline-start: 1.5px solid color-mix(in srgb, currentColor 28%, transparent);
+  background: transparent;
+  color: inherit;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.nlogo {
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 8px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  flex: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+.navopt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 56px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 6px 12px;
+  text-align: start;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.navopt[aria-pressed="true"] {
+  border: 2px solid var(--ink);
+}
+.navopt .ck {
+  font-weight: 700;
+  color: var(--ok);
+  font-size: 18px;
+}
+/* Settings: Waze | Google Maps */
+.seg2 {
+  display: flex;
+  background: var(--sunk);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+}
+.seg2 button {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: var(--tap);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 0 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.seg2 .nlogo {
+  inline-size: 24px;
+  block-size: 24px;
+}
+.seg2 button[aria-checked="true"] {
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--shadow);
+  font-weight: 700;
+}
+.setrow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 10px;
+}
+/* Sheets: departure ("לעדכן את הנוסעים?") and contacts. */
+.nrows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nrow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-block: 8px;
+  border-block-end: 1px solid var(--line);
+}
+.nrow:last-child {
+  border-block-end: 0;
+}
+.nrow-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nrow-h small {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+.sentok {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  padding-inline: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ok);
+  background: var(--ok-soft);
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.bub {
+  font-size: 12.5px;
+  line-height: 1.4;
+  background: var(--wa-bubble);
+  color: var(--wa-ink);
+  border-radius: 10px 10px 2px 10px;
+  padding: 6px 9px;
+  white-space: pre-wrap;
+  align-self: flex-start;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+.ct-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ct-role {
+  display: block;
+  font-size: 12.5px;
+}
+.crow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-block-start: 10px;
+  border-block-start: 1px solid var(--line);
+}
+.crow .phone {
+  display: block;
+  font-size: 14px;
+  color: var(--ink-2);
+  text-decoration: none;
+  inline-size: fit-content;
+}
+/* After "הגענו". */
+.drv-done {
+  background: var(--surface);
+  border: 2px solid var(--ok);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.drv-done .rt-names {
+  font-size: 27px;
+}
+.drv-links {
+  justify-content: center;
+  gap: 24px;
 }
 
 /* ---------- kid page ---------- */
@@ -1824,12 +2306,8 @@ a.who:hover {
   background: transparent;
   padding: 0;
 }
-.kstat-onTheWay,
-.kstat-next {
+.kstat-onTheWay {
   background: var(--accent-soft);
-}
-.kstat-next .kstat-main {
-  font-size: 30px;
 }
 .kstat-arrived {
   background: var(--accent);
@@ -1858,34 +2336,6 @@ a.who:hover {
   50% {
     transform: scale(1.03);
   }
-}
-.stop-acts {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.navs {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 10px;
-}
-.navs .btn {
-  flex-direction: column;
-  gap: 2px;
-  padding-block: 10px;
-}
-.navs .btn .small {
-  font-weight: 500;
-}
-.btn.on {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-}
-.card.hl {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

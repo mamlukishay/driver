@@ -99,15 +99,21 @@ test("main flow: two families, live seating, undo, driver phones, shared contact
     await expect(seatedKid(a.page, A.kid)).toBeVisible();
     await expect(seatedKid(b.page, A.kid)).toBeVisible();
 
-    // --- B's driver mode shows A's phone ---
+    // --- B's driver mode: "יצאתי" asks to update A's family; A's phone is in the stop's contact sheet ---
     await b.page.getByRole("link", { name: he.event.driveMode }).click();
     await expect(b.page).toHaveURL(/\/drive\/out$/);
     await expect(b.page.getByRole("heading", { name: he.drive.title("out") })).toBeVisible();
-    const aPhone = formatPhoneLocal(A.phone)!;
-    await expect(b.page.getByRole("link", { name: aPhone })).toBeVisible();
-    await expect(b.page.getByRole("link", { name: aPhone })).toHaveAttribute("href", "tel:+972521111111");
     await b.page.getByRole("button", { name: he.drive.start }).click();
-    await expect(b.page.getByText(he.drive.onTheWay)).toBeVisible();
+    const depart = b.page.getByRole("dialog", { name: he.drive.departTitle });
+    await expect(depart).toContainText(he.family(A.name));
+    await depart.getByRole("button", { name: he.drive.skip }).click();
+    await expect(b.page.getByText(he.drive.progress(0, 1))).toBeVisible();
+    await b.page.getByRole("button", { name: he.drive.contacts(A.kid) }).click();
+    const contact = b.page.getByRole("dialog", { name: A.kid });
+    const aPhone = formatPhoneLocal(A.phone)!;
+    await expect(contact.getByRole("link", { name: aPhone })).toHaveAttribute("href", "tel:+972521111111");
+    await contact.getByRole("button", { name: he.common.close }).click();
+    await expect(contact).toBeHidden();
 
     // --- C, an unrelated family in a third context, sees everyone's contacts (trust model) ---
     const c = await spawn();
@@ -135,7 +141,7 @@ test("main flow: two families, live seating, undo, driver phones, shared contact
     await kid.page.getByRole("button", { name: he.kid.ready }).click();
     await expect(kid.page.getByText(he.kid.readyDone)).toBeVisible();
     // ...and the driver sees it live.
-    await expect(b.page.getByText(he.drive.ready)).toBeVisible();
+    await expect(b.page.getByText(he.drive.waiting)).toBeVisible();
 
     const finalEvent: EventView = await apiEvent(b.page, groupId, eventId, await familyIdOf(b.page, groupId));
     expect(finalEvent.offers.out[0]?.kidIds).toHaveLength(1);

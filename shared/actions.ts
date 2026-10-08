@@ -88,8 +88,19 @@ function applyAll(
 function cloneRun(r: Run): Run {
   const c: Run = { ...r, picked: [...r.picked] };
   if (r.arrived) c.arrived = [...r.arrived];
+  if (r.eta) c.eta = Object.fromEntries(Object.entries(r.eta).map(([k, v]) => [k, { ...v }]));
   return c;
 }
+
+/** Drops a kid's ETA from the run (and the field when empty). */
+function clearEta(run: Run | undefined, kidId: string): void {
+  if (!run?.eta || !(kidId in run.eta)) return;
+  delete run.eta[kidId];
+  if (Object.keys(run.eta).length === 0) delete run.eta;
+}
+
+const isEtaEntry = (v: unknown): v is { at: number; setAt: number } =>
+  !!v && typeof v === "object" && Number.isFinite((v as { at: unknown }).at) && Number.isFinite((v as { setAt: unknown }).setAt);
 
 /** Removes a kid from `run.arrived` (dropping the field when empty); returns whether they were there. */
 function clearArrived(run: Run | undefined, kidId: string): boolean {
@@ -142,6 +153,7 @@ function removeKidFromOffer(o: Offer, kidId: string): SeatFlags {
   o.kidIds = o.kidIds.filter((k) => k !== kidId);
   if (o.run) o.run.picked = o.run.picked.filter((k) => k !== kidId);
   const wasArrived = clearArrived(o.run, kidId);
+  clearEta(o.run, kidId);
   if (o.ready) {
     o.ready = o.ready.filter((k) => k !== kidId);
     if (o.ready.length === 0) delete o.ready;
@@ -193,6 +205,8 @@ const RIDE_ACTIONS: ReadonlySet<string> = new Set([
   "startRun",
   "setPicked",
   "setArrived",
+  "setEta",
+  "endRun",
   "setKidReady",
   "confirmDeparture",
 ]);
@@ -412,6 +426,10 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       if (seatedOn(s, a.kidId, leg)) return fail("seat_taken");
       if (offer.kidIds.length >= offer.seats) return fail("car_full");
       offer.kidIds.push(a.kidId);
+      // The driver's own kid rides along from home on the out leg: on board as soon as they're seated.
+      if (leg === "out" && offer.run && kidFamily(ctx, a.kidId)?.id === offer.familyId && !offer.run.picked.includes(a.kidId)) {
+        offer.run.picked.push(a.kidId);
+      }
       return { ok: true, inverse: [{ type: "unseatKid", offerId: offer.id, kidId: a.kidId }] };
     }
 
@@ -431,7 +449,9 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       const { offer } = found;
       if (!sys && offer.familyId !== actor) return fail("forbidden");
       if (offer.run) return fail("invalid");
-      offer.run = { startedAt: now, picked: [] };
+      // On the out leg the driver's own kids leave home in the car, so they start out picked.
+      const picked = found.leg === "out" ? offer.kidIds.filter((k) => kidFamily(ctx, k)?.id === offer.familyId) : [];
+      offer.run = { startedAt: now, picked };
       return { ok: true, inverse: [{ type: "setRun", offerId: offer.id, run: null }] };
     }
 
@@ -444,9 +464,18 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       if (a.run) {
         if (typeof a.run.startedAt !== "number" || !Array.isArray(a.run.picked)) return fail("invalid");
         if (a.run.arrived !== undefined && !Array.isArray(a.run.arrived)) return fail("invalid");
+        if (a.run.eta !== undefined && (!a.run.eta || typeof a.run.eta !== "object" || Array.isArray(a.run.eta))) return fail("invalid");
+        if (a.run.endedAt !== undefined && !Number.isFinite(a.run.endedAt)) return fail("invalid");
         offer.run = { startedAt: a.run.startedAt, picked: a.run.picked.filter((k) => offer.kidIds.includes(k)) };
         const arrived = (a.run.arrived ?? []).filter((k) => offer.kidIds.includes(k));
         if (arrived.length) offer.run.arrived = arrived;
+        const eta: Record<string, { at: number; setAt: number }> = {};
+        for (const [k, v] of Object.entries(a.run.eta ?? {})) {
+          if (!isEtaEntry(v)) return fail("invalid");
+          if (offer.kidIds.includes(k)) eta[k] = { at: v.at, setAt: v.setAt };
+        }
+        if (Object.keys(eta).length) offer.run.eta = eta;
+        if (a.run.endedAt !== undefined) offer.run.endedAt = a.run.endedAt;
       } else {
         delete offer.run;
       }
@@ -484,6 +513,34 @@ function step(s: EventState, ctx: ActionCtx, a: Action, actor: string, now: numb
       if (a.arrived && !was) offer.run.arrived = [...(offer.run.arrived ?? []), a.kidId];
       if (!a.arrived && was) clearArrived(offer.run, a.kidId);
       return { ok: true, inverse: [{ type: "setArrived", offerId: offer.id, kidId: a.kidId, arrived: was }] };
+    }
+
+    case "setEta": {
+      if (!Number.isInteger(a.minutes) || a.minutes < 1 || a.minutes > 60) return fail("invalid");
+      if (!Array.isArray(a.kidIds) || a.kidIds.length === 0 || !a.kidIds.every(isStr)) return fail("invalid");
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      if (!sys && offer.familyId !== actor) return fail("forbidden");
+      if (!a.kidIds.every((k) => offer.kidIds.includes(k))) return fail("not_found");
+      if (!offer.run) return fail("invalid");
+      const prev = cloneRun(offer.run);
+      const eta = (offer.run.eta ??= {});
+      for (const k of a.kidIds) eta[k] = { at: now + a.minutes * 60_000, setAt: now };
+      return { ok: true, inverse: [{ type: "setRun", offerId: offer.id, run: prev }] };
+    }
+
+    case "endRun": {
+      if (typeof a.ended !== "boolean") return fail("invalid");
+      const found = findOffer(s, a.offerId);
+      if (!found) return fail("not_found");
+      const { offer } = found;
+      if (!sys && offer.familyId !== actor) return fail("forbidden");
+      if (!offer.run) return fail("invalid");
+      const prev = cloneRun(offer.run);
+      if (a.ended) offer.run.endedAt = now;
+      else delete offer.run.endedAt;
+      return { ok: true, inverse: [{ type: "setRun", offerId: offer.id, run: prev }] };
     }
 
     case "setKidReady": {

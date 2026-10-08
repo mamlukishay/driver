@@ -14,6 +14,7 @@ import type {
   Leg,
   LogEntry,
   LogEntryView,
+  Run,
 } from "./types.ts";
 import { gapsFor, waitingKids } from "./gaps.ts";
 import { offerDriver } from "./drivers.ts";
@@ -91,12 +92,18 @@ export function viewFor(
 
   const kidPlans: EventView["kidPlans"] = {};
   for (const [k, p] of Object.entries(state.kidPlans)) kidPlans[k] = { ...p };
+  const copyRun = (r: Run): Run => ({
+    ...r,
+    picked: [...r.picked],
+    ...(r.arrived ? { arrived: [...r.arrived] } : {}),
+    ...(r.eta ? { eta: Object.fromEntries(Object.entries(r.eta).map(([k, v]) => [k, { ...v }])) } : {}),
+  });
   const copyOffers = (leg: Leg) =>
     state.offers[leg].map((o) => ({
       ...o,
       kidIds: [...o.kidIds],
       ...(o.ready ? { ready: [...o.ready] } : {}),
-      ...(o.run ? { run: { ...o.run, picked: [...o.run.picked], ...(o.run.arrived ? { arrived: [...o.run.arrived] } : {}) } } : {}),
+      ...(o.run ? { run: copyRun(o.run) } : {}),
     }));
 
   const view: EventView = {
@@ -140,16 +147,6 @@ export function pickupStops(leg: Leg, kidIds: readonly string[], familyOf: (kidI
   return stops.map((x) => x.kids);
 }
 
-/** Kids at stops before `kidId`'s stop who are not picked up yet. */
-export function kidsAhead(stops: readonly (readonly string[])[], kidId: string, picked: readonly string[]): number {
-  let n = 0;
-  for (const stop of stops) {
-    if (stop.includes(kidId)) return n;
-    n += stop.filter((k) => !picked.includes(k)).length;
-  }
-  return n;
-}
-
 /** Minutes after the leg's time (out: event start, back: return time) after which the leg counts as over. */
 export const LEG_OVER_AFTER_MIN: Record<Leg, number> = { out: 30, back: 90 };
 
@@ -168,18 +165,19 @@ export function legOver(e: { date: string; start: string; returnTime: string }, 
 
 /**
  * The kid page's live status for one leg; null when the kid doesn't need this leg.
- * done > picked > arrived > next > onTheWay > assigned > waiting. `over` (see `legOver`) makes the
- * leg "done", except while a started run hasn't picked the kid up yet (a late driver stays live).
+ * done > picked > arrived > onTheWay > assigned > waiting. The leg is "done" once the driver ended
+ * the run ("הגענו"), or when `over` (see `legOver`), except while a started run hasn't picked the
+ * kid up yet (a late driver stays live).
  */
 export function kidLegStatus(l: KidLegView, over: boolean): KidLegStatus | null {
   if (!l.needed) return null;
   const r = l.ride;
+  if (r?.ended) return "done";
   if (over && !(r?.started && !r.picked)) return "done";
   if (!r) return "waiting";
   if (r.picked) return "picked";
   if (!r.started) return "assigned";
   if (r.arrived) return "arrived";
-  if (r.ahead === 0) return "next";
   return "onTheWay";
 }
 
@@ -199,7 +197,6 @@ export function kidView(
   const family = families.find((f) => f.kids.some((k) => k.id === kidId));
   const kid = family?.kids.find((k) => k.id === kidId);
   if (!family || !kid) return null;
-  const familyOf = (id: string) => families.find((f) => f.kids.some((k) => k.id === id))?.id;
 
   const legView = (e: EventState, leg: Leg): KidLegView => {
     const plan = e.kidPlans[kid.id];
@@ -227,7 +224,8 @@ export function kidView(
         picked: picked.includes(kid.id),
         ready: !!offer.ready?.includes(kid.id),
         arrived: !!offer.run?.arrived?.includes(kid.id),
-        ahead: kidsAhead(pickupStops(leg, offer.kidIds, familyOf), kid.id, picked),
+        eta: offer.run?.eta?.[kid.id] ? { ...offer.run.eta[kid.id]! } : null,
+        ended: offer.run?.endedAt !== undefined,
       },
     };
   };

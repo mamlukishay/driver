@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { applyAction } from "./actions.ts";
 import type { Action, EventState, KidLegView, KidRide, LogEntry } from "./types.ts";
-import { familyPrivate, familyPublic, kidLegStatus, kidsAhead, kidView, legOver, pickupStops, viewFor } from "./view.ts";
+import { familyPrivate, familyPublic, kidLegStatus, kidView, legOver, pickupStops, viewFor } from "./view.ts";
 import { A, B, baseEvent, C, ctx, deepFreeze, FAMILIES } from "./test/fixtures.ts";
 
-function chain(steps: [string, Action][]): EventState {
-  let s = baseEvent();
+function chain(steps: [string, Action][], start: EventState = baseEvent()): EventState {
+  let s = start;
   const c = ctx();
   for (const [actor, a] of steps) {
     const r = applyAction(s, c, a, actor, 0);
@@ -123,10 +123,19 @@ describe("kidView: live fields and per-event focus", () => {
   ]);
   const ride = (st: EventState, kid: string) => kidView(group, FAMILIES, [st], kid, "2026-10-07")!.events[0]!.legs.out.ride!;
 
-  test("arrived and ahead follow the driver's pickup order", () => {
-    expect(ride(s0, "b1")).toMatchObject({ started: true, arrived: true, ahead: 0 });
-    expect(ride(s0, "a1")).toMatchObject({ arrived: false, ahead: 1 });
-    expect(ride(s0, "c1")).toMatchObject({ ahead: 2 });
+  test("arrived; the driver's own kid is on board from the start of the out leg", () => {
+    expect(ride(s0, "b1")).toMatchObject({ started: true, arrived: true, picked: false, eta: null, ended: false });
+    expect(ride(s0, "a1")).toMatchObject({ arrived: false, picked: true });
+    expect(ride(s0, "c1")).toMatchObject({ arrived: false, picked: false });
+  });
+
+  test("eta is this kid's entry; ended follows the run", () => {
+    const s1 = chain([["fama", { type: "setEta", offerId: "o1", kidIds: ["c1"], minutes: 7 }]], s0);
+    expect(ride(s1, "c1").eta).toEqual({ at: 7 * 60_000, setAt: 0 });
+    expect(ride(s1, "b1").eta).toBeNull();
+    const s2 = chain([["fama", { type: "endRun", offerId: "o1", ended: true }]], s1);
+    expect(ride(s2, "c1").ended).toBe(true);
+    expect(ride(s2, "b1").ended).toBe(true);
   });
 
   test("eventId shows only that event, even when past; unknown id → no events", () => {
@@ -136,19 +145,12 @@ describe("kidView: live fields and per-event focus", () => {
   });
 });
 
-describe("pickupStops / kidsAhead", () => {
+describe("pickupStops", () => {
   const famOf = (k: string) => ({ a1: "A", a2: "A", b1: "B", c1: "C" })[k];
   test("out: one stop per family in seating order; back: one stop", () => {
     expect(pickupStops("out", ["b1", "a1", "c1", "a2"], famOf)).toEqual([["b1"], ["a1", "a2"], ["c1"]]);
     expect(pickupStops("back", ["b1", "a1"], famOf)).toEqual([["b1", "a1"]]);
     expect(pickupStops("back", [], famOf)).toEqual([]);
-  });
-  test("counts unpicked kids at earlier stops", () => {
-    const stops = [["b1"], ["a1", "a2"], ["c1"]];
-    expect(kidsAhead(stops, "b1", [])).toBe(0);
-    expect(kidsAhead(stops, "c1", [])).toBe(3);
-    expect(kidsAhead(stops, "c1", ["b1", "a1"])).toBe(1);
-    expect(kidsAhead(stops, "a2", ["b1"])).toBe(0);
   });
 });
 
@@ -174,7 +176,8 @@ describe("kidLegStatus", () => {
     picked: false,
     ready: false,
     arrived: false,
-    ahead: 2,
+    eta: null,
+    ended: false,
     ...over,
   });
   const leg = (ride: KidRide | null, needed = true): KidLegView => ({ needed, ride });
@@ -183,16 +186,29 @@ describe("kidLegStatus", () => {
     expect(kidLegStatus(leg(null, false), false)).toBeNull();
     expect(kidLegStatus(leg(null), false)).toBe("waiting");
     expect(kidLegStatus(leg(r()), false)).toBe("assigned");
-    expect(kidLegStatus(leg(r({ ahead: 0 })), false)).toBe("assigned");
     expect(kidLegStatus(leg(r({ started: true })), false)).toBe("onTheWay");
-    expect(kidLegStatus(leg(r({ started: true, ahead: 0 })), false)).toBe("next");
-    expect(kidLegStatus(leg(r({ started: true, arrived: true, ahead: 1 })), false)).toBe("arrived");
-    expect(kidLegStatus(leg(r({ started: true, picked: true, ahead: 0 })), false)).toBe("picked");
+    expect(kidLegStatus(leg(r({ started: true, arrived: true })), false)).toBe("arrived");
+    expect(kidLegStatus(leg(r({ started: true, picked: true })), false)).toBe("picked");
     expect(kidLegStatus(leg(r({ started: true, picked: true })), true)).toBe("done");
     expect(kidLegStatus(leg(null), true)).toBe("done");
     expect(kidLegStatus(leg(r()), true)).toBe("done");
     expect(kidLegStatus(leg(r({ started: true })), true)).toBe("onTheWay");
     expect(kidLegStatus(leg(r({ started: true, arrived: true })), true)).toBe("arrived");
     expect(kidLegStatus(leg(null, false), true)).toBeNull();
+  });
+
+  test("an eta keeps the kid on the way (even when it has passed)", () => {
+    const eta = { at: 1, setAt: 0 };
+    expect(kidLegStatus(leg(r({ started: true, eta })), false)).toBe("onTheWay");
+    expect(kidLegStatus(leg(r({ started: true, eta })), true)).toBe("onTheWay");
+    expect(kidLegStatus(leg(r({ started: true, arrived: true, eta })), false)).toBe("arrived");
+    expect(kidLegStatus(leg(r({ started: true, picked: true, eta })), false)).toBe("picked");
+  });
+
+  test("an ended run is done, picked or not, before the leg is over", () => {
+    expect(kidLegStatus(leg(r({ started: true, picked: true, ended: true })), false)).toBe("done");
+    expect(kidLegStatus(leg(r({ started: true, ended: true })), false)).toBe("done");
+    expect(kidLegStatus(leg(r({ started: true, ended: true })), true)).toBe("done");
+    expect(kidLegStatus(leg(r({ started: true, ended: true }), false), false)).toBeNull();
   });
 });
