@@ -23,7 +23,7 @@ export const LOG_TAIL = 50;
 
 /** A clean copy of a family; strips fields older versions stored (`keyHash`, `kidToken`). */
 export function familyPublic(f: Family): FamilyPublic {
-  return {
+  const out: FamilyPublic = {
     id: f.id,
     name: f.name,
     color: f.color,
@@ -33,6 +33,8 @@ export function familyPublic(f: Family): FamilyPublic {
     cars: f.cars.map((c) => ({ ...c })),
     createdAt: f.createdAt,
   };
+  if (f.city) out.city = f.city;
+  return out;
 }
 
 /** The requester's own family; same data as `familyPublic`. */
@@ -87,6 +89,7 @@ export function viewFor(
       createdAt: f.createdAt,
     };
     if (f.address) v.address = f.address;
+    if (f.city) v.city = f.city;
     return v;
   });
 

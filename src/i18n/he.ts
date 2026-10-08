@@ -187,8 +187,11 @@ export const he = {
     phoneInvalid: "זה לא נראה כמו נייד ישראלי. לדוגמה 050-1234567",
     addParent: "+ הוספת הורה או נהג/ת",
     removeParent: "הסרה מהרשימה",
+    /** The home address card's title (street + city fields below it). */
     address: "כתובת הבית",
     addressHint: "גלויה לכל המשפחות בקבוצה",
+    street: "רחוב ומספר בית",
+    city: "יישוב",
     addressSuggestions: "הצעות כתובת",
     kids: "ילדים",
     kidName: "שם הילד/ה",

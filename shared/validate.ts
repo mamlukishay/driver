@@ -57,7 +57,8 @@ export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
   if (!isObj(input)) return invalid;
   const name = cleanName(input.name);
   const address = cleanText(input.address ?? "", 200);
-  if (!name || address === null) return invalid;
+  const city = cleanText(input.city ?? "", 60);
+  if (!name || address === null || city === null) return invalid;
   if (!Array.isArray(input.parents) || input.parents.length < 1 || input.parents.length > MAX_PARENTS) return invalid;
   if (!Array.isArray(input.kids) || input.kids.length > MAX_KIDS) return invalid;
   if (!Array.isArray(input.cars ?? []) || (input.cars as unknown[] | undefined ?? []).length > MAX_CARS) return invalid;
@@ -112,7 +113,9 @@ export function validateFamilyInput(input: unknown): Validated<FamilyInput> {
     cars.push(car);
   }
 
-  return { ok: true, value: { name, parents, address, kids, cars } };
+  const value: FamilyInput = { name, parents, address, kids, cars };
+  if (city) value.city = city;
+  return { ok: true, value };
 }
 
 export interface FamilyBase {
@@ -152,7 +155,9 @@ export function buildFamily(
     used.add(id);
     return { id, name: p.name, phone: p.phone };
   });
-  return { ...base, name: input.name, parents, address: input.address, kids, cars };
+  const family: Family = { ...base, name: input.name, parents, address: input.address, kids, cars };
+  if (input.city) family.city = input.city;
+  return family;
 }
 
 export function validateEventInput(input: unknown): Validated<EventInput> {

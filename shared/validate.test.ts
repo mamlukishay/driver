@@ -45,6 +45,19 @@ describe("validateFamilyInput", () => {
     }
   });
 
+  test("city: trimmed and kept when given, omitted when blank, too long rejected", () => {
+    const r = validateFamilyInput({ ...input, address: "הרצל 5", city: "  פרדס חנה-כרכור " });
+    expect(r.ok && r.value.city).toBe("פרדס חנה-כרכור");
+    for (const city of [undefined, "", "   "]) {
+      const v = validateFamilyInput({ ...input, city });
+      expect(v.ok).toBe(true);
+      if (v.ok) expect("city" in v.value).toBe(false);
+    }
+    expect(validateFamilyInput({ ...input, city: "x".repeat(60) }).ok).toBe(true);
+    expect(validateFamilyInput({ ...input, city: "x".repeat(61) }).ok).toBe(false);
+    expect(validateFamilyInput({ ...input, city: 5 }).ok).toBe(false);
+  });
+
   test("names that merely contain the words are fine", () => {
     expect(validateFamilyInput({ ...input, name: "Nullman" }).ok).toBe(true);
     expect(validateFamilyInput({ ...input, kids: [{ name: "undefined2" }] }).ok).toBe(true);
@@ -100,6 +113,19 @@ describe("buildFamily", () => {
     expect(new Set(ids).size).toBe(4);
     expect(ids).not.toContain("nope");
     expect(ids).not.toContain(dana!.id);
+  });
+
+  test("stores the city when given and drops it when cleared on edit", () => {
+    const gen = { id: () => "x" };
+    const base = { id: "fam1", color: 0, createdAt: 0 };
+    const v = validateFamilyInput({ ...input, address: "הרצל 5", city: "כרכור" });
+    if (!v.ok) throw new Error();
+    const first = buildFamily(v.value, base, null, gen);
+    expect(first.address).toBe("הרצל 5");
+    expect(first.city).toBe("כרכור");
+    const cleared = validateFamilyInput({ ...input, address: "הרצל 5", city: "" });
+    if (!cleared.ok) throw new Error();
+    expect("city" in buildFamily(cleared.value, base, first, gen)).toBe(false);
   });
 
   test("up to 6 people; ids must be short strings", () => {

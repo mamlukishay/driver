@@ -82,7 +82,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
   };
   return (
     <>
-      <FamilyForm key={formKey} group={group} initial={initial} submitLabel={he.common.save} places={places} cars={false} revealErrors={!initial.name} onSubmit={save} />
+      <FamilyForm key={formKey} group={group} initial={initial} submitLabel={he.common.save} places={places} cities={data.families.filter((f) => f.id !== fam.id).map((f) => f.city ?? "")} cars={false} revealErrors={!initial.name} onSubmit={save} />
       <section class="card" aria-labelledby="cars-sum-h">
         <h2 class="hs" id="cars-sum-h">
           {he.cars.summary}

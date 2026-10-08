@@ -13,12 +13,24 @@ export async function placesAutocomplete(apiKey: string, input: string): Promise
       return { suggestions: [] };
     }
     const data = (await res.json()) as {
-      suggestions?: { placePrediction?: { placeId?: string; text?: { text?: string } } }[];
+      suggestions?: {
+        placePrediction?: {
+          placeId?: string;
+          text?: { text?: string };
+          structuredFormat?: { mainText?: { text?: string }; secondaryText?: { text?: string } };
+        };
+      }[];
     };
     const suggestions: PlacesResponse["suggestions"] = [];
     for (const s of data.suggestions ?? []) {
       const p = s.placePrediction;
-      if (p?.placeId && p.text?.text) suggestions.push({ text: p.text.text, placeId: p.placeId });
+      if (!p?.placeId || !p.text?.text) continue;
+      const sug: PlacesResponse["suggestions"][number] = { text: p.text.text, placeId: p.placeId };
+      const main = p.structuredFormat?.mainText?.text;
+      const secondary = p.structuredFormat?.secondaryText?.text;
+      if (main) sug.main = main;
+      if (secondary) sug.secondary = secondary;
+      suggestions.push(sug);
     }
     return { suggestions: suggestions.slice(0, 8) };
   } catch (e) {

@@ -22,6 +22,8 @@ interface FieldProps {
   /** For date/time inputs. */
   min?: string;
   autoComplete?: string;
+  /** id of a `<datalist>` with suggestions (pass it as a child). */
+  list?: string;
   dir?: "ltr" | "rtl";
   onBlur?: () => void;
   /** Shows a small spinner inside the input (its left edge: busy fields are `dir="ltr"`, text aligned right). */
@@ -43,6 +45,7 @@ export function Field(p: FieldProps) {
       maxLength={p.maxLength}
       min={p.min}
       autoComplete={p.autoComplete}
+      list={p.list}
       dir={p.dir}
       aria-invalid={p.error ? true : undefined}
       aria-busy={p.busy || undefined}

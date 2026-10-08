@@ -69,7 +69,10 @@ export interface Family {
   /** Index into the UI family palette. */
   color: number;
   parents: Parent[];
+  /** Street + house number ("הרצל 5"). Legacy rows may hold a full "street, city" text. */
   address: string;
+  /** City / town ("פרדס חנה-כרכור"); absent on legacy rows and when not given. */
+  city?: string;
   kids: Kid[];
   cars: Car[];
   createdAt: number;
@@ -101,7 +104,10 @@ export interface ParentInput {
 export interface FamilyInput {
   name: string;
   parents: ParentInput[];
+  /** Street + house number. */
   address: string;
+  /** City / town; omitted or empty when not given. */
+  city?: string;
   kids: KidInput[];
   cars: CarInput[];
 }
@@ -308,6 +314,7 @@ export interface FamilyView {
   kids: { id: string; name: string; phone?: string }[];
   cars: CarPublic[];
   address?: string;
+  city?: string;
   /** For stable labels of same-named families (see familyLabel). */
   createdAt: number;
 }
@@ -456,7 +463,8 @@ export interface InviteParseResponse {
   address?: string;
 }
 export interface PlacesResponse {
-  suggestions: { text: string; placeId: string }[];
+  /** `main`/`secondary`: the Places structured format (e.g. "הרצל 5" / "פרדס חנה-כרכור, ישראל"). */
+  suggestions: { text: string; placeId: string; main?: string; secondary?: string }[];
 }
 export type WsMessage =
   | { t: "event"; eventId: string; version: number }

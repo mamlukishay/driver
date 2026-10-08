@@ -27,6 +27,10 @@ describe("nextEventDate", () => {
 });
 
 describe("prefillFrom", () => {
+  test("carries the city", () => {
+    const p = prefillFrom({ name: "כהן", address: "הרצל 1", city: "כרכור", parents: [], kids: [], cars: [] });
+    expect(p.family.city).toBe("כרכור");
+  });
   test("copies details without ids, photos or kids; kids become choices", () => {
     const p = prefillFrom({
       name: "כהן",

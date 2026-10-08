@@ -194,6 +194,7 @@ export function Join({ group }: { group: string }) {
               kidChoices={pre?.kids}
               submitLabel={he.join.submit}
               places={places}
+              cities={families.map((f) => f.city ?? "")}
               onSubmit={submit}
             />
           </>

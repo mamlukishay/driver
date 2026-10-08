@@ -89,7 +89,7 @@ Personas: **Parent** (registers family, RSVPs kids, offers rides, drives) and **
 ### Data model (JSON inside the group's Durable Object, images too)
 ```
 group/{groupId}.json   { name, inviteCode, families:[…], createdAt }
-family: { id, color, parents:[{name, phone}], address, kids:[{id,name,phone?,grade?}], cars:[{id,label,seats,color?,plate?,photo?}] , keyHash }
+family: { id, color, parents:[{name, phone}], address (street + house number), city?, kids:[{id,name,phone?,grade?}], cars:[{id,label,seats,color?,plate?,photo?}] , keyHash }
 event/{groupId}/{eventId}.json
   { id, title, place, address, date, start, returnTime, hostFamilyId,
     rsvp: { kidId: "yes"|"no"|"maybe" },

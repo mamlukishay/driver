@@ -45,7 +45,9 @@ async function scene(page: Page): Promise<Scene> {
   await fam({
     name: "כהן",
     parents: [{ name: "דנה", phone: "050-111-1111" }],
-    address: "ז׳בוטינסקי 45, רמת גן",
+    // Street and city as separate fields (the form's shape); navigation joins them.
+    address: "ז׳בוטינסקי 45",
+    city: "רמת גן",
     kids: [{ name: NOA, phone: "052-418-7730" }],
     cars: [],
   });
@@ -150,7 +152,10 @@ test("out leg: departure sheet per other family, pick up in any order, a done st
   // Progress counts kids at stops only (not the driver's own kid).
   await expect(page.getByText(he.drive.progress(0, 3))).toBeVisible();
   // The first stop is expanded: the navigation button goes there, in Waze by default.
-  await expect(page.getByRole("link", { name: he.drive.navIn(NOA, "Waze") })).toHaveAttribute("href", /^https:\/\/waze\.com\/ul\?q=/);
+  const toNoaHome = page.getByRole("link", { name: he.drive.navIn(NOA, "Waze") });
+  await expect(toNoaHome).toHaveAttribute("href", /^https:\/\/waze\.com\/ul\?q=/);
+  // Street + city, so navigation never lands on the same street in another town.
+  expect(new URL((await toNoaHome.getAttribute("href"))!).searchParams.get("q")).toBe("ז׳בוטינסקי 45, רמת גן");
 
   // Stop 2 before stop 1, with its own compact button: הגעתי → אספתי ✓.
   await page.getByRole("button", { name: he.drive.arriveLabel(SIBS) }).click();
@@ -252,6 +257,7 @@ test("navigation app: the selector switches the logo, survives a reload and matc
   await expect(bar.locator(".nlogo")).toHaveAttribute("data-app", "gmaps");
   const nav = page.getByRole("link", { name: he.drive.navIn(NOA, "Google Maps") });
   await expect(nav).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=.+&travelmode=driving$/);
+  expect(new URL((await nav.getAttribute("href"))!).searchParams.get("destination")).toBe("ז׳בוטינסקי 45, רמת גן");
 
   await page.reload();
   await expect(bar.locator(".nlogo")).toHaveAttribute("data-app", "gmaps");

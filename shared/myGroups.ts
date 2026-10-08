@@ -30,11 +30,12 @@ export interface Prefill {
 }
 
 /** An independent copy of a family from another group, to prefill registration. */
-export function prefillFrom(src: Pick<Family, "name" | "parents" | "address" | "kids" | "cars">): Prefill {
+export function prefillFrom(src: Pick<Family, "name" | "parents" | "address" | "city" | "kids" | "cars">): Prefill {
   return {
     family: {
       name: src.name,
       address: src.address,
+      ...(src.city ? { city: src.city } : {}),
       parents: src.parents.map((p) => ({ name: p.name, phone: p.phone })),
       kids: [],
       cars: src.cars.map((c) => ({

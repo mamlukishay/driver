@@ -8,6 +8,7 @@ import type { JSX } from "preact";
 import { useState } from "preact/hooks";
 import { useLocation } from "preact-iso";
 import type { EventView, FamilyView, Leg, Offer, PublicAction } from "../../shared/types.ts";
+import { fullAddress } from "../../shared/address.ts";
 import { familyDisplayName } from "../../shared/familyLabel.ts";
 import { formatPhoneLocal, telHref } from "../../shared/phone.ts";
 import { pickupStops } from "../../shared/view.ts";
@@ -142,6 +143,7 @@ function driveModel(ev: EventView, leg: Leg, offer: Offer) {
 type Model = ReturnType<typeof driveModel>;
 
 const names = (m: Model, kids: string[]) => he.joinNames(kids.map(m.idx.kidName));
+/** The street only (compact rows); full addresses and navigation use `fullAddress`. */
 const shortAddr = (a: string | undefined) => (a ?? "").split(",")[0]!.trim();
 
 /** When each kid was picked up, from the event log (the log is a tail, so only "if known"). */
@@ -242,7 +244,7 @@ function DriveRun({ group, ev, leg, offer }: { group: string; ev: EventView; leg
   const homeTarget = (h: FamKids) => {
     const mine = h.fam.id === offer.familyId;
     const label = mine ? he.drive.home2 : names(m, h.kids);
-    return { text: mine ? he.drive.navHome : he.drive.navTo(label), label, addr: h.fam.address || null };
+    return { text: mine ? he.drive.navHome : he.drive.navTo(label), label, addr: fullAddress(h.fam) || null };
   };
   let target: { text: string; label: string; addr: string | null } | null = null;
   if (run) {
@@ -250,7 +252,7 @@ function DriveRun({ group, ev, leg, offer }: { group: string; ev: EventView; leg
     if (leg === "back" && (tappedHome || m.allIn)) target = m.homes.length ? homeTarget(tappedHome ?? m.homes[0]!) : null;
     else if (!m.allIn && expanded && !expanded.venue) {
       const label = names(m, expanded.kids);
-      target = { text: he.drive.navTo(label), label, addr: expanded.fam?.address || null };
+      target = { text: he.drive.navTo(label), label, addr: (expanded.fam && fullAddress(expanded.fam)) || null };
     } else target = venueTarget;
   }
   const selHome = leg === "back" && run && target ? (m.homes.find((h) => h.fam.id === home) ?? (m.allIn ? m.homes[0] : undefined)) : undefined;
@@ -428,7 +430,7 @@ function DriveRun({ group, ev, leg, offer }: { group: string; ev: EventView; leg
                   />
                 </li>
               );
-            const sub = [s.venue ? (ev.address && ev.address !== ev.place ? shortAddr(ev.address) : legTime) : run ? shortAddr(s.fam?.address) : s.fam?.address];
+            const sub = [s.venue ? (ev.address && ev.address !== ev.place ? shortAddr(ev.address) : legTime) : run ? shortAddr(s.fam?.address) : s.fam && fullAddress(s.fam)];
             if (st === 1) sub.push(he.drive.arrivedState);
             else if (ready) sub.push(he.drive.waiting);
             return (
@@ -494,7 +496,7 @@ function DriveRun({ group, ev, leg, offer }: { group: string; ev: EventView; leg
                     >
                       <span class="grow1">
                         <b>{t.label}</b>
-                        <small>{h.fam.address || he.drive.noAddress}</small>
+                        <small>{fullAddress(h.fam) || he.drive.noAddress}</small>
                       </span>
                     </button>
                     {last && run && !m.allIn && endBtn}
@@ -557,7 +559,7 @@ function StopCard(p: {
   const who = names(m, un);
   const eta = un.map((k) => run?.eta?.[k]).find(Boolean);
   const etaMin = eta ? Math.round((eta.at - eta.setAt) / 60_000) : null;
-  const addr = s.venue ? (ev.address && ev.address !== ev.place ? ev.address : null) : s.fam?.address;
+  const addr = s.venue ? (ev.address && ev.address !== ev.place ? ev.address : null) : s.fam && fullAddress(s.fam);
   const contactBtn = (kidId: string, sm?: boolean) => (
     <button
       type="button"

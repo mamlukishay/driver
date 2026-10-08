@@ -1,4 +1,4 @@
-/** Registration / profile form: family name, parents and drivers + phones, address, kids, cars. */
+/** Registration / profile form: family name, parents and drivers + phones, address (street + city), kids, cars. */
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { FamilyInput, FamilyPrivate } from "../../shared/types.ts";
 import { formatPhoneLocal, normalizePhone } from "../../shared/phone.ts";
@@ -25,7 +25,9 @@ export interface FamilyDraft {
   name: string;
   /** Parents and other drivers; `id` keeps a stored person (and the rides they drive) through an edit. */
   parents: { id?: string; name: string; phone: string }[];
+  /** Street + house number. */
   address: string;
+  city: string;
   kids: { id?: string; name: string; phone: string }[];
   cars: CarDraft[];
 }
@@ -33,7 +35,7 @@ export interface FamilyDraft {
 const MAX_SEATS_UI = 8;
 
 export function emptyDraft(): FamilyDraft {
-  return { name: "", parents: [{ name: "", phone: "" }], address: "", kids: [{ name: "", phone: "" }], cars: [] };
+  return { name: "", parents: [{ name: "", phone: "" }], address: "", city: "", kids: [{ name: "", phone: "" }], cars: [] };
 }
 
 const local = (p?: string) => (p ? (formatPhoneLocal(p) ?? p) : "");
@@ -44,6 +46,7 @@ export function draftFrom(f: FamilyInput | FamilyPrivate): FamilyDraft {
   return {
     name: nameField(f.name),
     address: f.address ?? "",
+    city: f.city ?? "",
     parents: f.parents.length
       ? f.parents.map((p) => ({ ...(p.id ? { id: p.id } : {}), name: nameField(p.name), phone: local(p.phone) }))
       : [{ name: "", phone: "" }],
@@ -67,6 +70,7 @@ export function draftToInput(d: FamilyDraft): FamilyInput {
   return {
     name: d.name.trim(),
     address: d.address.trim(),
+    ...(d.city.trim() ? { city: d.city.trim() } : {}),
     parents: d.parents.map((p) => ({ ...(p.id ? { id: p.id } : {}), name: p.name.trim(), phone: normalizePhone(p.phone) ?? p.phone })),
     kids: d.kids
       .filter((k) => k.name.trim())
@@ -105,6 +109,8 @@ function validate(d: FamilyDraft, pickedCount: number | null = null, withCars = 
     const pe = phoneError(p.phone, true);
     if (pe) e[`parent-${i}-phone`] = pe;
   });
+  // A street without a city can send navigation to the wrong town.
+  if (d.address.trim() && !d.city.trim()) e["fam-city"] = he.form.requiredField;
   d.kids.forEach((k, i) => {
     const alone = pickedCount === null && d.kids.length === 1;
     if (!k.name.trim() && (k.phone.trim() || alone)) e[`kid-${i}-name`] = he.form.requiredField;
@@ -138,12 +144,14 @@ interface Props {
   kidChoices?: readonly KidChoice[];
   /** false: no car fields (the family page; cars live on `/g/:group/me/cars`). The draft's cars are submitted unchanged. */
   cars?: boolean;
+  /** Cities of the group's other families, offered as suggestions for the city field (never auto-filled). */
+  cities?: readonly string[];
   /** Show validation errors from the start (e.g. a stored family whose name is missing). */
   revealErrors?: boolean;
   onSubmit: (d: FamilyDraft) => Promise<void>;
 }
 
-export function FamilyForm({ group, initial, submitLabel, places, kidChoices, revealErrors, cars = true, onSubmit }: Props) {
+export function FamilyForm({ group, initial, submitLabel, places, kidChoices, cities, revealErrors, cars = true, onSubmit }: Props) {
   const [d, setD] = useState<FamilyDraft>(initial);
   const choices = kidChoices?.length ? kidChoices : null;
   const [picked, setPicked] = useState<boolean[]>(() => (choices ? choices.map(() => false) : []));
@@ -202,9 +210,16 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, re
         )}
       </section>
 
-      <section class="card">
-        <AddressField group={group} places={places} value={d.address} onInput={(v) => up((x) => ({ ...x, address: v }))} />
-      </section>
+      <AddressCard
+        group={group}
+        places={places}
+        street={d.address}
+        city={d.city}
+        cities={cities}
+        cityError={err("fam-city")}
+        onStreet={(v) => up((x) => ({ ...x, address: v }))}
+        onCity={(v) => up((x) => ({ ...x, city: v }))}
+      />
 
       <section class="card" aria-labelledby="kids-h">
         <h2 class="hs" id="kids-h">
@@ -367,48 +382,92 @@ function cloneDraft(x: FamilyDraft): FamilyDraft {
   };
 }
 
-function AddressField({ group, places, value, onInput }: { group: string; places: boolean; value: string; onInput: (v: string) => void }) {
-  const [sugs, setSugs] = useState<string[]>([]);
+/** The first comma part of a Places secondary text: "פרדס חנה-כרכור, ישראל" → "פרדס חנה-כרכור". */
+export const cityFromSecondary = (secondary: string) => secondary.split(",")[0]!.trim();
+
+/** "כתובת הבית": street + house number (with Places suggestions) and city (with the group's cities). */
+function AddressCard({
+  group,
+  places,
+  street,
+  city,
+  cities,
+  cityError,
+  onStreet,
+  onCity,
+}: {
+  group: string;
+  places: boolean;
+  street: string;
+  city: string;
+  cities?: readonly string[];
+  cityError: string | null;
+  onStreet: (v: string) => void;
+  onCity: (v: string) => void;
+}) {
+  type Sug = { text: string; main?: string; secondary?: string };
+  const [sugs, setSugs] = useState<Sug[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const picked = useRef(false);
   // Places needs a family key; at first registration there is none yet, so it stays a plain field.
   const canSuggest = places && !!getIdentity(group);
   useEffect(() => {
-    if (!canSuggest || picked.current || value.trim().length < 3) {
+    if (!canSuggest || picked.current || street.trim().length < 3) {
       setSugs([]);
       picked.current = false;
       return;
     }
     clearTimeout(timer.current);
+    const q = city.trim() ? `${street.trim()}, ${city.trim()}` : street.trim();
     timer.current = setTimeout(() => {
       api
-        .places(group, value.trim())
-        .then((r) => setSugs((r.suggestions ?? []).map((s) => s.text).slice(0, 5)))
+        .places(group, q)
+        .then((r) => setSugs((r.suggestions ?? []).slice(0, 5)))
         .catch(() => setSugs([]));
     }, 300);
     return () => clearTimeout(timer.current);
-  }, [value, canSuggest]);
+  }, [street, canSuggest]);
+  const cityList = [...new Set((cities ?? []).map((c) => c.trim()).filter(Boolean))];
   return (
-    <Field id="fam-address" label={he.form.address} hint={he.form.addressHint} value={value} autoComplete="street-address" onInput={onInput}>
-      {sugs.length > 0 && (
-        <ul class="sug" aria-label={he.form.addressSuggestions}>
-          {sugs.map((s) => (
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  picked.current = true;
-                  setSugs([]);
-                  onInput(s);
-                }}
-              >
-                {s}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Field>
+    <section class="card" aria-labelledby="address-h">
+      <h2 class="hs" id="address-h">
+        {he.form.address}
+      </h2>
+      <p class="small muted">{he.form.addressHint}</p>
+      <Field id="fam-address" label={he.form.street} value={street} autoComplete="address-line1" onInput={onStreet}>
+        {sugs.length > 0 && (
+          <ul class="sug" aria-label={he.form.addressSuggestions}>
+            {sugs.map((s) => (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    picked.current = true;
+                    setSugs([]);
+                    onStreet(s.main || s.text);
+                    if (s.secondary) {
+                      const c = cityFromSecondary(s.secondary);
+                      if (c) onCity(c);
+                    }
+                  }}
+                >
+                  {s.text}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Field>
+      <Field id="fam-city" label={he.form.city} value={city} error={cityError} autoComplete="address-level2" list={cityList.length ? "fam-city-list" : undefined} onInput={onCity}>
+        {cityList.length > 0 && (
+          <datalist id="fam-city-list">
+            {cityList.map((c) => (
+              <option value={c} />
+            ))}
+          </datalist>
+        )}
+      </Field>
+    </section>
   );
 }
 

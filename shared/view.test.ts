@@ -82,6 +82,13 @@ describe("familyPublic / familyPrivate", () => {
     const p = familyPublic(A);
     expect(p).toEqual({ ...A, kids: A.kids.map((k) => ({ ...k })) });
   });
+  test("copies the city when set, and only then", () => {
+    expect(familyPublic({ ...A, city: "כרכור" }).city).toBe("כרכור");
+    expect("city" in familyPublic(A)).toBe(false);
+    const v = viewFor(state, [{ ...A, city: "כרכור" }, B], "fama");
+    expect(v.families.find((f) => f.id === A.id)!.city).toBe("כרכור");
+    expect("city" in v.families.find((f) => f.id === B.id)!).toBe(false);
+  });
   test("strips fields older versions stored", () => {
     const legacy = { ...B, keyHash: "h", kids: B.kids.map((k) => ({ ...k, kidToken: "t" })) };
     const p = familyPrivate(legacy);

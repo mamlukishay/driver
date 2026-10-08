@@ -11,3 +11,4 @@ export * from "./familyLabel.ts";
 export * from "./dates.ts";
 export * from "./myGroups.ts";
 export * from "./drivers.ts";
+export * from "./address.ts";

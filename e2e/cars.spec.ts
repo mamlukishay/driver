@@ -52,11 +52,20 @@ test("cars live on their own page: board link → add, save, profile summary, pr
   await expect(summary).toContainText("45");
 
   // Saving the profile keeps the car.
-  await page.getByLabel(he.form.address).fill("הנשיא 5, חיפה");
+  // A street without a city is not saved (navigation could land in another town).
+  await page.getByLabel(he.form.street).fill("הנשיא 5");
+  await page.getByLabel(he.form.city).fill("");
+  await page.getByRole("button", { name: he.common.save }).click();
+  await expect(page.getByText(he.form.fixErrors)).toBeVisible();
+  await expect(page.getByLabel(he.form.city)).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByLabel(he.form.city)).toBeFocused();
+  await expect(page.getByText(he.profile.saved)).toHaveCount(0);
+  await page.getByLabel(he.form.city).fill("חיפה");
   await page.getByRole("button", { name: he.common.save }).click();
   await expect(page.getByText(he.profile.saved)).toBeVisible();
   const g = await apiGroup(page, groupId, await familyIdOf(page, groupId));
-  expect(g.me?.address).toBe("הנשיא 5, חיפה");
+  expect(g.me?.address).toBe("הנשיא 5");
+  expect(g.me?.city).toBe("חיפה");
   expect(g.me?.cars.map((c) => [c.label, c.seats, c.plate])).toEqual([["טויוטה לבנה", 3, "45"]]);
 
   await summary.getByRole("link", { name: he.cars.manage }).click();

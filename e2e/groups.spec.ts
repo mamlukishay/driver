@@ -22,7 +22,8 @@ test("second group: registration copies the family, kids are picked per group; g
   await p.getByLabel(he.form.familyName, { exact: true }).fill("כהן");
   await p.getByLabel(he.form.parentName, { exact: true }).fill("רונית");
   await p.getByLabel(he.form.parentPhone, { exact: true }).fill("052-111-1111");
-  await p.getByLabel(he.form.address).fill("הרצל 12, רעננה");
+  await p.getByLabel(he.form.street).fill("הרצל 12");
+  await p.getByLabel(he.form.city).fill("רעננה");
   await p.locator("#kid-0-name").fill("נועה");
   await p.getByRole("button", { name: he.form.addKid }).click();
   await p.locator("#kid-1-name").fill("איתי");
@@ -44,7 +45,8 @@ test("second group: registration copies the family, kids are picked per group; g
   await expect(p.getByLabel(he.form.familyName, { exact: true })).toHaveValue("כהן");
   await expect(p.getByLabel(he.form.parentName, { exact: true })).toHaveValue("רונית");
   await expect(p.getByLabel(he.form.parentPhone, { exact: true })).toHaveValue(/052-?111-?1111/);
-  await expect(p.getByLabel(he.form.address)).toHaveValue("הרצל 12, רעננה");
+  await expect(p.getByLabel(he.form.street)).toHaveValue("הרצל 12");
+  await expect(p.getByLabel(he.form.city)).toHaveValue("רעננה");
   await expect(p.getByLabel(he.form.carLabel)).toHaveValue("מאזדה");
   await expect(p.getByLabel(he.form.carColor)).toHaveValue("אדום");
   await expect(p.getByLabel(he.form.carPlate)).toHaveValue("123");
