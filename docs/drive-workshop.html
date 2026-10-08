@@ -1,0 +1,1112 @@
+<title>מצב נהג · סדנה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Secular+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ---------- tokens (ported from src/styles/tokens.css, same as events-workshop.html) ---------- */
+:root{
+  --bg:#F3F3EE; --surface:#FFFFFF; --sunk:#E8E9E3; --line:#D4D6CF;
+  --ink:#1C1F23; --ink-2:#555B62; --ink-3:#80868C;
+  --asphalt:#2B2F34; --asphalt-2:#3B4047; --on-asphalt:#EEF0EA; --on-asphalt-2:#AEB4B9;
+  --accent:#F2B705; --accent-soft:#FBEDB8; --on-accent:#1C1F23;
+  --ok:#22804E; --ok-soft:#DCF0E3; --gap:#C0570A; --gap-soft:#FCE6D2; --bad:#B8382A; --bad-soft:#F8DEDA;
+  --wa-bg:#EAE4DA; --wa-bubble:#D9FDD3; --wa-ink:#13261A;
+  --device:#17191C; --app-bg:#F7F7F3; --inv-bg:#FFF6DC; --inv-ink:#3A2A10;
+  --f1:#2F6FD6; --f2:#C2417F; --f3:#7A5AC8; --f4:#138A8A; --f5:#B5651D;
+  --car-glass:#A9C6DA;
+  --shadow:rgba(20,22,25,.14); --scrim:rgba(15,17,20,.45); --focus:#2F6FD6;
+  --ff-display:"Secular One","Rubik",system-ui,sans-serif;
+  --ff-body:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --ff-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gutter:16px; --tap:44px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --car-glass:#4F6E86;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141619; --surface:#1D2024; --sunk:#262A2F; --line:#353A41;
+  --ink:#ECEEE9; --ink-2:#A8AEB4; --ink-3:#7E858C;
+  --asphalt:#0C0E10; --asphalt-2:#252A30; --on-asphalt:#EEF0EA; --on-asphalt-2:#9CA3A9;
+  --accent:#F5C02B; --accent-soft:#45380E; --on-accent:#1C1F23;
+  --ok:#55C68B; --ok-soft:#173826; --gap:#F2933F; --gap-soft:#43290F; --bad:#EE7461; --bad-soft:#45201B;
+  --wa-bg:#0E1714; --wa-bubble:#1E4A36; --wa-ink:#E3F5EA;
+  --device:#2C3036; --app-bg:#17191C; --inv-bg:#3A3020; --inv-ink:#FBEFD2;
+  --f1:#6FA0F0; --f2:#E27AAE; --f3:#A68BEB; --f4:#3FC1C1; --f5:#DB9555;
+  --car-glass:#4F6E86;
+  --shadow:rgba(0,0,0,.5); --scrim:rgba(0,0,0,.6); --focus:#8DB6FF; color-scheme:dark}
+
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ff-body);font-size:16px;line-height:1.5;overflow-x:clip}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{line-height:1.25;text-wrap:balance}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.num,time{font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-2)}
+.small{font-size:13.5px}
+.grow1{flex:1;min-inline-size:0}
+.row{display:flex;align-items:center;gap:8px;min-inline-size:0}
+.row.sp{justify-content:space-between}
+.row.wrap{flex-wrap:wrap}
+.stack{display:flex;flex-direction:column;gap:12px;min-inline-size:0}
+code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-radius:5px;padding:0 4px}
+
+/* ---------- workshop page ---------- */
+.w-ctl{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);border-block-end:1px solid var(--line)}
+.w-seg{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;padding-block:8px;padding-inline:16px;max-inline-size:1180px;margin-inline:auto;scrollbar-width:none}
+.w-seg::-webkit-scrollbar{display:none}
+.w-seg a{flex:none;white-space:nowrap;text-decoration:none;border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 14px;font-size:14.5px;font-weight:500;min-block-size:38px;display:inline-flex;align-items:center;gap:6px}
+.w-seg a b{font-family:var(--ff-mono);font-weight:500}
+.w-seg a[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.w-wrap{max-inline-size:1180px;margin-inline:auto;padding-inline:16px;padding-block:20px 80px;display:flex;flex-direction:column;gap:44px}
+.w-intro{display:flex;flex-direction:column;gap:10px;max-inline-size:760px}
+.w-intro h1{font-family:var(--ff-display);font-weight:400;font-size:30px}
+.w-lane{block-size:10px;background:var(--asphalt);border-radius:3px;position:relative;max-inline-size:220px}
+.w-lane::after{content:"";position:absolute;inset-inline:8px;inset-block-start:4px;block-size:2px;background:repeating-linear-gradient(to left,var(--accent) 0 20px,transparent 20px 34px)}
+.w-sec{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 64px);display:flex;flex-direction:column;gap:16px;min-inline-size:0}
+.w-sec > h2{font-family:var(--ff-display);font-weight:400;font-size:26px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.w-sec > h2 .w-k{font-family:var(--ff-mono);font-size:15px;background:var(--accent);color:var(--on-accent);border-radius:6px;padding:0 8px}
+.w-sec > h2 .w-k.bad{background:var(--bad);color:var(--surface)}
+.w-lead{color:var(--ink-2);max-inline-size:720px}
+.w-opt{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:28px;align-items:start}
+.w-side{display:flex;flex-direction:column;gap:14px;min-inline-size:0}
+.w-pc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.w-pc > div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.w-pc h3{font-size:14px;font-weight:700;margin-block-end:6px}
+.w-pc .pro h3{color:var(--ok)}
+.w-pc .con h3{color:var(--gap)}
+.w-pc ul,.w-ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
+.w-try{background:var(--sunk);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--ink-2)}
+.w-try ol{margin:4px 0 0;padding-inline-start:18px}
+.w-url{font-family:var(--ff-mono);font-size:12.5px;color:var(--ink-2);direction:ltr;text-align:center;background:var(--sunk);border-radius:8px;padding:4px 8px;inline-size:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-url b{color:var(--ink);font-weight:500}
+.w-cmp{display:flex;gap:20px;overflow-x:auto;padding-block:4px 12px;scroll-snap-type:x mandatory;overscroll-behavior-x:contain}
+.w-cmp > div{flex:none;inline-size:min(340px,calc(100vw - 48px));scroll-snap-align:start;display:flex;flex-direction:column;gap:8px}
+.w-cmp h3{font-size:16px}
+.w-tblw{overflow-x:auto}
+.w-tbl{border-collapse:collapse;inline-size:100%;min-inline-size:620px;font-size:14px;background:var(--surface);border-radius:12px;overflow:hidden}
+.w-tbl th,.w-tbl td{border-block-end:1px solid var(--line);padding:8px 10px;text-align:start;vertical-align:top}
+.w-tbl thead th{background:var(--sunk);font-weight:700}
+.w-tbl td.rec{background:var(--accent-soft)}
+.w-tbl b.n{font-family:var(--ff-mono);font-size:16px}
+.w-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.w-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-inline-size:0}
+.w-card h3{font-size:17px}
+.w-card .lbl{font-size:12px;font-weight:700;color:var(--ink-2)}
+.w-rec{background:var(--accent-soft);border:2px solid var(--accent);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;max-inline-size:760px}
+.w-rec h2{font-family:var(--ff-display);font-weight:400;font-size:24px}
+.w-q{counter-reset:q;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-inline-size:760px}
+.w-q li{counter-increment:q;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:10px}
+.w-q li::before{content:counter(q);font-family:var(--ff-mono);background:var(--ink);color:var(--bg);border-radius:6px;padding:0 7px;block-size:max-content}
+.w-q small{display:block;color:var(--ink-2)}
+.w-prob{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.w-prob li{background:var(--surface);border:1px solid var(--line);border-inline-start:4px solid var(--bad);border-radius:10px;padding:8px 12px}
+.w-dup{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14.5px}
+.w-dup li{display:flex;gap:10px;align-items:baseline}
+.w-dup .ns{flex:none;font-family:var(--ff-mono);font-size:12.5px;background:var(--bad-soft);color:var(--bad);border-radius:6px;padding:0 6px;white-space:nowrap}
+.w-ctrl{display:flex;flex-direction:column;gap:8px;max-inline-size:360px;margin-inline:auto;inline-size:100%}
+.w-steps{display:flex;flex-wrap:wrap;gap:6px}
+.w-steps button{border:1.5px solid var(--line);background:var(--surface);border-radius:16px;padding:4px 10px;font-size:13px;min-block-size:40px}
+.w-steps button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.w-steps button .x{font-size:10.5px;font-weight:700;color:var(--bad)}
+.w-steps button[aria-pressed="true"] .x{color:inherit}
+.w-cnt{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+.w-cnt b{font-family:var(--ff-mono);font-size:20px;font-weight:500}
+.w-cnt .vs{color:var(--ink-2);font-size:13px}
+.w-reset{border:1.5px solid var(--line);background:var(--sunk);border-radius:10px;padding:4px 12px;min-block-size:40px;font-weight:500;font-size:14px}
+.w-copy{border-collapse:collapse;inline-size:100%;font-size:14px}
+.w-copy th,.w-copy td{border-block-end:1px solid var(--line);padding:6px 4px;text-align:start;vertical-align:top}
+.w-copy td.old{color:var(--bad);text-decoration:line-through;text-decoration-thickness:1px}
+.w-copy td.new{color:var(--ok);font-weight:700}
+
+/* ---------- device ---------- */
+.dev{inline-size:100%;max-inline-size:360px;block-size:740px;background:var(--device);border-radius:34px;padding:9px;box-shadow:0 14px 34px var(--shadow);margin-inline:auto;flex:none}
+.scr{position:relative;inline-size:100%;block-size:100%;border-radius:26px;overflow:hidden;background:var(--app-bg);display:flex;flex-direction:column;isolation:isolate}
+.sbar{flex:none;block-size:24px;display:flex;justify-content:space-between;align-items:center;padding-inline:20px;font-size:11.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.scr-body{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin}
+
+/* ---------- app components (ported from src/styles/app.css) ---------- */
+.hdr{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--app-bg) 92%,transparent);backdrop-filter:blur(8px);padding-block:2px 6px;padding-inline:14px;border-block-end:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.hdr-row{display:flex;align-items:center;gap:4px;min-block-size:44px}
+.attl{font-size:17px;font-weight:700;min-inline-size:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grp{display:block;font-size:12px;color:var(--ink-2);line-height:1.2}
+.bk{border:0;background:transparent;inline-size:40px;block-size:40px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--ink);margin-inline-start:-8px}
+.content{padding-inline:14px;padding-block:12px 20px;display:flex;flex-direction:column;gap:12px}
+.hs{font-size:14px;color:var(--ink-2);font-weight:500}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-inline-size:0}
+.card.hl{outline:3px solid var(--accent);outline-offset:2px}
+.note{border-radius:11px;padding:10px 12px;background:var(--sunk);font-size:14px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.note.ok{background:var(--ok-soft);color:var(--ok)}
+.btn{border:0;background:var(--accent);color:var(--on-accent);border-radius:12px;padding:11px 16px;min-block-size:var(--tap);font-weight:700;font-size:15.5px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.btn.big{inline-size:100%;padding:13px 16px;font-size:16px}
+.btn.xl{inline-size:100%;min-block-size:60px;font-size:20px;border-radius:16px;padding:10px 16px}
+.btn.sm{min-block-size:44px;padding:6px 12px;font-size:14px;border-radius:10px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn.dark{background:var(--ink);color:var(--bg)}
+.btn.wa{background:var(--ok);color:var(--surface)}
+.btn.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.mini{border:1.5px solid currentColor;background:transparent;border-radius:9px;padding:5px 11px;min-block-size:44px;font-size:14px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--ink)}
+.mini.wa{color:var(--ok)}
+.lnk{border:0;background:none;padding:4px 0;text-decoration:underline;color:var(--f1);font-size:14px;cursor:pointer;min-block-size:44px}
+.xbtn{border:0;background:var(--sunk);inline-size:44px;block-size:44px;border-radius:50%;font-size:20px;line-height:1;flex:none}
+.av{inline-size:28px;block-size:28px;border-radius:50%;background:var(--fc);color:var(--surface);display:inline-grid;place-items:center;font-size:13px;font-weight:700;flex:none}
+.av.lg{inline-size:44px;block-size:44px;font-size:19px}
+.avs{display:flex}
+.avs .av + .av{margin-inline-start:-10px;box-shadow:0 0 0 2px var(--surface)}
+.evh{display:flex;gap:12px;align-items:center}
+.evh .cov{border:1px solid var(--line);border-radius:9px;overflow:hidden;inline-size:54px;block-size:70px;flex:none;display:grid;place-items:center}
+.cov-art{inline-size:100%;block-size:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:var(--ff-display);font-size:10px;line-height:1.1;text-align:center;color:var(--inv-ink);background:repeating-linear-gradient(135deg,var(--inv-bg) 0 8px,var(--accent-soft) 8px 16px)}
+.cov-art span{font-size:20px}
+.evh-t{display:flex;flex-direction:column;min-inline-size:0}
+.evh-t b{font-size:17px}
+.evh-t small{color:var(--ink-2);font-size:13.5px}
+.tag{font-size:12px;font-weight:700;border-radius:6px;padding:0 7px;white-space:nowrap}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.live{display:inline-flex;align-items:center;gap:8px;background:var(--ok-soft);color:var(--ok);font-weight:700;border-radius:20px;padding:6px 14px;font-size:15px;align-self:flex-start}
+.live::before{content:"";inline-size:9px;block-size:9px;border-radius:50%;background:currentColor}
+.stopc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.chk{display:flex;align-items:center;gap:10px;border:0;background:transparent;padding:4px 2px;inline-size:100%;text-align:start;min-block-size:var(--tap)}
+.chk .bx{inline-size:26px;block-size:26px;border-radius:8px;border:2px solid var(--ink-3);display:grid;place-items:center;flex:none}
+.chk small{display:block;color:var(--ink-2);font-size:13px}
+.ctc{display:flex;flex-direction:column;gap:8px;border-block-start:1px dashed var(--line);padding-block-start:8px}
+.phone{font-family:var(--ff-mono);font-size:15px;unicode-bidi:isolate}
+.stop-acts{display:flex;gap:8px;flex-wrap:wrap}
+.navs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
+.navs .btn{flex-direction:column;gap:2px;padding-block:10px}
+.navs .btn .small{font-weight:500}
+/* sheets / overlays (absolute inside the phone) */
+.ov{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end}
+.scrim{position:absolute;inset:0;background:var(--scrim);border:0;padding:0;inline-size:100%}
+.sheet{position:relative;background:var(--surface);color:var(--ink);border-radius:22px 22px 0 0;padding-inline:14px;padding-block:8px 18px;display:flex;flex-direction:column;gap:10px;max-block-size:90%;overflow:auto;inline-size:100%;animation:up .18s ease-out}
+.sheet-h{display:flex;align-items:center;gap:8px}
+.sheet-h h3{flex:1;font-size:18px}
+@keyframes up{from{transform:translateY(24px);opacity:.4}}
+.grab{inline-size:40px;block-size:4px;border-radius:2px;background:var(--line);align-self:center}
+.toast-live{position:absolute;inset-inline:12px;inset-block-end:14px;z-index:40;pointer-events:none}
+.toast-live.hi{inset-block-end:96px}
+.toast{pointer-events:auto;position:relative;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:14.5px;box-shadow:0 8px 20px var(--shadow);overflow:hidden;animation:up .18s ease-out}
+.toast > span{flex:1;min-inline-size:0}
+.toast button{border:0;background:var(--accent);color:var(--on-accent);border-radius:9px;padding:7px 12px;font-weight:700;font-size:14px;min-block-size:44px;white-space:nowrap}
+.toast .bub{margin-block-start:4px;display:block}
+
+/* ---------- shared mock pieces ---------- */
+.evl{font-size:13.5px;color:var(--ink-2)}
+.evl b{color:var(--ink);font-weight:500}
+.own{display:flex;align-items:center;gap:8px;font-size:14px;background:var(--sunk);border-radius:20px;padding-block:4px;padding-inline:4px 12px;align-self:flex-start}
+.bub{font-size:12.5px;line-height:1.4;background:var(--wa-bubble);color:var(--wa-ink);border-radius:10px 10px 2px 10px;padding:6px 9px;white-space:pre-wrap;align-self:flex-start;max-inline-size:100%;overflow-wrap:anywhere}
+.bub .u{direction:ltr;unicode-bidi:isolate;color:var(--f1)}
+.rnd{inline-size:52px;block-size:52px;border-radius:50%;border:0;background:var(--sunk);color:var(--ink);display:grid;place-items:center;flex:none}
+.rnd.wa{background:var(--ok);color:var(--surface)}
+.rnd.sm{inline-size:44px;block-size:44px}
+.newtag{font-size:11.5px;font-weight:700;background:var(--bad-soft);color:var(--bad);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.kidsee{font-size:13px;background:var(--ok-soft);color:var(--ok);border-radius:10px;padding:5px 10px;align-self:flex-start}
+.bbar{flex:none;padding:10px 12px 14px;background:var(--app-bg);border-block-start:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 -6px 16px var(--shadow)}
+.bbar .lnk{min-block-size:40px}
+.nrow{display:flex;flex-direction:column;gap:6px;padding-block:8px;border-block-end:1px solid var(--line)}
+.nrow:last-child{border-block-end:0}
+.nrow-h{display:flex;align-items:center;gap:8px}
+.nrow-h small{display:block;color:var(--ink-2);font-size:12.5px;line-height:1.3}
+.sentok{display:inline-flex;align-items:center;min-block-size:44px;padding-inline:10px;font-weight:700;font-size:14px;color:var(--ok);background:var(--ok-soft);border-radius:10px;white-space:nowrap}
+.crow{display:flex;align-items:center;gap:8px;padding-block:6px;border-block-start:1px solid var(--line)}
+.crow b{display:block}
+.crow small{color:var(--ink-2);font-size:12.5px}
+.crow .phone{display:block;font-size:14px;color:var(--ink-2);text-align:end}
+.dchk{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--gap-soft);color:var(--gap);border-radius:10px;padding:6px 10px;font-size:14px}
+
+/* today badges */
+.tp{position:relative}
+.bdg{position:absolute;inset-block-start:-9px;inset-inline-end:-7px;inline-size:22px;block-size:22px;border-radius:50%;background:var(--bad);color:#fff;font:700 12px/22px var(--ff-mono);text-align:center;z-index:2;box-shadow:0 0 0 2px var(--app-bg);pointer-events:none}
+.bdg.r{inset-inline-end:auto;inset-inline-start:auto;right:-30px;top:-1px}
+.fold{position:relative;border-block-start:2px dashed var(--bad);margin-block:2px;text-align:center}
+.fold span{position:relative;inset-block-start:-11px;background:var(--app-bg);color:var(--bad);font-size:11.5px;font-weight:700;padding-inline:6px}
+
+/* A · next stop */
+.prog{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.prog b{font-size:16px}
+.pdots{display:flex;gap:6px;align-items:center;color:var(--ink-3)}
+.pdots i{inline-size:10px;block-size:10px;border-radius:5px;background:var(--line)}
+.pdots i.d{background:var(--ok)}
+.pdots i.c{background:var(--accent);inline-size:24px}
+.acard{background:var(--surface);border:2px solid var(--accent);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.acard.dim{border-color:var(--line)}
+.lbl2{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.anames{font-family:var(--ff-display);font-weight:400;font-size:27px;line-height:1.15}
+.addr{display:flex;gap:6px;align-items:center;font-size:16px;font-weight:500}
+.addr svg{flex:none;color:var(--ink-3)}
+.ctcrow{display:flex;gap:10px;align-items:center;padding-block-start:4px}
+.ctcrow .who2{font-size:13px;color:var(--ink-2);line-height:1.3}
+.arow{display:flex;align-items:center;justify-content:space-between;inline-size:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 12px;min-block-size:48px;font-weight:500;font-size:15px}
+.arow svg{transition:transform .15s}
+.arow[aria-expanded="true"] svg{transform:rotate(180deg)}
+.alist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.alist li{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 10px;min-block-size:52px}
+.alist li.cur{border-color:var(--accent);border-width:2px}
+.alist .stt{font-size:12.5px;color:var(--ink-2);display:block}
+.alist li.done b{color:var(--ink-2)}
+.navbig{display:flex;flex-direction:column;align-items:center;gap:0}
+
+/* B · route */
+.rt{list-style:none;margin:0;padding:0;position:relative;display:flex;flex-direction:column;gap:10px}
+.rt::before{content:"";position:absolute;inset-block:12px;inset-inline-start:9px;inline-size:20px;background:var(--asphalt);border-radius:10px}
+.rt::after{content:"";position:absolute;inset-block:18px;inset-inline-start:18px;inline-size:2px;background:repeating-linear-gradient(to bottom,var(--accent) 0 9px,transparent 9px 17px)}
+.rt-n{position:relative;padding-inline-start:42px;min-block-size:44px;display:flex;flex-direction:column;justify-content:center}
+.rt-m{position:absolute;inset-inline-start:5px;inset-block-start:8px;inline-size:28px;block-size:28px;border-radius:50%;background:var(--surface);border:2.5px solid var(--ink-3);z-index:1;display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--ink)}
+.rt-n.done .rt-m{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.rt-n.cur .rt-m{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 35%,transparent)}
+.rt-n.end .rt-m{background:var(--asphalt);border-color:var(--accent);color:var(--accent)}
+.rt-t{padding-block:6px}
+.rt-t b{display:block;font-size:15px}
+.rt-t small{color:var(--ink-2);font-size:13px}
+.rt-row{display:flex;align-items:center;gap:8px;inline-size:100%;text-align:start;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:6px 10px;min-block-size:48px}
+.rt-row b{font-size:15px}
+.rt-row small{display:block;color:var(--ink-2);font-size:12.5px;line-height:1.3}
+.rt-n.done .rt-row{background:transparent;border-style:dashed}
+.rt-n.done .rt-row b{color:var(--ink-2)}
+.rt-card{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.rt-card .anames{font-size:23px}
+
+/* C · two modes */
+.prep{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.pstep{display:flex;gap:10px;align-items:flex-start}
+.pn{flex:none;inline-size:28px;block-size:28px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-family:var(--ff-mono);font-size:14px;margin-block-start:12px}
+.pstep.ok .pn{background:var(--ok);color:var(--surface)}
+.pstep > .card{flex:1}
+.route{font-size:13.5px;color:var(--ink-2)}
+.scr.car{background:var(--asphalt);color:var(--on-asphalt)}
+.scr.car .sbar{color:var(--on-asphalt)}
+.carb{padding:6px 12px 20px;display:flex;flex-direction:column;gap:10px}
+.cart{display:flex;align-items:center;justify-content:space-between;gap:8px;min-block-size:44px}
+.cart .lnk{color:var(--on-asphalt);font-size:14.5px}
+.cart b{font-size:15px}
+.cnav{display:grid;grid-template-columns:1.5fr 1fr;gap:10px}
+.cnav button{min-block-size:78px;border-radius:16px;border:0;font-weight:700;font-size:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:6px}
+.cnav button small{font-size:13px;font-weight:500}
+.cnav .wz{background:var(--accent);color:var(--on-accent)}
+.cnav .mp{background:var(--asphalt-2);color:var(--on-asphalt);border:1.5px solid var(--on-asphalt-2)}
+.tile{position:relative;border-radius:18px;background:var(--asphalt-2);border:2px solid var(--on-asphalt-2)}
+.tile-b{inline-size:100%;min-block-size:108px;border:0;background:transparent;color:inherit;text-align:start;padding:12px 16px;padding-inline-end:64px;display:flex;flex-direction:column;align-items:flex-start;gap:0;border-radius:16px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.tile-n{font-family:var(--ff-mono);font-size:12.5px;opacity:.8}
+.tile-name{font-family:var(--ff-display);font-weight:400;font-size:26px;line-height:1.15}
+.tile-a{font-size:14px;opacity:.85}
+.tile-st{margin-block-start:6px;font-weight:700;font-size:15px;border-radius:8px;padding:2px 10px;background:var(--asphalt);color:var(--on-asphalt)}
+.tile.s1{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.tile.s1 .tile-st{background:var(--on-accent);color:var(--accent)}
+.tile.s2{background:transparent;border-color:var(--ok);color:var(--on-asphalt-2)}
+.tile.s2 .tile-st{background:var(--ok);color:var(--asphalt)}
+.tile.s2 .tile-b{cursor:default;min-block-size:76px}
+.tile-more{position:absolute;inset-block-start:10px;inset-inline-end:10px;inline-size:44px;block-size:44px;border-radius:50%;border:0;background:color-mix(in srgb,currentColor 16%,transparent);color:inherit;font-size:22px;line-height:1;display:grid;place-items:center}
+.tile.end{border-style:dashed;padding:10px 16px;font-size:15px}
+.carok{background:var(--ok);color:var(--asphalt);border-radius:12px;padding:8px 12px;font-weight:700}
+.car .own{background:var(--asphalt-2);color:var(--on-asphalt)}
+
+/* time chips */
+.chips2{display:flex;flex-direction:column;gap:6px;min-inline-size:0}
+.chips2 .row{gap:6px}
+.chip{flex:1 1 0;min-inline-size:0;min-block-size:44px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:22px;font-weight:700;font-size:14px;padding:0 2px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips2 .ksee{font-size:12.5px}
+.cstrip{padding:2px 12px 12px}
+.car .chips2 .lbl2,.car .chips2 .ksee{color:var(--on-asphalt-2)}
+.car .chip{background:var(--asphalt);color:var(--on-asphalt);border-color:var(--on-asphalt-2)}
+.car .chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.rt-pend{display:flex;gap:6px;align-items:stretch}
+.rt-pend .rt-row{flex:1;min-inline-size:0}
+.rt-pend .btn{flex:none;padding-inline:10px}
+.alist .lrow{display:flex;align-items:center;gap:8px;flex:1;min-inline-size:0;border:0;background:transparent;text-align:start;padding:0;min-block-size:44px}
+.alist .mini{flex:none;padding-inline:8px}
+
+/* kid page mock */
+.dev.kidd{block-size:620px}
+.dev.qd{block-size:640px}
+.kidp{gap:12px}
+.kh{font-family:var(--ff-display);font-weight:400;font-size:24px}
+.kstat{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.kstat.on{border-color:var(--accent);background:var(--accent-soft)}
+.kstat .kk{font-size:14px;color:var(--ink-2)}
+.kstat .kbig{font-family:var(--ff-display);font-weight:400;font-size:28px;line-height:1.15}
+.kstat small{font-size:12.5px;color:var(--ink-2)}
+.carico{font-size:26px}
+.plate{font-family:var(--ff-mono);font-size:13px;background:var(--accent);color:var(--on-accent);border:1.5px solid var(--ink);border-radius:5px;padding:0 6px}
+
+/* back-leg mini mock */
+.mm{background:var(--app-bg);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.mm-r{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 8px;min-block-size:48px}
+.mm-r b{flex:1}
+.mm .route{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.mm .route span{background:var(--sunk);border-radius:8px;padding:0 8px}
+
+@media (max-width: 860px){
+  .w-opt{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width: 520px){
+  .w-pc{grid-template-columns:minmax(0,1fr)}
+  .w-intro h1{font-size:26px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+
+<div dir="rtl" lang="he">
+<nav class="w-ctl" aria-label="חלקי הסדנה">
+  <div class="w-seg" id="seg">
+    <a href="#today" data-go="today">היום</a>
+    <a href="#a" data-go="a"><b>A</b> העצירה הבאה</a>
+    <a href="#b" data-go="b"><b>B</b> מסלול</a>
+    <a href="#c" data-go="c"><b>C</b> לפני / בנסיעה</a>
+    <a href="#compare" data-go="compare">השוואה</a>
+    <a href="#kid" data-go="kid">דף הילד</a>
+    <a href="#rules" data-go="rules">משותף</a>
+    <a href="#rec" data-go="rec">המלצה</a>
+    <a href="#q" data-go="q">שאלות</a>
+  </div>
+</nav>
+
+<main class="w-wrap">
+  <header class="w-intro">
+    <div class="w-lane" aria-hidden="true"></div>
+    <h1>מצב נהג · סדנה</h1>
+    <p class="muted">המסך שהנהג פותח כשהוא יוצא לאסוף: <code dir="ltr">/g/:group/e/:event/drive/:leg</code>. שלוש חלופות לעיצוב מחדש, השוואה, וכללים שתקפים בכל מקרה.</p>
+    <ul class="w-prob">
+      <li><b>הזרימה לא ברורה.</b> לא רואים מה עושים עכשיו ומה אחר כך: הודעות, רשימה וניווט מופיעים יחד, בלי סדר.</li>
+      <li><b>יותר מדי כפתורים.</b> לילד אחד יש 11 דברים ללחוץ עליהם, 4 דרכים לשלוח לו WhatsApp, שני כפתורים שעושים אותו דבר, והניווט, מה שנהג צריך הכי הרבה, נמצא בסוף, מתחת לקו הגלילה.</li>
+      <li><b>"עלה/תה" זו עברית לא טובה.</b> פעולות הנהג נכתבות בגוף ראשון, בלי לוכסן: "יצאתי", "הגעתי", "אספתי ✓". התגית של ילד שמוכן: "✓ מחכה".</li>
+    </ul>
+    <p class="small muted">נתונים לדוגמה בכל הטלפונים: משפחת לוי נוהגת בהלוך ל"יום הולדת לנועה" (16:30, פארק הירקון, שער רוקח), יציאה 16:00. איתי (הילד של הנהג) כבר ברכב. 3 עצירות: נועה כהן (יש לה טלפון, לחצה "אני מוכנה"), מאיה ויואב מזרחי (אחים, עצירה אחת, בלי טלפון, איש קשר: רונית), עומר פרץ (יש לו טלפון). כל כפתורי WhatsApp וחיוג מדומים: הם מראים את ההודעה שהייתה נשלחת.</p>
+  </header>
+
+  <!-- ===== today ===== -->
+  <section class="w-sec" id="today" aria-labelledby="today-h">
+    <h2 id="today-h"><span class="w-k bad">היום</span> המסך הנוכחי</h2>
+    <p class="w-lead">שחזור של צילום המסך: הלוך, אחרי "יצאתי", ילד אחד (תוני, משפחת ממלוק, שהיא המשפחה של הנהג עצמו). כל עיגול אדום הוא משהו שאפשר ללחוץ עליו.</p>
+    <div class="w-opt">
+      <div class="stack">
+        <div class="dev"><div class="scr" data-phone="today"></div></div>
+        <div class="w-cnt"><span>פעולות על המסך: <b data-count="today">11</b></span><span class="vs">לילד אחד</span></div>
+      </div>
+      <div class="w-side">
+        <h3>מה כפול</h3>
+        <ul class="w-dup">
+          <li><span class="ns">2 · 8 · 9 · 1</span><span><b>4 דרכים לשלוח WhatsApp</b> לאותה עצירה: "שליחה לתוני" (קישור מעקב), "WhatsApp לתוני" (אני למטה), "WhatsApp לישי", ו"ישי" בכרטיס ההודעה להורים.</span></li>
+          <li><span class="ns">5 = 3</span><span><b>תיבת הסימון ו"עלה/תה" עושים אותו דבר</b> (<code>setPicked</code>). שני פקדים למצב אחד.</span></li>
+          <li><span class="ns">1</span><span><b>"הודיעו להורים שיצאת" כולל את המשפחה של הנהג.</b> הכפתור "ישי" שולח לנהג עצמו.</span></li>
+          <li><span class="ns">7 = 6</span><span><b>המספר הוא קישור, וגם "התקשרות" הוא קישור</b> לאותו מספר.</span></li>
+          <li><span class="ns">11 · 10</span><span><b>הניווט אחרון</b>, מתחת לקו הגלילה, אף שזה מה שהנהג פותח הכי הרבה.</span></li>
+          <li><span class="ns">✓</span><span>"מוכן/ה ✓" ו"עלה/תה" בלוכסן; "בדרך" הוא תגית בלי מידע על ההתקדמות.</span></li>
+        </ul>
+        <div class="w-try"><b>ברכב לדוגמה (3 עצירות, 4 נוסעים + איתי)</b> המסך של היום היה מציג כ-<b>41</b> פעולות: 4 כפתורי "הודיעו להורים" (כולל המשפחה שלנו), 3 בשיתוף (2 שליחות + "הוספת טלפון" לאיתי), 32 ברשימת האיסוף (6 או 7 לכל ילד, כולל איתי כ"עצירה"), ו-2 ניווט.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== A ===== -->
+  <section class="w-sec" id="a" aria-labelledby="a-h">
+    <h2 id="a-h"><span class="w-k">A</span> העצירה הבאה</h2>
+    <p class="w-lead">צעד אחד בכל פעם, כמו אפליקציה של נהגי מוניות. המסך עוסק רק בעצירה שבפוקוס: כרטיס גדול, כפתור ניווט אחד, שבבי "כמה זמן עד שאגיע", ופעולה ראשית אחת בתחתית שמשתנה: יצאתי ← הגעתי ← אספתי ✓ ← ניווט לפארק. הפוקוס הוא העצירה הראשונה ברשימה שעוד לא נאספה, וזז לבד אחרי כל איסוף, בכל סדר.</p>
+    <div class="w-opt">
+      <div class="stack">
+        <div class="dev"><div class="scr" data-phone="a"></div></div>
+        <div class="w-url" data-url="a"></div>
+        <div class="w-ctrl" data-ctrl="a"></div>
+      </div>
+      <div class="w-side">
+        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← לשלוח לכל משפחה ← סיום</li><li>"הגעתי" ← "אספתי ✓" בכל עצירה</li><li>שבב "5 דק׳": מה שרואים בדף הילד</li><li>סדר אחר: "כל העצירות" ← "אספתי ✓" ליד עומר, או הקשה על עומר כדי לפתוח אותו בכרטיס</li><li>"עוד" בכרטיס: איש הקשר השני</li></ol></div>
+        <div class="w-pc">
+          <div class="pro"><h3>בעד</h3><ul><li>אפס מחשבה: תמיד ברור מה הצעד הבא</li><li>מטרות לחיצה ענקיות, בטוח בטלפון שמחובר למתקן ברכב</li><li>הניווט הוא הכפתור הגדול בכרטיס</li><li>איש קשר אחד גלוי; השני ב"עוד"</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>מסתיר את התמונה הכוללת: מי כבר ברכב, מי עוד מחכה</li><li>איסוף בסדר אחר רחוק בצעד אחד יותר מאשר ב-B: קודם פותחים את "כל העצירות", ורק אז מגיעים ל"אספתי ✓" של עצירה אחרת</li><li>"הגענו" בסוף הוא <span class="newtag">פעולה חדשה</span>; בלעדיו ההסעה נגמרת לפי השעה</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== B ===== -->
+  <section class="w-sec" id="b" aria-labelledby="b-h">
+    <h2 id="b-h"><span class="w-k">B</span> מסלול</h2>
+    <p class="w-lead">כביש אנכי מ"יציאה מהבית" דרך כל עצירה ועד הפארק. עצירות שהסתיימו מתקפלות לשורה עם ✓. העצירה הפתוחה היא הראשונה שעוד לא נאספה (או זו שהקשת עליה), ורק בה יש אנשי קשר ושבבי זמן. לכל עצירה שמחכה יש כפתור קטן משלה (הגעתי ← אספתי ✓), כך שאוספים בכל סדר בלי צעד נוסף. בתחתית בר קבוע: "יצאתי", ואחר כך "ניווט ל" העצירה הפתוחה.</p>
+    <div class="w-opt">
+      <div class="stack">
+        <div class="dev"><div class="scr" data-phone="b"></div></div>
+        <div class="w-url" data-url="b"></div>
+        <div class="w-ctrl" data-ctrl="b"></div>
+      </div>
+      <div class="w-side">
+        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← "לעדכן את הנוסעים?" ← שליחה לכל משפחה</li><li>בעצירה הפתוחה: שבב זמן, "הגעתי" ← "אספתי ✓"</li><li>"אספתי ✓" הקטן ליד עומר, לפני נועה</li><li>הקשה על שורה עם ✓ מבטלת את האיסוף</li></ol></div>
+        <div class="w-pc">
+          <div class="pro"><h3>בעד</h3><ul><li>תמונה כוללת וגם מיקוד: רואים הכל, פועלים רק בעצירה הנוכחית</li><li>קל לתקן טעות: הקשה על ✓</li><li>סדר אחר בלי שום צעד נוסף: לכל עצירה כפתור משלה</li><li>שתי ההודעות של היום הופכות לשלב אחד ביציאה</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>דף ארוך כשיש הרבה עצירות</li><li>יותר עבודת עיצוב (הכביש, המצבים, הבר התחתון)</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== C ===== -->
+  <section class="w-sec" id="c" aria-labelledby="c-h">
+    <h2 id="c-h"><span class="w-k">C</span> לפני היציאה / בנסיעה</h2>
+    <p class="w-lead">שני מצבים. בחניה: רשימת הכנה קצרה בעיצוב הרגיל (① שעת יציאה, ② עדכון הנוסעים, ③ יצאתי). אחרי "יצאתי": "מצב נסיעה" כהה ובניגודיות גבוהה, עם ניווט גדול למעלה ואריח ענק לכל עצירה. הקשה על אריח מקדמת אותו: הגעתי ← אספתי ✓.</p>
+    <div class="w-opt">
+      <div class="stack">
+        <div class="dev"><div class="scr" data-phone="c"></div></div>
+        <div class="w-url" data-url="c"></div>
+        <div class="w-ctrl" data-ctrl="c"></div>
+      </div>
+      <div class="w-side">
+        <div class="w-try"><b>לנסות:</b><ol><li>"אישור שעה" ← שליחה לכל משפחה ← "יצאתי"</li><li>הקשה על אריח, בכל סדר: הגעתי; עוד הקשה: אספתי ✓</li><li>שבבי הזמן מתחת לאריח שנגעת בו אחרון</li><li>⋯ או לחיצה ארוכה: ניווט לכאן ואנשי קשר</li><li>"ביטול" בטוסט, ו"חזרה לפרטים"</li></ol></div>
+        <div class="w-pc">
+          <div class="pro"><h3>בעד</h3><ul><li>מפריד בין הודעות (בחניה) לנהיגה</li><li>אפשר להבין במבט, גם בשמש ובלילה</li><li>כל אריח בכל סדר; Waze הולך תמיד לעצירה הראשונה שעוד לא נאספה</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>שני עיצובים לתחזק</li><li>אריח שמתקדם בהקשה קל ללחוץ בטעות: חייבים טוסט "ביטול"</li><li>לחיצה ארוכה לא מוכרת לכולם</li><li>השינוי הגדול ביותר בקוד</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== compare ===== -->
+  <section class="w-sec" id="compare" aria-labelledby="cmp-h">
+    <h2 id="cmp-h">השוואה</h2>
+    <p class="w-lead">אותו רגע בשלושתן: באמצע ההסעה, נועה כבר ברכב, הנהג הגיע לעצירה 2 (מאיה ויואב) ולחץ "הגעתי".</p>
+    <div class="w-cmp" tabindex="0" aria-label="שלושת הטלפונים זה ליד זה">
+      <div><h3>A · העצירה הבאה</h3><div class="dev"><div class="scr" data-phone="ca"></div></div><div class="w-cnt"><span>פעולות על המסך: <b data-count="ca"></b></span></div></div>
+      <div><h3>B · מסלול</h3><div class="dev"><div class="scr" data-phone="cb"></div></div><div class="w-cnt"><span>פעולות על המסך: <b data-count="cb"></b></span></div></div>
+      <div><h3>C · לפני / בנסיעה</h3><div class="dev"><div class="scr" data-phone="cc"></div></div><div class="w-cnt"><span>פעולות על המסך: <b data-count="cc"></b></span></div></div>
+    </div>
+    <div class="w-tblw" tabindex="0" aria-label="טבלת השוואה">
+      <table class="w-tbl">
+        <thead><tr><th scope="col"></th><th scope="col">A העצירה הבאה</th><th scope="col">B מסלול</th><th scope="col">C לפני / בנסיעה</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">פעולות גלויות ברגע הזה <small class="muted">(היום: 11 לילד אחד, כ-41 לרכב הזה)</small></th><td><b class="n" data-count="ca2"></b></td><td class="rec"><b class="n" data-count="cb2"></b></td><td><b class="n" data-count="cc2"></b></td></tr>
+          <tr><th scope="row">הקשות להסעה של 3 עצירות <small class="muted">(כולל הודעות וניווט, בלי שבבי זמן, נספר באב-טיפוס)</small></th><td><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה Waze + הגעתי + אספתי = 9 · Waze לפארק 1 · הגענו 1 <span class="newtag">חדש</span></small></td><td class="rec"><b class="n">15</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה ניווט + הגעתי + אספתי = 9 · ניווט לפארק 1</small></td><td><b class="n">15</b><br><small>אישור שעה 1 · הודעות 3 · יצאתי 1 · לכל עצירה Waze + 2 הקשות על האריח = 9 · Waze לפארק 1</small></td></tr>
+          <tr><th scope="row">איסוף בסדר אחר <small class="muted">(עומר, נועה, מאיה ויואב; עם ניווט)</small></th><td><b class="n">18</b> הקשות<br><small>+2: פתיחת "כל העצירות" והקשה על עומר. סימון בלבד: 2 הקשות ("כל העצירות" ← "אספתי ✓")</small></td><td class="rec"><b class="n">16</b> הקשות<br><small>+1: הקשה על עומר לפתוח אותו (בשביל הניווט). סימון בלבד: הקשה אחת על הכפתור שלו</small></td><td><b class="n">16</b> הקשות<br><small>+1: ⋯ ← "ניווט לכאן". סימון בלבד: הקשה על האריח</small></td></tr>
+          <tr><th scope="row">"כמה זמן עד שאגיע" <small class="muted">(שבבים 2/5/10/15, הקשה אחת לעצירה)</small></th><td>בכרטיס הראשי</td><td class="rec">בעצירה הפתוחה</td><td>פס מתחת לאריח שנגעת בו אחרון</td></tr>
+          <tr><th scope="row">איפה הניווט</th><td>הכפתור הגדול בכרטיס העצירה</td><td class="rec">בר תחתון קבוע, תמיד אל העצירה הבאה</td><td>שני אריחים גדולים בראש מצב הנסיעה</td></tr>
+          <tr><th scope="row">איך שולחים הודעות</th><td>"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון בכרטיס</td><td class="rec">"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון אנשי הקשר של העצירה</td><td>שלב ② ברשימת ההכנה, לפני היציאה; "אני למטה" ב-⋯ / לחיצה ארוכה</td></tr>
+          <tr><th scope="row">תיקון טעות</th><td>טוסט "ביטול"; ב"כל העצירות" אפשר לבטל איסוף</td><td class="rec">טוסט "ביטול"; הקשה על שורה עם ✓</td><td>טוסט "ביטול" ← "בוטל · {שם}"</td></tr>
+          <tr><th scope="row">סדר אחר</th><td>"כל העצירות" ← "אספתי ✓" ליד כל עצירה, או הקשה שמעבירה אותה לכרטיס</td><td class="rec">כפתור קטן ליד כל עצירה; הקשה על עצירה פותחת אותה</td><td>כל אריח, בכל סדר</td></tr>
+          <tr><th scope="row">היקף שינוי בקוד</th><td>קטן-בינוני (+ "הגענו" אופציונלי, פעולה חדשה)</td><td class="rec">בינוני</td><td>גדול: שני מצבים, עיצוב כהה, לחיצה ארוכה</td></tr><tr><th scope="row">פעולה חדשה ב-reducer</th><td colspan="3">בכולן: פעולה קטנה אחת לשעת ההגעה של עצירה (נשמרת על ה-run). חוץ ממנה, ב-A בלבד: "הגענו" (אופציונלי).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== kid page ===== -->
+  <section class="w-sec" id="kid" aria-labelledby="kid-h">
+    <h2 id="kid-h">מה רואים בדף של הילד/ה</h2>
+    <p class="w-lead">"את/ה הבא/ה בתור" יוצא מהדף. במקומו: השעה שהנהג קבע בהקשה אחת על שבב ("2 דק׳", "5 דק׳", "10 דק׳", "15 דק׳") בעצירה שבפוקוס. בלי שעה, הדף מראה "בדרך" ולא מנחש.</p>
+    <div class="row wrap" role="group" aria-label="רגע להצגה" id="kid-tg">
+      <button type="button" class="w-reset" data-kid="0" aria-pressed="true">לפני: 16:05, עוד לא נקבעה שעה</button>
+      <button type="button" class="w-reset" data-kid="1" aria-pressed="false">אחרי: הנהג הקיש "5 דק׳" אצל עומר</button>
+    </div>
+    <div class="w-cmp" tabindex="0" aria-label="דף הילד של נועה ושל עומר">
+      <div><h3>נועה · עצירה 1</h3><div class="dev kidd"><div class="scr" data-kid-phone="noa"></div></div></div>
+      <div><h3>עומר · עצירה 3</h3><div class="dev kidd"><div class="scr" data-kid-phone="omer"></div></div></div>
+    </div>
+    <div class="w-cards">
+      <article class="w-card">
+        <span class="lbl">הסטטוסים בדף הילד, לפי הסדר</span>
+        <table class="w-copy"><tbody>
+          <tr><td>לפני היציאה</td><td><b>משפחת לוי אוספת בשעה 16:00</b> (כמו היום)</td></tr>
+          <tr><td>אחרי "יצאתי"</td><td><b>בדרך</b>, בלי שעה</td></tr>
+          <tr><td>הנהג הקיש שבב</td><td><b>משפחת לוי בדרך אליך · הגעה בערך ב-16:10</b><br><small class="muted">עודכן ב-16:05</small></td></tr>
+          <tr><td>השעה עברה, עוד לא "הגעתי"</td><td><b>עוד רגע</b> (אף פעם לא מספר שלילי או "באיחור")</td></tr>
+          <tr><td>"הגעתי"</td><td><b>משפחת לוי למטה! 🚗</b></td></tr>
+          <tr><td>"אספתי ✓"</td><td><b>עלית לרכב ✓</b></td></tr>
+        </tbody></table>
+      </article>
+      <article class="w-card">
+        <span class="lbl">כללי השבבים</span>
+        <ul class="w-ul">
+          <li>הקשה אחת קובעת את השעה של העצירה ומעדכנת את דף הילד. בלי אישור ובלי WhatsApp. הקשה נוספת משנה.</li>
+          <li>לכל עצירה, לא לכל ילד: מאיה ויואב מקבלים אותה שעה.</li>
+          <li>נשמרת כשעה, לא כספירה לאחור: הקשה ב-16:05 על "5 דק׳" = 16:10.</li>
+          <li>רק בעצירה שבפוקוס, אף פעם לא בכל השורות. כך מספר הפעולות על המסך נשאר נמוך (4 שבבים, לא 12).</li>
+          <li>בנייה: פעולה קטנה אחת חדשה ב-reducer. בלי שירות מסלולים, בלי מפתח API, בלי עלות.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== shared rules ===== -->
+  <section class="w-sec" id="rules" aria-labelledby="rules-h">
+    <h2 id="rules-h">משותף לכל החלופות</h2>
+    <div class="w-cards">
+      <article class="w-card">
+        <span class="lbl">1 · המשפחה של הנהג</span>
+        <h3>לא "מודיעים" לעצמנו</h3>
+        <ul class="w-ul">
+          <li>המשפחה של הנהג לא מופיעה בעדכון הנוסעים, אף פעם.</li>
+          <li>בהלוך, הילדים של הנהג כבר ברכב מההתחלה: שורה אחת "איתי איתך ברכב", בלי עצירה ובלי כפתורים.</li>
+          <li>בחזור הם עולים בפארק עם כולם ומקבלים "אספתי ✓" כמו כולם.</li>
+        </ul>
+      </article>
+      <article class="w-card">
+        <span class="lbl">סדר</span>
+        <h3>סדר האיסוף הוא הצעה, לא חובה</h3>
+        <ul class="w-ul">
+          <li>הסדר ברשימה הוא רק ברירת מחדל. כל סדר עובד, ואין מה לסדר מחדש.</li>
+          <li>"הגעתי" ו"אספתי ✓" עובדים על כל עצירה, בכל רגע. שום דבר לא נעול, בלי "בטוח?" ובלי "דלג".</li>
+          <li>"העצירה הבאה" = הראשונה ברשימה שעוד לא נאספה. זזה לבד אחרי כל איסוף, וגם הניווט.</li>
+          <li>ההתקדמות נכתבת "אספתי 1 מתוך 3", לא "עצירה 2 מתוך 3".</li>
+        </ul>
+      </article>
+      <article class="w-card">
+        <span class="lbl">2 · הודעות</span>
+        <h3>הודעה אחת לכל משפחה ביציאה</h3>
+        <p class="small">שני הכרטיסים של היום ("הודיעו להורים שיצאת" ו"שיתוף עם הנוסעים") הופכים לשלב אחד: "עדכון הנוסעים". שורה לכל משפחה אחרת, הודעה אחת שמאחדת יצאתי + קישור מעקב, לטלפון של הילד אם יש, אחרת להורה. אחרי ההקשה: "נשלח ✓".</p>
+        <div class="bub">יצאתי 🚗 אגיע לאסוף את מאיה ויואב בעוד כ-10 דק׳
+רואים כאן איפה אני:
+<span class="u">trempush.com/g/gan-alon/kid/maya/e/noa-bday</span></div>
+        <p class="small muted">בעצירה: "אני למטה" לאיש הקשר הראשי. "בדקו שעת יציאה" + "אישור שעה" מופיעים לפני "יצאתי" כשהשעה מסומנת (מוצג ב-C).</p>
+      </article>
+      <article class="w-card">
+        <span class="lbl">3 · אנשי קשר ומספרים</span>
+        <h3>איש קשר אחד לכל עצירה</h3>
+        <ul class="w-ul">
+          <li>ברירת מחדל: הטלפון של הילד, ואם אין, ההורה.</li>
+          <li>השני (ההורה, או הורה נוסף) רק בגיליון משני.</li>
+          <li>המספר עצמו מופיע כטקסט רק בתוך הגיליון, לא במסך הראשי.</li>
+          <li>חיוג ו-WhatsApp: שני אייקונים עגולים, לא ארבעה כפתורים.</li>
+        </ul>
+      </article>
+      <article class="w-card">
+        <span class="lbl">4 · מצבים</span>
+        <h3>פקד אחד לכל מצב</h3>
+        <ul class="w-ul">
+          <li>אין תיבת סימון לצד כפתור שעושה אותו דבר.</li>
+          <li>כפתור אחד שמתקדם: הגעתי (<code>setArrived</code>) ← אספתי ✓ (<code>setPicked</code>).</li>
+          <li>באחים שבאותה עצירה, "אספתי ✓" אחד שולח <code>setPicked</code> לכל אחד מהם.</li>
+          <li>כל שינוי מצב: טוסט עם "ביטול".</li>
+          <li>פעולה חדשה אחת בכולן: שעת הגעה לעצירה (השבבים). ב-A גם "הגענו" (<span class="newtag">פעולה חדשה</span>).</li>
+        </ul>
+      </article>
+      <article class="w-card">
+        <span class="lbl">5 · מילים</span>
+        <h3>ישן ← חדש</h3>
+        <table class="w-copy">
+          <tbody>
+            <tr><td class="old">עלה/תה</td><td class="new">אספתי ✓</td></tr>
+            <tr><td class="old">מוכן/ה ✓</td><td class="new">✓ מחכה</td></tr>
+            <tr><td class="old">הודיעו להורים שיצאת + שיתוף עם הנוסעים</td><td class="new">עדכון הנוסעים</td></tr>
+            <tr><td class="old">בדרך (תגית)</td><td class="new">אספתי 1 מתוך 3</td></tr><tr><td class="old">את/ה הבא/ה בתור (דף הילד)</td><td class="new">הגעה בערך ב-16:10</td></tr>
+            <tr><td class="old">הגעתי ✓ (מתג)</td><td class="new">הגעתי (שלב, עם ביטול)</td></tr>
+            <tr><td class="old">שליחה לתוני / WhatsApp לתוני / WhatsApp לישי</td><td class="new">אייקון WhatsApp אחד: "אני למטה"</td></tr>
+            <tr><td class="old">התקשרות + מספר כקישור</td><td class="new">אייקון חיוג; המספר בגיליון</td></tr>
+            <tr><td class="old">טלפון הילד/ה</td><td class="new">הטלפון של נועה</td></tr>
+            <tr><td class="old">רשימת איסוף</td><td class="new">מסלול / כל העצירות</td></tr>
+            <tr><td class="old">Google Maps · כל העצירות / Waze · לעצירה הבאה</td><td class="new">ניווט לנועה (Waze) + קישור Maps</td></tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="w-card">
+        <span class="lbl">6 · חזור</span>
+        <h3>עצירה אחת בפארק, ואז הביתה</h3>
+        <p class="small">בחזור כולם עולים בפארק: עצירה אחת, ובה "אספתי ✓" לכל ילד (כולל איתי). הבתים הם רק יעדי ניווט, בלי פעולות.</p>
+        <div class="mm" aria-label="דוגמה לחזור">
+          <b>פארק הירקון, שער רוקח · 19:00</b>
+          <div class="mm-r"><span class="av" style="--fc:var(--f1)">א</span><b>איתי</b><span class="tag ok">אספתי ✓</span></div>
+          <div class="mm-r"><span class="av" style="--fc:var(--f2)">נ</span><b>נועה</b><span class="btn sm">אספתי ✓</span></div>
+          <div class="mm-r"><span class="av" style="--fc:var(--f4)">מ</span><b>מאיה</b><span class="btn sm">אספתי ✓</span></div>
+          <div class="small muted">ואז ניווט בלבד:</div>
+          <div class="route small"><span>ז׳בוטינסקי 45</span>←<span>ביאליק 12</span>←<span>אבן גבירול 140</span>←<span>הביתה</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===== recommendation ===== -->
+  <section class="w-sec" id="rec" aria-labelledby="rec-h">
+    <div class="w-rec">
+      <h2 id="rec-h">המלצת הארכיטקט</h2>
+      <p><b>B, מסלול</b>, עם שני דברים מהחלופות האחרות: מ-A, פעולה ראשית אחת וענקית בבר התחתון; מ-C, ההודעות קורות פעם אחת, ביציאה, בגיליון אחד.</p>
+      <p>B נותן גם תמונה כוללת וגם מיקוד: רואים מי כבר ברכב ומי מחכה, ופועלים רק בעצירה הנוכחית. טעות מתוקנת בהקשה על ✓, ואיסוף בסדר אחר הוא פשוט הקשה על עצירה אחרת. B מטפל בסדר אחר בלי שום צעד נוסף: לכל עצירה שמחכה יש כפתור משלה, והעצירה הפתוחה והניווט זזים לבד. הוא נשען על סדר האיסוף הקיים (<code>pickupStops</code>, כהצעה) ועל הפעולות שכבר קיימות (<code>startRun</code>, <code>setArrived</code>, <code>setPicked</code>), ועוד פעולה קטנה אחת לשעת ההגעה.</p>
+    </div>
+  </section>
+
+  <!-- ===== questions ===== -->
+  <section class="w-sec" id="q" aria-labelledby="q-h">
+    <h2 id="q-h">שאלות פתוחות</h2>
+    <ol class="w-q">
+      <li><div>הילד של הנהג באמת נחשב "ברכב" אוטומטית בהלוך?<small>ומה אם ההורה השני מביא אותו, או שהוא מצטרף מבית של חבר? אולי שורה "איתי איתך ברכב" עם "לא איתי" קטן.</small></div></li>
+      <li><div>להוסיף "הגענו / הורדתי את כולם" שמסיים את ההסעה, או להמשיך לסיים לפי השעה?<small>פעולה חדשה ב-reducer. היום ההסעה "נגמרת" 30 דקות אחרי ההתחלה.</small></div></li>
+      <li><div>האם "הגעתי" צריך לפתוח מיד את ה-WhatsApp "אני למטה", או להישאר אייקון נפרד?<small>מיד = פחות הקשות, אבל יוצאים מהאפליקציה בכל עצירה, גם כשהילד כבר רואה "משפחת לוי למטה!" בדף שלו.</small></div></li>
+      <li><div>Waze כברירת מחדל, או לזכור את הבחירה של כל נהג?<small>למשל: מי שהקיש פעם על Maps יקבל Maps בכפתור הגדול.</small></div></li>
+      <li><div>האם "יצאתי" צריך לשאול מיד "בעוד כמה זמן לעצירה הראשונה?"<small>שתי הגרסאות למטה (על B).</small></div></li>
+    </ol>
+    <div class="w-cmp" tabindex="0" aria-label="שתי גרסאות ל'יצאתי'">
+      <div><h3>(א) "יצאתי" רק מתחיל</h3><div class="dev qd"><div class="scr" data-q="a"></div></div>
+        <div class="w-pc"><div class="pro"><h3>בעד</h3><ul><li>הקשה אחת ויוצאים</li></ul></div><div class="con"><h3>נגד</h3><ul><li>הילד הראשון לא רואה שעה עד שהנהג נזכר להקיש</li></ul></div></div></div>
+      <div><h3>(ב) "יצאתי" שואל מיד</h3><div class="dev qd"><div class="scr" data-q="b"></div></div>
+        <div class="w-pc"><div class="pro"><h3>בעד</h3><ul><li>הילד הראשון מקבל שעה מיד</li></ul></div><div class="con"><h3>נגד</h3><ul><li>עוד צעד ברגע היציאה</li></ul></div></div></div>
+    </div>
+    <p class="w-rec" style="padding:10px 14px"><span><b>הנטייה של הארכיטקט: (ב)</b>, אבל רק כשורת שבבים בתוך גיליון "לעדכן את הנוסעים?" ש-A ו-B כבר פותחים אחרי "יצאתי" (ב-C: בשלב ② של ההכנה), בלי מסך נוסף, עם "אחר כך" שמדלג.</span></p>
+  </section>
+</main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- sample data ---------- */
+  var FAM = {
+    levi: { name: "משפחת לוי", c: "var(--f1)", addr: "הרא״ה 30, רמת גן" },
+    cohen: { name: "משפחת כהן", c: "var(--f2)", addr: "ז׳בוטינסקי 45, רמת גן", parents: [{ name: "דנה", phone: "050-731-2284" }] },
+    mizrahi: { name: "משפחת מזרחי", c: "var(--f4)", addr: "ביאליק 12, רמת גן", parents: [{ name: "רונית", phone: "054-662-9013" }, { name: "אלון", phone: "052-390-4471" }] },
+    peretz: { name: "משפחת פרץ", c: "var(--f3)", addr: "אבן גבירול 140, תל אביב", parents: [{ name: "אבי", phone: "050-214-8836" }] }
+  };
+  var STOPS = [
+    { fam: "cohen", kids: [{ name: "נועה", phone: "052-418-7730" }], slug: "noa", ready: true, eta: "כ-4 דק׳ · 1.6 ק״מ", pick: "16:07" },
+    { fam: "mizrahi", kids: [{ name: "מאיה" }, { name: "יואב" }], slug: "maya", ready: false, eta: "כ-5 דק׳ · 2.0 ק״מ", pick: "16:13" },
+    { fam: "peretz", kids: [{ name: "עומר", phone: "053-287-1150" }], slug: "omer", ready: false, eta: "כ-9 דק׳ · 4.3 ק״מ", pick: "16:21" }
+  ];
+  var VENUE = { name: "פארק הירקון", gate: "שער רוקח", full: "פארק הירקון, שער רוקח", eta: "כ-8 דק׳ · 3.8 ק״מ" };
+  var OWN = "איתי";
+  var URL_BASE = "/g/gan-alon/e/noa-bday/drive/out";
+  var STEP_LABELS = ["לפני היציאה", "יצאתי", "נועה · הגעתי", "נועה · אספתי", "מאיה ויואב · הגעתי", "מאיה ויואב · אספתי", "עומר · הגעתי", "עומר · אספתי"];
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function names(i) { var k = STOPS[i].kids.map(function (x) { return x.name; }); return k.length > 1 ? k.slice(0, -1).join(", ") + " ו" + k[k.length - 1] : k[0]; }
+  function short(addr) { return addr.split(",")[0]; }
+  function av(name, c, cls) { return '<span class="av' + (cls ? " " + cls : "") + '" style="--fc:' + c + '" aria-hidden="true">' + esc(name.charAt(0)) + "</span>"; }
+  function avs(i, cls) { var c = FAM[STOPS[i].fam].c; return '<span class="avs">' + STOPS[i].kids.map(function (k) { return av(k.name, c, cls); }).join("") + "</span>"; }
+  // Contacts for a stop: kids with a phone first (the default), then the parents.
+  function contacts(i) {
+    var s = STOPS[i], out = [];
+    s.kids.forEach(function (k) { if (k.phone) out.push({ name: k.name, phone: k.phone, role: "הטלפון של " + k.name, wa: k.name + ", אני למטה 🚗" }); });
+    FAM[s.fam].parents.forEach(function (p) { out.push({ name: p.name, phone: p.phone, role: "הורה · " + FAM[s.fam].name, wa: "אני למטה, מחכה ל" + names(i) + " 🚗" }); });
+    return out;
+  }
+  function notifyMsg(i, before) {
+    var head = before ? "עוד רגע יוצאים 🚗 אגיע לאסוף את " + names(i) + " בעוד כ-15 דק׳" : "יצאתי 🚗 אגיע לאסוף את " + names(i) + " בעוד כ-10 דק׳";
+    return esc(head + "\nרואים כאן איפה אני:\n") + '<span class="u">trempush.com/g/gan-alon/kid/' + STOPS[i].slug + "/e/noa-bday</span>";
+  }
+
+  /* ---------- icons ---------- */
+  var I = {
+    back: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    phone: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 013 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>',
+    wa: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a8.8 8.8 0 00-7.6 13.3L3.2 20.8l4.4-1.2A8.8 8.8 0 1012 3.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path fill="currentColor" d="M9.1 7.6c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.2.3 0 .5.5.9 1.3 1.7 2.3 2.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.6.8c.2.1.3.3.3.5-.1 1-.9 1.7-1.9 1.7-2.8-.3-5.6-3-5.8-5.9 0-1 .7-1.9 1.2-2.1z"/></svg>',
+    nav: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l7.5 18.5-7.5-4.2L4.5 21z"/></svg>',
+    pin: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 21.5s7-6.6 7-11.8a7 7 0 10-14 0c0 5.2 7 11.8 7 11.8z"/><circle cx="12" cy="9.8" r="2.4" fill="currentColor"/></svg>',
+    flag: '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 2h2v20H5zM8 3h11l-2.5 4L19 11H8z"/></svg>',
+    chev: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    users: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.8 20c.5-3.4 3-5.4 6.2-5.4s5.7 2 6.2 5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path fill="currentColor" d="M16.5 5.2a3 3 0 011.6 5.6 4.6 4.6 0 013.7 4.6h-2a3 3 0 00-2.6-2.9l-.8-.1v-1.6l.6-.3a1.4 1.4 0 00-.5-2.7z"/></svg>'
+  };
+
+  function sbar(dark) { return '<div class="sbar" aria-hidden="true"><span>16:0' + (dark ? "9" : "1") + '</span><span>●●● 5G ▮</span></div>'; }
+  function hdr() {
+    return '<header class="hdr"><div class="hdr-row"><button type="button" class="bk" data-act="noop" data-nc aria-label="חזרה לאירוע">' + I.back + '</button>' +
+      '<div class="grow1"><span class="grp">גן אלון · כיתה ב׳</span><div class="attl">מצב נהג · הלוך</div></div></div></header>';
+  }
+  function evl() { return '<p class="evl">🎈 <b>יום הולדת לנועה</b> · ' + VENUE.full + " · 16:30</p>"; }
+  function own() { return '<div class="own">' + av(OWN, FAM.levi.c) + "<span><b>" + OWN + "</b> איתך ברכב</span></div>"; }
+
+  /* ---------- today (static reproduction of the screenshot) ---------- */
+  function b(n) { return '<span class="bdg" aria-hidden="true">' + n + "</span>"; }
+  function todayHtml() {
+    var fc = "var(--f5)";
+    return sbar() + '<div class="scr-body">' +
+      '<header class="hdr"><div class="hdr-row"><button type="button" class="bk" data-nc aria-label="חזרה">' + I.back + '</button><div class="grow1"><span class="grp">גן אלון · כיתה ב׳</span><div class="attl">מצב נהג · הלוך</div></div></div></header>' +
+      '<div class="content">' +
+      '<div class="evh"><div class="cov"><div class="cov-art"><span>🎈</span>יום הולדת</div></div><div class="evh-t"><b>יום הולדת לנועה</b><small>יום שישי, 16.10 · 16:30</small><small>פארק הירקון</small></div></div>' +
+      '<span class="live">בדרך</span>' +
+      '<section class="card"><h2 class="hs">הודיעו להורים שיצאת</h2><div class="row sp"><span>משפחת ממלוק</span><button type="button" class="btn wa sm tp" data-act="t">' + I.wa + "ישי" + b(1) + "</button></div></section>" +
+      '<section class="card hl"><h2 class="hs">שיתוף עם הנוסעים</h2><p class="small muted">קישור למעקב אחרי ההסעה בזמן אמת</p><div class="row sp"><b>תוני</b><button type="button" class="btn wa sm tp" data-act="t">' + I.wa + "שליחה לתוני" + b(2) + "</button></div></section>" +
+      '<section class="stack"><h2 class="hs">רשימת איסוף</h2>' +
+      '<div class="stopc"><button type="button" class="chk tp" data-act="t" role="checkbox" aria-checked="false"><span class="bx" aria-hidden="true"></span>' + av("תוני", fc) + '<span class="grow1"><b>תוני</b><small>משפחת ממלוק · הרצל 8, גבעתיים</small></span><span class="tag ok">מוכן/ה ✓</span>' + b(3) + "</button>" +
+      '<div class="stop-acts"><button type="button" class="btn sm ghost grow1 tp" data-act="t">הגעתי' + b(4) + '</button><button type="button" class="btn sm grow1 tp" data-act="t">עלה/תה' + b(5) + "</button></div>" +
+      '<div class="ctc"><div class="row sp"><span class="small muted">טלפון הילד/ה</span><a class="phone tp" data-act="t" dir="ltr" href="#" data-noop>054-555-0193' + b(6).replace('class="bdg"', 'class="bdg r"') + "</a></div>" +
+      '<div class="row wrap"><button type="button" class="btn sm tp" data-act="t">' + I.phone + "התקשרות" + b(7) + '</button><button type="button" class="btn wa sm tp" data-act="t">' + I.wa + "WhatsApp לתוני" + b(8) + '</button><button type="button" class="mini tp" data-act="t">WhatsApp לישי' + b(9) + "</button></div></div></div></section>" +
+      '<div class="fold"><span>קו הגלילה בטלפון אמיתי</span></div>' +
+      '<section class="card"><h2 class="hs">ניווט</h2><div class="navs"><button type="button" class="btn ghost tp" data-act="t"><b>Google Maps</b><span class="small muted">כל העצירות</span>' + b(10) + '</button><button type="button" class="btn ghost tp" data-act="t"><b>Waze</b><span class="small muted">לעצירה הבאה</span>' + b(11) + "</button></div></section>" +
+      "</div></div>";
+  }
+
+  /* ---------- state ---------- */
+  function fresh() { return { started: false, st: [0, 0, 0], order: [0, 1, 2], sent: {}, depOk: false, mode: "prep", sheet: null, list: false, focus: null, cf: null, eta: {}, venue: false, toast: null }; }
+  function stepState(n) {
+    var s = fresh();
+    if (n === "x" || n >= 1) { s.started = true; s.depOk = true; s.mode = "car"; STOPS.forEach(function (x) { s.sent[x.fam] = true; }); }
+    if (n === "x") { s.st = [0, 0, 2]; return s; }
+    for (var i = 0; i < 3; i++) s.st[i] = Math.max(0, Math.min(2, n - 1 - 2 * i));
+    if (n >= 8) s.venue = true;
+    return s;
+  }
+  function key(s) { return JSON.stringify([s.started, s.st, s.venue]); }
+  // The suggested next stop: the first stop in the list not yet picked up. A and B let the driver focus another one.
+  function nextStop(s) { for (var k = 0; k < s.order.length; k++) if (s.st[s.order[k]] < 2) return s.order[k]; return -1; }
+  function current(s, v) {
+    if (!s.started) return -1;
+    if (v !== "c" && s.focus !== null && s.st[s.focus] < 2) return s.focus;
+    return nextStop(s);
+  }
+  function picked(s) { return s.st.filter(function (x) { return x === 2; }).length; }
+  function hm(m) { return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0"); }
+  // A fake clock: 16:02 at "יצאתי", 3 minutes per stop action.
+  function nowMin(s) { return 16 * 60 + 2 + 3 * (s.st[0] + s.st[1] + s.st[2]); }
+  function progress(s) { return "אספתי " + picked(s) + " מתוך 3"; }
+
+  /* ---------- pieces used by several variants ---------- */
+  function notifyRows(s, before) {
+    return STOPS.map(function (x, i) {
+      var c = contacts(i)[0], sent = s.sent[x.fam];
+      return '<div class="nrow"><div class="nrow-h">' + avs(i) + '<div class="grow1"><b>' + FAM[x.fam].name + "</b><small>ל" + esc(c.name) + (c.role.indexOf("הורה") === 0 ? " (הורה)" : "") + "</small></div>" +
+        (sent ? '<span class="sentok">נשלח ✓</span>' : '<button type="button" class="btn wa sm" data-act="send" data-arg="' + x.fam + '" aria-label="שליחת עדכון ל' + esc(c.name) + '">' + I.wa + "שליחה</button>") +
+        '</div><div class="bub">' + notifyMsg(i, before) + "</div></div>";
+    }).join("");
+  }
+  function notifySheet(s, askEta) {
+    var any = STOPS.some(function (x) { return s.sent[x.fam]; });
+    return '<div class="ov"><button type="button" class="scrim" data-act="close" data-nc aria-label="סגירה"></button><div class="sheet" role="dialog" aria-modal="true" aria-label="לעדכן את הנוסעים?"><span class="grab" aria-hidden="true"></span>' +
+      (askEta ? '<div class="card">' + chips(s, 0).replace("כמה זמן עד שאגיע?", "כמה זמן עד נועה?") + '<button type="button" class="lnk" data-act="close" style="align-self:center">אחר כך</button></div>' : "") +
+      '<div class="sheet-h"><h3>לעדכן את הנוסעים?</h3></div><p class="small muted">הודעה אחת לכל משפחה: יצאתי + קישור למעקב. ' + OWN + " איתך ברכב, אז למשפחת לוי לא שולחים.</p>" +
+      "<div>" + notifyRows(s, false) + "</div>" +
+      (any ? '<button type="button" class="btn big" data-act="close">סיום</button>' : '<button type="button" class="lnk" data-act="close" style="align-self:center">דלג</button>') +
+      "</div></div>";
+  }
+  function contactSheet(i, nav) {
+    var cs = contacts(i);
+    return '<div class="ov"><button type="button" class="scrim" data-act="close" data-nc aria-label="סגירה"></button><div class="sheet" role="dialog" aria-modal="true" aria-label="אנשי קשר"><span class="grab" aria-hidden="true"></span>' +
+      '<div class="sheet-h">' + avs(i) + "<h3>" + names(i) + ' <small class="muted" style="font-size:13px;font-weight:400">' + FAM[STOPS[i].fam].name + '</small></h3><button type="button" class="xbtn" data-act="close" data-nc aria-label="סגירה">×</button></div>' +
+      (nav ? '<button type="button" class="btn big dark" data-act="waze" data-arg="' + i + '">' + I.nav + "ניווט לכאן · Waze</button>" : "") +
+      cs.map(function (c, j) {
+        return '<div class="crow"><div class="grow1"><b>' + esc(c.name) + (j === 0 ? ' <span class="tag ok">ראשי</span>' : "") + "</b><small>" + esc(c.role) + '</small></div><span class="phone" dir="ltr">' + c.phone + "</span>" +
+          '<button type="button" class="rnd sm" data-act="call" data-arg="' + i + ":" + j + '" aria-label="התקשרות ל' + esc(c.name) + '">' + I.phone + "</button>" +
+          '<button type="button" class="rnd sm wa" data-act="wa" data-arg="' + i + ":" + j + '" aria-label="WhatsApp ל' + esc(c.name) + ': אני למטה">' + I.wa + "</button></div>" +
+          '<div class="bub">' + esc(c.wa) + "</div>";
+      }).join("") + "</div></div>";
+  }
+  function kidsee(i) { return '<p class="kidsee">בדף של ' + names(i) + ": «משפחת לוי למטה! 🚗»</p>"; }
+  // "כמה זמן עד שאגיע": one row of chips, only on the focused stop, only while not yet "הגעתי".
+  function chips(s, i) {
+    var e = s.eta[i];
+    return '<div class="chips2" role="group" aria-label="כמה זמן עד שאגיע ל' + names(i) + '"><span class="lbl2">כמה זמן עד שאגיע?</span><div class="row">' +
+      [2, 5, 10, 15].map(function (m) { return '<button type="button" class="chip" data-act="eta" data-arg="' + i + ":" + m + '" aria-pressed="' + !!(e && e.m === m) + '">' + m + " דק׳</button>"; }).join("") + "</div>" +
+      (e ? '<p class="kidsee">בדף של ' + names(i) + ": «הגעה בערך ב-" + e.at + "» · עודכן ב-" + e.set + "</p>" : '<p class="small muted ksee">בדף של ' + names(i) + ": «בדרך», בלי שעה</p>") + "</div>";
+  }
+
+  /* ---------- A · next stop ---------- */
+  function renderA(s) {
+    var cur = current(s, "a"), done = picked(s), h = hdr() + '<div class="content">' + evl();
+    var label = !s.started ? "3 עצירות · יציאה 16:00" : cur >= 0 ? progress(s) : s.venue ? "ההסעה הסתיימה" : "כולם ברכב ✓";
+    h += '<div class="prog"><b>' + label + '</b><span class="pdots" aria-hidden="true">' + s.order.map(function (i) { return '<i class="' + (s.st[i] === 2 ? "d" : i === cur ? "c" : "") + '"></i>'; }).join("") + I.flag + "</span></div>";
+    h += own();
+    if (cur >= 0 || !s.started) {
+      var i = cur >= 0 ? cur : s.order[0], x = STOPS[i], c = contacts(i)[0];
+      var lbl = !s.started ? "העצירה הראשונה (הצעה)" : s.st[i] === 1 ? "הגעתי ✓" : i === nextStop(s) ? "העצירה הבאה" : "בחרת לעצור כאן";
+      h += '<section class="acard" aria-label="העצירה בפוקוס"><div class="row sp"><span class="lbl2">' + lbl + "</span>" + (x.ready ? '<span class="tag ok">✓ מחכה</span>' : "") + "</div>" +
+        '<div class="row">' + avs(i, "lg") + '<div class="grow1"><h3 class="anames">' + names(i) + '</h3><small class="muted">' + FAM[x.fam].name + "</small></div></div>" +
+        '<p class="addr">' + I.pin + FAM[x.fam].addr + '</p><p class="small muted">' + x.eta + "</p>" +
+        (s.st[i] === 1 ? kidsee(i) : s.started ? chips(s, i) : "") +
+        '<div class="ctcrow"><button type="button" class="rnd" data-act="call" data-arg="' + i + ':0" aria-label="התקשרות ל' + esc(c.name) + '">' + I.phone + "</button>" +
+        '<button type="button" class="rnd wa" data-act="wa" data-arg="' + i + ':0" aria-label="WhatsApp ל' + esc(c.name) + ': אני למטה">' + I.wa + "</button>" +
+        '<span class="who2 grow1">ל' + esc(c.name) + (c.role.indexOf("הורה") === 0 ? " (הורה)" : "") + "<br>«אני למטה»</span>" +
+        '<button type="button" class="mini" data-act="contact" data-arg="' + i + '">עוד</button></div></section>' +
+        '<div class="navbig"><button type="button" class="btn xl dark" data-act="waze" data-arg="' + i + '">' + I.nav + "ניווט ל" + names(i) + '</button><button type="button" class="lnk" data-act="maps">Google Maps · כל העצירות</button></div>';
+    } else {
+      h += '<section class="acard' + (s.venue ? " dim" : "") + '"><span class="lbl2">' + (s.venue ? "הגעתם · 16:27" : "היעד") + '</span><h3 class="anames">' + VENUE.name + '</h3><p class="addr">' + I.pin + VENUE.gate + " · יום הולדת לנועה 16:30</p>" +
+        '<p class="small muted">' + (s.venue ? "ההסעה הסתיימה. בדפי הילדים: «ההסעה הזאת הסתיימה»." : "כולם ברכב ✓ · " + OWN + ", נועה, מאיה, יואב, עומר · " + VENUE.eta) + "</p></section>";
+      if (!s.venue) h += '<div class="navbig"><button type="button" class="btn xl dark" data-act="waze" data-arg="v">' + I.nav + 'ניווט לפארק</button></div>';
+    }
+    if (s.started) {
+      h += '<button type="button" class="arow" data-act="list" aria-expanded="' + s.list + '"><span>כל העצירות · אספתי ' + done + "/3</span>" + I.chev + "</button>";
+      if (s.list) {
+        h += '<ol class="alist">' + s.order.map(function (k) {
+          var stt = s.st[k] === 2 ? "אספתי ✓ " + STOPS[k].pick : s.st[k] === 1 ? "הגעתי ✓" : k === cur ? "בפוקוס" : "ממתין";
+          var inner = avs(k) + '<span class="grow1"><b>' + names(k) + '</b><span class="stt">' + short(FAM[STOPS[k].fam].addr) + " · " + stt + "</span></span>";
+          var main = k === cur || s.st[k] === 2 ? '<div class="lrow">' + inner + "</div>" : '<button type="button" class="lrow" data-act="focus" data-arg="' + k + '" aria-label="לעצור קודם אצל ' + names(k) + '">' + inner + "</button>";
+          return '<li class="' + (s.st[k] === 2 ? "done" : k === cur ? "cur" : "") + '">' + main +
+            (s.st[k] === 2 ? '<button type="button" class="mini" data-act="unpick" data-arg="' + k + '">ביטול</button>' : k !== cur ? '<button type="button" class="mini" data-act="pick" data-arg="' + k + '">אספתי ✓</button>' : "") + "</li>";
+        }).join("") + "</ol>";
+      }
+    }
+    h += "</div>";
+    var bar = "";
+    if (!s.started) bar = '<button type="button" class="btn xl" data-act="start">יצאתי</button>';
+    else if (cur >= 0) bar = '<button type="button" class="btn xl" data-act="step" data-arg="' + cur + '">' + (s.st[cur] === 0 ? "הגעתי" : "אספתי ✓") + "</button>";
+    else if (!s.venue) bar = '<button type="button" class="btn xl" data-act="venue">הגענו <span class="newtag">פעולה חדשה</span></button>';
+    return { body: h, bar: bar };
+  }
+
+  /* ---------- B · route ---------- */
+  function renderB(s) {
+    var cur = current(s, "b"), all = s.started && cur < 0;
+    var h = hdr() + '<div class="content">' + evl();
+    h += '<div class="row sp"><b>' + (!s.started ? "3 עצירות · יציאה 16:00" : all ? "כולם ברכב ✓" : progress(s)) + "</b></div>";
+    h += own();
+    h += '<ol class="rt">';
+    h += '<li class="rt-n' + (s.started ? " done" : "") + '"><span class="rt-m" aria-hidden="true">' + (s.started ? "✓" : "") + '</span><div class="rt-t"><b>יציאה מהבית</b><small>' + short(FAM.levi.addr) + " · " + (s.started ? "יצאתי 16:02" : "16:00") + "</small></div></li>";
+    STOPS.forEach(function (x, i) {
+      var tag = x.ready && s.st[i] < 2 ? '<span class="tag ok">✓ מחכה</span>' : "";
+      if (s.st[i] === 2) {
+        h += '<li class="rt-n done"><span class="rt-m" aria-hidden="true">✓</span><button type="button" class="rt-row" data-act="unpick" data-arg="' + i + '" aria-label="ביטול אספתי · ' + names(i) + '">' + avs(i) + '<span class="grow1"><b>' + names(i) + "</b><small>אספתי ✓ " + x.pick + " · הקשה מבטלת</small></span></button></li>";
+      } else if (i === cur) {
+        h += '<li class="rt-n cur"><span class="rt-m" aria-hidden="true">' + (i + 1) + '</span><div class="rt-card"><div class="row">' + avs(i, "lg") + '<div class="grow1"><h3 class="anames">' + names(i) + '</h3><small class="muted">' + FAM[x.fam].name + "</small></div>" + tag + "</div>" +
+          '<p class="addr">' + I.pin + FAM[x.fam].addr + "</p>" + (s.st[i] === 1 ? kidsee(i) : chips(s, i)) +
+          '<div class="row"><button type="button" class="btn big grow1' + (s.st[i] === 1 ? "" : " dark") + '" data-act="step" data-arg="' + i + '">' + (s.st[i] === 0 ? "הגעתי" : "אספתי ✓") + "</button>" +
+          '<button type="button" class="rnd" data-act="contact" data-arg="' + i + '" aria-label="אנשי קשר · ' + names(i) + '">' + I.users + "</button></div></div></li>";
+      } else if (s.started) {
+        h += '<li class="rt-n"><span class="rt-m" aria-hidden="true">' + (i + 1) + '</span><div class="rt-pend"><button type="button" class="rt-row" data-act="focus" data-arg="' + i + '" aria-label="לפתוח את ' + names(i) + '"><span class="grow1"><b>' + names(i) + "</b><small>" + short(FAM[x.fam].addr) + (s.st[i] === 1 ? " · הגעתי ✓" : x.ready ? " · ✓ מחכה" : "") + "</small></span></button>" +
+          '<button type="button" class="btn sm ghost" data-act="step" data-arg="' + i + '">' + (s.st[i] === 0 ? "הגעתי" : "אספתי ✓") + "</button></div></li>";
+      } else {
+        h += '<li class="rt-n"><span class="rt-m" aria-hidden="true">' + (i + 1) + '</span><div class="rt-row">' + avs(i) + '<span class="grow1"><b>' + names(i) + "</b><small>" + FAM[x.fam].addr + "</small></span>" + tag + "</div></li>";
+      }
+    });
+    h += '<li class="rt-n end"><span class="rt-m" aria-hidden="true">' + I.flag + '</span><div class="rt-t"><b>' + VENUE.full + "</b><small>יום הולדת לנועה · 16:30</small></div></li></ol>";
+    if (!s.started) h += '<p class="small muted">הסדר הוא הצעה. אחרי "יצאתי" אפשר לאסוף בכל סדר.</p>';
+    h += "</div>";
+    var bar;
+    if (!s.started) bar = '<button type="button" class="btn xl" data-act="start">יצאתי</button>';
+    else {
+      var tgt = cur >= 0 ? names(cur) : "פארק הירקון";
+      bar = '<button type="button" class="btn xl" data-act="waze" data-arg="' + (cur >= 0 ? cur : "v") + '">' + I.nav + "ניווט ל" + tgt + '</button><button type="button" class="lnk" data-act="maps">Google Maps · כל העצירות</button>';
+    }
+    return { body: h, bar: bar };
+  }
+
+  /* ---------- C · prep / car ---------- */
+  function renderC(s) {
+    if (s.mode === "car" && s.started) return renderCar(s);
+    var allSent = STOPS.every(function (x) { return s.sent[x.fam]; });
+    var h = hdr() + '<div class="content">' + evl() + '<ol class="prep">';
+    h += '<li class="pstep' + (s.depOk ? " ok" : "") + '"><span class="pn" aria-hidden="true">' + (s.depOk ? "✓" : "1") + '</span><div class="card"><b>שעת יציאה</b>' +
+      (s.depOk ? '<p class="small">16:00 ✓ אושרה</p>' : '<div class="dchk"><b>בדקו שעת יציאה</b><button type="button" class="mini" data-act="depok">אישור שעה</button></div><p class="small muted">האירוע זז ל-16:30. היציאה שלך עדיין 16:00.</p>') + "</div></li>";
+    h += '<li class="pstep' + (allSent ? " ok" : "") + '"><span class="pn" aria-hidden="true">' + (allSent ? "✓" : "2") + '</span><div class="card"><b>עדכון הנוסעים</b><p class="small muted">הודעה אחת לכל משפחה, עם קישור למעקב.</p>' + notifyRows(s, true) + "</div></li>";
+    h += '<li class="pstep"><span class="pn" aria-hidden="true">3</span><div class="card"><b>' + (s.started ? "יצאתי 16:02 ✓" : "יציאה") + "</b>" + own() +
+      '<p class="route">סדר מוצע: ' + STOPS.map(function (x, i) { return names(i); }).join(" · ") + ". אפשר לאסוף בכל סדר.</p>" +
+      (s.started ? '<button type="button" class="btn big" data-act="mode" data-arg="car">חזרה למצב נסיעה</button>' : '<button type="button" class="btn xl" data-act="start">יצאתי</button>') + "</div></li>";
+    h += "</ol></div>";
+    return { body: h, bar: "" };
+  }
+  function stripStop(s) {
+    if (s.cf !== null && s.st[s.cf] === 0) return s.cf;
+    for (var k = 0; k < s.order.length; k++) if (s.st[s.order[k]] === 0) return s.order[k];
+    return -1;
+  }
+  function renderCar(s) {
+    var nx = nextStop(s), strip = stripStop(s);
+    var h = '<div class="carb"><div class="cart"><button type="button" class="lnk" data-act="mode" data-arg="prep">→ חזרה לפרטים</button><b>' + progress(s) + "</b></div>";
+    h += '<div class="cnav"><button type="button" class="wz" data-act="waze" data-arg="' + (nx >= 0 ? nx : "v") + '">Waze<small>ל' + (nx >= 0 ? names(nx) : "פארק הירקון") + '</small></button><button type="button" class="mp" data-act="maps">Maps<small>כל העצירות</small></button></div>';
+    if (nx < 0) h += '<p class="carok">כולם ברכב ✓ · נוסעים לפארק</p>';
+    STOPS.forEach(function (x, i) {
+      var st = s.st[i], txt = st === 0 ? "הקשה = הגעתי" : st === 1 ? "הגעתי ✓ · הקשה = אספתי" : "אספתי ✓ " + x.pick;
+      h += '<div class="tile s' + st + '">' +
+        (st < 2 ? '<button type="button" class="tile-b" data-act="step" data-arg="' + i + '" data-lp="' + i + '" aria-label="' + names(i) + ": " + txt + '">' : '<div class="tile-b">') +
+        (x.ready && st < 2 ? '<span class="tile-n">✓ מחכה</span>' : "") + '<b class="tile-name">' + names(i) + '</b><span class="tile-a">' + FAM[x.fam].addr + '</span><span class="tile-st">' + txt + "</span>" +
+        (st < 2 ? "</button>" : "</div>") +
+        '<button type="button" class="tile-more" data-act="contact" data-arg="' + i + '" aria-label="ניווט ואנשי קשר · ' + names(i) + '">⋯</button>' +
+        (i === strip ? '<div class="cstrip">' + chips(s, i) + "</div>" : "") + "</div>";
+    });
+    h += '<div class="tile end">' + I.flag + " " + VENUE.full + " · 16:30</div>" + own() + "</div>";
+    return { body: h, bar: "", car: true };
+  }
+
+  /* ---------- phone factory ---------- */
+  var phones = {};
+  function Phone(el, v, id, initStep) {
+    var s = initStep ? stepState(initStep) : fresh();
+    var snap = null, timer = null, lpTimer = null, lpFired = false;
+    function setToast(t) {
+      s.toast = t; clearTimeout(timer);
+      if (t) timer = setTimeout(function () { s.toast = null; render(true); }, t.undo ? 7000 : 4500);
+    }
+    function save(nm) { snap = { s: JSON.parse(JSON.stringify(s)), nm: nm }; }
+    function render(keep) {
+      var body = el.querySelector(".scr-body"), top = keep && body ? body.scrollTop : 0;
+      var r = v === "a" ? renderA(s) : v === "b" ? renderB(s) : renderC(s);
+      var ov = "";
+      if (s.sheet === "notify") ov = notifySheet(s);
+      else if (s.sheet && s.sheet.indexOf("contact:") === 0) ov = contactSheet(+s.sheet.slice(8), v === "c");
+      var t = s.toast;
+      el.classList.toggle("car", !!r.car);
+      el.innerHTML = sbar(r.car) + '<div class="scr-body">' + r.body + "</div>" + (r.bar ? '<div class="bbar">' + r.bar + "</div>" : "") + ov +
+        '<div class="toast-live' + (r.bar ? " hi" : "") + '" aria-live="polite">' + (t ? '<div class="toast"><span>' + t.html + "</span>" + (t.undo ? '<button type="button" data-act="undo" data-nc>ביטול</button>' : "") + "</div>" : "") + "</div>";
+      body = el.querySelector(".scr-body");
+      if (keep) body.scrollTop = top;
+      sync();
+    }
+    function sync() {
+      var scope = el.querySelector(".ov .sheet") || el;
+      var n = scope.querySelectorAll("[data-act]:not([data-nc])").length;
+      document.querySelectorAll('[data-count="' + id + '"],[data-count="' + id + '2"]').forEach(function (c) { c.textContent = n; });
+      var url = document.querySelector('[data-url="' + id + '"]');
+      if (url) url.innerHTML = "trempush.com" + URL_BASE + (v === "c" && s.mode === "car" && s.started ? "<b>?car=1</b>" : "") + (s.sheet === "notify" ? "<b>?sheet=notify</b>" : "");
+      var ctrl = document.querySelector('[data-ctrl="' + id + '"]');
+      if (ctrl) {
+        var k = key(s);
+        ctrl.querySelectorAll("[data-n]").forEach(function (bt) { var n = bt.dataset.n === "x" ? "x" : +bt.dataset.n; bt.setAttribute("aria-pressed", String(key(stepState(n)) === k)); });
+      }
+    }
+    function act(a, arg) {
+      var i = arg != null && arg !== "v" ? +arg : null;
+      switch (a) {
+        case "start":
+          save("יצאתי"); s.started = true; s.focus = null;
+          if (v === "c") { s.mode = "car"; s.depOk = true; setToast({ html: "יצאתי 16:02 · בדפי הילדים: «משפחת לוי יצאה לדרך»", undo: true }); }
+          else { s.sheet = "notify"; setToast(null); }
+          break;
+        case "send": s.sent[arg] = true; break;
+        case "close": s.sheet = null; break;
+        case "depok": s.depOk = true; break;
+        case "mode": s.mode = arg; setToast(null); break;
+        case "list": s.list = !s.list; break;
+        case "focus": s.focus = i; s.cf = i; break;
+        case "step":
+          if (s.st[i] >= 2) return;
+          save(names(i)); s.st[i]++; s.cf = i; if (s.st[i] === 2 && s.focus === i) s.focus = null;
+          setToast({ html: (s.st[i] === 1 ? "הגעתי" : "אספתי ✓") + " · " + names(i), undo: true });
+          break;
+        case "pick":
+          save(names(i)); s.st[i] = 2; if (s.focus === i) s.focus = null;
+          setToast({ html: "אספתי ✓ · " + names(i), undo: true });
+          break;
+        case "unpick":
+          save(names(i)); s.st[i] = 1; s.focus = i;
+          setToast({ html: "בוטל · אספתי · " + names(i), undo: true });
+          break;
+        case "eta": {
+          var q = arg.split(":"), si = +q[0], m = +q[1], nm0 = nowMin(s);
+          s.eta[si] = { m: m, at: hm(nm0 + m), set: hm(nm0) };
+          setToast({ html: "בדף של " + names(si) + ": «הגעה בערך ב-" + hm(nm0 + m) + "»" });
+          break;
+        }
+        case "venue": save("הגענו"); s.venue = true; setToast({ html: "הגענו · 16:27 <span class=\"newtag\">פעולה חדשה</span>", undo: true }); break;
+        case "undo":
+          if (snap) { var nm = snap.nm; s = snap.s; snap = null; s.sheet = null; setToast({ html: "בוטל · " + nm }); }
+          break;
+        case "contact": s.sheet = "contact:" + i; s.cf = i; break;
+        case "call": case "wa": {
+          var p = arg.split(":"), c = contacts(+p[0])[+p[1]];
+          s.sheet = null;
+          setToast(a === "call" ? { html: "חיוג ל" + esc(c.name) + ' · <span dir="ltr" class="num">' + c.phone + "</span>" } : { html: "WhatsApp ל" + esc(c.name) + ':<span class="bub">' + esc(c.wa) + "</span>" });
+          break;
+        }
+        case "waze": s.sheet = null; setToast({ html: "נפתח Waze ← " + (arg === "v" ? VENUE.full : FAM[STOPS[i].fam].addr) }); break;
+        case "maps": setToast({ html: "נפתח Google Maps · " + (3 - picked(s)) + " עצירות ← " + VENUE.name }); break;
+        default: return;
+      }
+      render(a !== "start" || v !== "c");
+    }
+    el.addEventListener("click", function (ev) {
+      var bt = ev.target.closest("[data-act]");
+      if (!bt || !el.contains(bt)) return;
+      if (lpFired) { lpFired = false; return; }
+      act(bt.dataset.act, bt.dataset.arg);
+    });
+    el.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && s.sheet) act("close"); });
+    // C: long-press on a tile opens the contact sheet.
+    el.addEventListener("pointerdown", function (ev) {
+      var t = ev.target.closest("[data-lp]"); if (!t) return;
+      lpFired = false; clearTimeout(lpTimer);
+      lpTimer = setTimeout(function () { lpFired = true; act("contact", t.dataset.lp); }, 550);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (n) { el.addEventListener(n, function () { clearTimeout(lpTimer); }); });
+    el.addEventListener("contextmenu", function (ev) { if (ev.target.closest("[data-lp]")) ev.preventDefault(); });
+    render(false);
+    return {
+      go: function (n) { s = stepState(n); snap = null; setToast(null); if (v === "c" && n === 0) s.mode = "prep"; render(false); },
+      reset: function () { s = fresh(); snap = null; setToast(null); render(false); }
+    };
+  }
+
+  document.querySelectorAll("[data-phone]").forEach(function (el) {
+    var p = el.dataset.phone;
+    if (p === "today") {
+      el.innerHTML = todayHtml();
+      el.addEventListener("click", function (e) { e.preventDefault(); });
+      var n = el.querySelectorAll("[data-act]:not([data-nc])").length;
+      document.querySelector('[data-count="today"]').textContent = n;
+      return;
+    }
+    phones[p] = Phone(el, p.slice(-1), p, p.length === 2 ? 4 : 0);
+  });
+
+  /* ---------- kid page mocks ---------- */
+  function kidHtml(who, after) {
+    var omer = who === "omer", nm = omer ? "עומר" : "נועה", c = omer ? FAM.peretz.c : FAM.cohen.c, timed = omer && after;
+    var stat = timed
+      ? '<span class="kk">משפחת לוי בדרך אליך</span><b class="kbig">הגעה בערך ב-16:10</b><small>עודכן ב-16:05</small>'
+      : '<b class="kbig">משפחת לוי בדרך</b><small>יציאה 16:02 · עוד אין שעת הגעה</small>';
+    return sbar() + '<div class="scr-body"><div class="content kidp">' +
+      '<div class="row">' + av(nm, c, "lg") + '<div class="grow1"><span class="grp">גן אלון · כיתה ב׳</span><h3 class="kh">היי ' + nm + "!</h3></div></div>" +
+      '<div class="card"><b>יום הולדת לנועה</b><small class="muted">יום שישי, 16.10 · פארק הירקון</small><small class="muted">הלוך · אוספים אותך מהבית</small></div>' +
+      '<div class="kstat' + (timed ? " on" : "") + '" role="status">' + (timed ? '<span class="live">בדרך</span>' : "") + stat + "</div>" +
+      '<div class="card"><div class="row"><span class="carico" aria-hidden="true">🚗</span><div class="grow1"><b>משפחת לוי</b><small class="muted" style="display:block">טויוטה קורולה · לבנה</small></div><span class="plate" dir="ltr">12-345-67</span></div>' +
+      '<span class="btn ghost big">' + I.phone + "התקשרות לדני</span></div>" +
+      (omer ? '<span class="btn big">אני מחכה ✓</span>' : '<p class="note ok">✓ מחכה · נשלח לנהג</p>') +
+      "</div></div>";
+  }
+  function drawKids(after) {
+    document.querySelectorAll("[data-kid-phone]").forEach(function (el) { el.innerHTML = kidHtml(el.dataset.kidPhone, after); });
+    document.querySelectorAll("[data-kid]").forEach(function (bt) { bt.setAttribute("aria-pressed", String(+bt.dataset.kid === after)); });
+  }
+  var kidTg = document.getElementById("kid-tg");
+  if (kidTg) kidTg.addEventListener("click", function (ev) { var bt = ev.target.closest("[data-kid]"); if (bt) drawKids(+bt.dataset.kid); });
+  drawKids(0);
+
+  /* ---------- open question: what "יצאתי" does ---------- */
+  document.querySelectorAll("[data-q]").forEach(function (el) {
+    var s = stepState(1), r = renderB(s), ask = el.dataset.q === "b";
+    el.innerHTML = sbar() + '<div class="scr-body">' + r.body + '</div><div class="bbar">' + r.bar + "</div>" + (ask ? notifySheet(fresh(), true) : "");
+    el.addEventListener("click", function (e) { e.preventDefault(); });
+  });
+
+  /* ---------- steppers under the phones ---------- */
+  document.querySelectorAll("[data-ctrl]").forEach(function (ctrl) {
+    var id = ctrl.dataset.ctrl, labels = STEP_LABELS.slice();
+    if (id === "a") labels.push('הגענו <span class="x">חדש</span>');
+    var extra = '<button type="button" data-n="x" aria-pressed="false">סדר אחר: עומר ראשון</button>';
+    ctrl.innerHTML = '<div class="w-cnt"><span>פעולות על המסך: <b data-count="' + id + '"></b></span><span class="vs">היום: 11 לילד אחד</span><button type="button" class="w-reset" data-reset>איפוס</button></div>' +
+      '<div class="w-steps" role="group" aria-label="קפיצה למצב">' + labels.map(function (l, n) { return '<button type="button" data-n="' + n + '" aria-pressed="false">' + l + "</button>"; }).join("") + extra + "</div>";
+    ctrl.addEventListener("click", function (ev) {
+      var bt = ev.target.closest("button"); if (!bt) return;
+      if (bt.hasAttribute("data-reset")) phones[id].reset(); else phones[id].go(bt.dataset.n === "x" ? "x" : +bt.dataset.n);
+    });
+    phones[id].reset();
+  });
+
+  /* ---------- sticky segmented control ---------- */
+  var seg = document.getElementById("seg");
+  var links = Array.prototype.slice.call(seg.querySelectorAll("[data-go]"));
+  function light(id) {
+    links.forEach(function (l) {
+      var on = l.dataset.go === id;
+      if (on) l.setAttribute("aria-current", "true"); else l.removeAttribute("aria-current");
+      if (on) { var sr = seg.getBoundingClientRect(), lr = l.getBoundingClientRect(); if (lr.left < sr.left || lr.right > sr.right) seg.scrollLeft += lr.left < sr.left ? lr.left - sr.left - 16 : lr.right - sr.right + 16; }
+    });
+  }
+  function go(id, smooth) {
+    var t = document.getElementById(id);
+    if (!t) return;
+    t.scrollIntoView({ behavior: smooth && !reduced ? "smooth" : "auto", block: "start" });
+    light(id);
+  }
+  links.forEach(function (l) {
+    l.addEventListener("click", function (e) {
+      e.preventDefault();
+      var id = l.dataset.go;
+      try { history.replaceState(null, "", "#" + id); } catch (er) { location.hash = id; }
+      go(id, true);
+    });
+  });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) { if (en.isIntersecting) light(en.target.id); });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    links.forEach(function (l) { var sct = document.getElementById(l.dataset.go); sct && io.observe(sct); });
+  }
+  var start = (location.hash || "").slice(1);
+  if (start && document.getElementById(start)) { light(start); requestAnimationFrame(function () { go(start, false); }); }
+})();
+</script>
