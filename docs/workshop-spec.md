@@ -65,7 +65,8 @@ Personas: **Parent** (registers family, RSVPs kids, offers rides, drives) and **
 /g/:group/e/:event/back   → leg: חזור
 /g/:group/e/:event/drive/:leg → driver run mode (pickup checklist)
 /kid/:group/:kidToken     → kid's read-only "my rides" page
-/me                       → my family profile (kids, cars, phone, address)
+/me                       → my family profile (kids, phone, address; a cars summary)
+/me/cars                  → my cars (הרכבים שלי)
 /me/devices               → "move to another phone" link
 ```
 
@@ -191,7 +192,7 @@ Parents usually get a designed invitation image (date, times, venue, address). C
 - Data model: `parents:[{name, phone}]`, `kids:[{id, name, phone?}]`.
 
 ## 12. Car photo (optional)
-- In the family profile, each car can have an optional **photo** (and optional color + last 3 plate digits). Add it with "+ תמונת הרכב (רשות)" from the gallery or camera. It's compressed on the phone (~800px, ~100 KB) and stored in the group's Durable Object (`img:{imageId}`).
+- On "הרכבים שלי" (`/g/:group/me/cars`, linked from the family page and the board), each car can have an optional **photo** (and optional color + last 3 plate digits). Add it with "+ תמונת הרכב (רשות)" from the gallery or camera. It's compressed on the phone (~800px, ~100 KB) and stored in the group's Durable Object (`img:{imageId}`).
 - **Where it shows**: as a thumbnail on the car card in every leg/offer, large on the **kid page** ("חפשי את הרכב הזה" + color + plate digits), and in the passengers' parents' view. When there's no photo, it falls back to a car icon tinted with the family color + the car label.
 - Why: kids (and other parents at pickup) recognize the car at the curb outside a school or event.
 

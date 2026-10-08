@@ -94,7 +94,7 @@ export function kidsWithChoices(d: FamilyDraft, choices: readonly KidChoice[], p
   return { ...d, kids: [...choices.filter((_, i) => picked[i]).map((k) => ({ ...k })), ...d.kids] };
 }
 
-function validate(d: FamilyDraft, pickedCount: number | null = null): Record<string, string> {
+function validate(d: FamilyDraft, pickedCount: number | null = null, withCars = true): Record<string, string> {
   const e: Record<string, string> = {};
   if (!d.name.trim()) e["fam-name"] = he.form.requiredField;
   d.parents.forEach((p, i) => {
@@ -110,12 +110,21 @@ function validate(d: FamilyDraft, pickedCount: number | null = null): Record<str
   });
   // With kid choices (copied from another group): at least one checked or added kid.
   if (pickedCount !== null && pickedCount + d.kids.filter((k) => k.name.trim()).length === 0) e["kid-pick-0"] = he.form.kidsPickRequired;
-  d.cars.forEach((c, i) => {
+  return withCars ? { ...e, ...validateCars(d.cars) } : e;
+}
+
+/** Errors for the car cards, keyed by field id (`car-<i>-label`, `car-<i>-plate`). */
+export function validateCars(cars: readonly CarDraft[]): Record<string, string> {
+  const e: Record<string, string> = {};
+  cars.forEach((c, i) => {
     if (!c.label.trim()) e[`car-${i}-label`] = he.form.requiredField;
     if (c.plate && !/^\d{1,3}$/.test(c.plate.trim())) e[`car-${i}-plate`] = he.form.plateInvalid;
   });
   return e;
 }
+
+export const MAX_CARS = 5;
+export const newCar = (): CarDraft => ({ label: "", seats: 4, color: "", plate: "" });
 
 interface Props {
   group: string;
@@ -124,24 +133,26 @@ interface Props {
   places: boolean;
   /** Kids from another group, shown as unchecked checkboxes; only checked or added kids are submitted. */
   kidChoices?: readonly KidChoice[];
+  /** false: no car fields (the family page; cars live on `/g/:group/me/cars`). The draft's cars are submitted unchanged. */
+  cars?: boolean;
   /** Show validation errors from the start (e.g. a stored family whose name is missing). */
   revealErrors?: boolean;
   onSubmit: (d: FamilyDraft) => Promise<void>;
 }
 
-export function FamilyForm({ group, initial, submitLabel, places, kidChoices, revealErrors, onSubmit }: Props) {
+export function FamilyForm({ group, initial, submitLabel, places, kidChoices, revealErrors, cars = true, onSubmit }: Props) {
   const [d, setD] = useState<FamilyDraft>(initial);
   const choices = kidChoices?.length ? kidChoices : null;
   const [picked, setPicked] = useState<boolean[]>(() => (choices ? choices.map(() => false) : []));
   const pickedCount = choices ? picked.filter(Boolean).length : null;
-  const [errors, setErrors] = useState<Record<string, string>>(() => (revealErrors ? validate(initial, pickedCount) : {}));
+  const [errors, setErrors] = useState<Record<string, string>>(() => (revealErrors ? validate(initial, pickedCount, cars) : {}));
   const [tried, setTried] = useState(!!revealErrors);
   const [busy, setBusy] = useState(false);
   const up = (f: (x: FamilyDraft) => FamilyDraft) => setD((x) => f(cloneDraft(x)));
 
   const submit = async (ev: Event) => {
     ev.preventDefault();
-    const e = validate(d, pickedCount);
+    const e = validate(d, pickedCount, cars);
     setErrors(e);
     setTried(true);
     const first = Object.keys(e)[0];
@@ -158,7 +169,7 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, re
   };
   const err = (id: string) => (tried ? (errors[id] ?? null) : null);
   useEffect(() => {
-    if (tried) setErrors(validate(d, pickedCount));
+    if (tried) setErrors(validate(d, pickedCount, cars));
   }, [d, picked]);
 
   return (
@@ -240,70 +251,7 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, re
         )}
       </section>
 
-      <section class="card" aria-labelledby="cars-h">
-        <h2 class="hs" id="cars-h">{he.form.cars}</h2>
-        {d.cars.length === 0 && <p class="small muted">{he.form.carsHint}</p>}
-        {d.cars.map((c, i) => (
-          <div class="sub">
-            <Field id={`car-${i}-label`} label={he.form.carLabel} placeholder={he.form.carLabelPlaceholder} value={c.label} error={err(`car-${i}-label`)} onInput={(v) => up((x) => (x.cars[i]!.label = v, x))} />
-            <Stepper id={`car-${i}-seats`} label={he.form.carSeats} hint={he.form.carSeatsHint} value={c.seats} min={1} max={MAX_SEATS_UI} onChange={(n) => up((x) => (x.cars[i]!.seats = n, x))} />
-            <div class="grid2">
-              <Field id={`car-${i}-color`} label={he.form.carColor} value={c.color} onInput={(v) => up((x) => (x.cars[i]!.color = v, x))} />
-              <Field id={`car-${i}-plate`} label={he.form.carPlate} value={c.plate} inputMode="numeric" maxLength={3} dir="ltr" error={err(`car-${i}-plate`)} onInput={(v) => up((x) => (x.cars[i]!.plate = v.replace(/\D/g, ""), x))} />
-            </div>
-            <div class="row">
-              <span class="cth">
-                {c.photoPreview || c.photoId ? (
-                  <img src={c.photoPreview ?? api.imageUrl(group, c.photoId!)} alt={c.label} />
-                ) : (
-                  <CarGlyph color={0} size={22} />
-                )}
-              </span>
-              <ImagePicker
-                id={`car-${i}-photo`}
-                variant="button"
-                maxDim={800}
-                onPicked={(blob) =>
-                  up((x) => {
-                    const car = x.cars[i]!;
-                    car.photoBlob = blob;
-                    car.photoPreview = URL.createObjectURL(blob);
-                    delete car.photoId;
-                    return x;
-                  })
-                }
-              >
-                {c.photoPreview || c.photoId ? he.form.carPhotoReplace : he.form.carPhoto}
-              </ImagePicker>
-              {(c.photoPreview || c.photoId) && (
-                <button
-                  type="button"
-                  class="lnk"
-                  onClick={() =>
-                    up((x) => {
-                      const car = x.cars[i]!;
-                      delete car.photoId;
-                      delete car.photoBlob;
-                      delete car.photoPreview;
-                      return x;
-                    })
-                  }
-                >
-                  {he.form.carPhotoRemove}
-                </button>
-              )}
-            </div>
-            <button type="button" class="lnk bad" onClick={() => up((x) => (x.cars.splice(i, 1), x))}>
-              {he.form.removeCar}
-            </button>
-          </div>
-        ))}
-        {d.cars.length < 5 && (
-          <button type="button" class="mini" onClick={() => up((x) => (x.cars.push({ label: "", seats: 4, color: "", plate: "" }), x))}>
-            {he.form.addCar}
-          </button>
-        )}
-      </section>
+      {cars && <CarsFields group={group} cars={d.cars} err={err} onChange={(f) => up((x) => ({ ...x, cars: f(x.cars) }))} />}
 
       {tried && Object.keys(errors).length > 0 && (
         <p class="note gap" role="alert">
@@ -314,6 +262,95 @@ export function FamilyForm({ group, initial, submitLabel, places, kidChoices, re
         {busy ? he.common.saving : submitLabel}
       </button>
     </form>
+  );
+}
+
+/** The car cards (label, seats, color, plate, photo, remove) + "+ רכב": registration and `/g/:group/me/cars`. */
+export function CarsFields({
+  group,
+  cars,
+  err,
+  onChange,
+  heading = true,
+}: {
+  group: string;
+  cars: readonly CarDraft[];
+  err: (id: string) => string | null;
+  /** Gets an updater that may mutate the (already cloned) array and its cars. */
+  onChange: (f: (cars: CarDraft[]) => CarDraft[]) => void;
+  /** false: no visible "רכבים" heading (the page title already says it). */
+  heading?: boolean;
+}) {
+  const up = (f: (x: CarDraft[]) => CarDraft[]) => onChange((x) => f(x.map((c) => ({ ...c }))));
+  return (
+    <section class="card" {...(heading ? { "aria-labelledby": "cars-h" } : { "aria-label": he.form.cars })}>
+      {heading && (
+        <h2 class="hs" id="cars-h">
+          {he.form.cars}
+        </h2>
+      )}
+      {cars.length === 0 && <p class="small muted">{he.form.carsHint}</p>}
+      {cars.map((c, i) => (
+        <div class="sub">
+          <Field id={`car-${i}-label`} label={he.form.carLabel} placeholder={he.form.carLabelPlaceholder} value={c.label} error={err(`car-${i}-label`)} onInput={(v) => up((x) => (x[i]!.label = v, x))} />
+          <Stepper id={`car-${i}-seats`} label={he.form.carSeats} hint={he.form.carSeatsHint} value={c.seats} min={1} max={MAX_SEATS_UI} onChange={(n) => up((x) => (x[i]!.seats = n, x))} />
+          <div class="grid2">
+            <Field id={`car-${i}-color`} label={he.form.carColor} value={c.color} onInput={(v) => up((x) => (x[i]!.color = v, x))} />
+            <Field id={`car-${i}-plate`} label={he.form.carPlate} value={c.plate} inputMode="numeric" maxLength={3} dir="ltr" error={err(`car-${i}-plate`)} onInput={(v) => up((x) => (x[i]!.plate = v.replace(/\D/g, ""), x))} />
+          </div>
+          <div class="row">
+            <span class="cth">
+              {c.photoPreview || c.photoId ? (
+                <img src={c.photoPreview ?? api.imageUrl(group, c.photoId!)} alt={c.label} />
+              ) : (
+                <CarGlyph color={0} size={22} />
+              )}
+            </span>
+            <ImagePicker
+              id={`car-${i}-photo`}
+              variant="button"
+              maxDim={800}
+              onPicked={(blob) =>
+                up((x) => {
+                  const car = x[i]!;
+                  car.photoBlob = blob;
+                  car.photoPreview = URL.createObjectURL(blob);
+                  delete car.photoId;
+                  return x;
+                })
+              }
+            >
+              {c.photoPreview || c.photoId ? he.form.carPhotoReplace : he.form.carPhoto}
+            </ImagePicker>
+            {(c.photoPreview || c.photoId) && (
+              <button
+                type="button"
+                class="lnk"
+                onClick={() =>
+                  up((x) => {
+                    const car = x[i]!;
+                    delete car.photoId;
+                    delete car.photoBlob;
+                    delete car.photoPreview;
+                    return x;
+                  })
+                }
+              >
+                {he.form.carPhotoRemove}
+              </button>
+            )}
+          </div>
+          <button type="button" class="lnk bad" onClick={() => up((x) => (x.splice(i, 1), x))}>
+            {he.form.removeCar}
+          </button>
+        </div>
+      ))}
+      {cars.length < MAX_CARS && (
+        <button type="button" class="mini" onClick={() => up((x) => (x.push(newCar()), x))}>
+          {he.form.addCar}
+        </button>
+      )}
+    </section>
   );
 }
 

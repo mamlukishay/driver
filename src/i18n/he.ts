@@ -296,8 +296,8 @@ export const he = {
     cars: "רכבים",
     noCars: "עוד אין רכבים בכיוון הזה.",
     offer: (leg: Leg) => `+ אני נוהג/ת ב${legName[leg]}`,
-    noCarInProfile: "כדי להציע הסעה, הוסיפו רכב בפרופיל המשפחה.",
-    toProfile: "להוספת רכב",
+    noCar: "כדי להציע הסעה, הוסיפו רכב.",
+    addCarLink: "להוספת רכב",
     history: "היסטוריה",
     noHistory: "עוד לא היו פעולות.",
     departs: (t: string) => `יציאה ${t}`,
@@ -414,6 +414,16 @@ export const he = {
     notRegistered: "עוד לא בחרתם משפחה בטלפון הזה.",
     notYou: "לא אתם?",
     switchFamily: "החלפת משפחה",
+  },
+
+  cars: {
+    title: "הרכבים שלי",
+    /** The car summary card on the family page. */
+    summary: "הרכבים",
+    none: "עוד לא הוספתם רכב",
+    seats: seatsText,
+    manage: "ניהול הרכבים",
+    saved: "הרכבים נשמרו",
   },
 
   kid: {
