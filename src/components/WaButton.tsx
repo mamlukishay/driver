@@ -8,16 +8,18 @@ export function WaButton({
   class: cls = "btn wa",
   children,
   label,
+  onClick,
 }: {
   phone?: string;
   text: string;
   class?: string;
   children: ComponentChildren;
   label?: string;
+  onClick?: () => void;
 }) {
   const href = (phone && waPersonUrl(phone, text)) || waChooserUrl(text);
   return (
-    <a class={cls} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
+    <a class={cls} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} onClick={onClick}>
       <WaIcon />
       <span>{children}</span>
     </a>
