@@ -242,6 +242,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
 .pdots i.c{background:var(--accent);inline-size:24px}
 .acard{background:var(--surface);border:2px solid var(--accent);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px}
 .acard.dim{border-color:var(--line)}
+.acard.donec{border-color:var(--ok)}
 .lbl2{font-size:12.5px;font-weight:700;color:var(--ink-2)}
 .anames{font-family:var(--ff-display);font-weight:400;font-size:27px;line-height:1.15}
 .addr{display:flex;gap:6px;align-items:center;font-size:16px;font-weight:500}
@@ -311,6 +312,17 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
 .tile.end{border-style:dashed;padding:10px 16px;font-size:15px}
 .carok{background:var(--ok);color:var(--asphalt);border-radius:12px;padding:8px 12px;font-weight:700}
 .car .own{background:var(--asphalt-2);color:var(--on-asphalt)}
+
+/* הגענו */
+.brow{display:flex;gap:8px;inline-size:100%}
+.brow .btn.xl{flex:1;min-inline-size:0;font-size:18px;padding-inline:10px}
+.brow .btn.endb{flex:none;inline-size:auto;padding-inline:18px}
+.alist li.end{border-style:dashed}
+.alist li.end svg{flex:none;color:var(--ink-3)}
+.tile-go{inline-size:100%;min-block-size:84px;color:var(--on-asphalt);font-weight:700;font-size:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+.tile-go small{font-size:13px;font-weight:500;opacity:.85}
+.tile-go.hot{background:var(--ok);color:var(--asphalt);border-color:var(--ok)}
+.rt-n.end .rt-pend{align-items:center}
 
 /* time chips */
 .chips2{display:flex;flex-direction:column;gap:6px;min-inline-size:0}
@@ -423,10 +435,10 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="a"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← לשלוח לכל משפחה ← סיום</li><li>"הגעתי" ← "אספתי ✓" בכל עצירה</li><li>שבב "5 דק׳": מה שרואים בדף הילד</li><li>סדר אחר: "כל העצירות" ← "אספתי ✓" ליד עומר, או הקשה על עומר כדי לפתוח אותו בכרטיס</li><li>"עוד" בכרטיס: איש הקשר השני</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← לשלוח לכל משפחה ← סיום</li><li>"הגעתי" ← "אספתי ✓" בכל עצירה</li><li>שבב "5 דק׳": מה שרואים בדף הילד</li><li>סדר אחר: "כל העצירות" ← "אספתי ✓" ליד עומר, או הקשה על עומר כדי לפתוח אותו בכרטיס</li><li>"עוד" בכרטיס: איש הקשר השני</li><li>"הגענו" בבר אחרי האיסוף האחרון (או ב"כל העצירות" לפני כן)</li></ol></div>
         <div class="w-pc">
           <div class="pro"><h3>בעד</h3><ul><li>אפס מחשבה: תמיד ברור מה הצעד הבא</li><li>מטרות לחיצה ענקיות, בטוח בטלפון שמחובר למתקן ברכב</li><li>הניווט הוא הכפתור הגדול בכרטיס</li><li>איש קשר אחד גלוי; השני ב"עוד"</li></ul></div>
-          <div class="con"><h3>נגד</h3><ul><li>מסתיר את התמונה הכוללת: מי כבר ברכב, מי עוד מחכה</li><li>איסוף בסדר אחר רחוק בצעד אחד יותר מאשר ב-B: קודם פותחים את "כל העצירות", ורק אז מגיעים ל"אספתי ✓" של עצירה אחרת</li><li>"הגענו" בסוף הוא <span class="newtag">פעולה חדשה</span>; בלעדיו ההסעה נגמרת לפי השעה</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>מסתיר את התמונה הכוללת: מי כבר ברכב, מי עוד מחכה</li><li>איסוף בסדר אחר רחוק בצעד אחד יותר מאשר ב-B: קודם פותחים את "כל העצירות", ורק אז מגיעים ל"אספתי ✓" של עצירה אחרת</li><li>לפני שכולם נאספו, "הגענו" נמצא רק בתוך "כל העצירות"</li></ul></div>
         </div>
       </div>
     </div>
@@ -443,7 +455,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="b"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← "לעדכן את הנוסעים?" ← שליחה לכל משפחה</li><li>בעצירה הפתוחה: שבב זמן, "הגעתי" ← "אספתי ✓"</li><li>"אספתי ✓" הקטן ליד עומר, לפני נועה</li><li>הקשה על שורה עם ✓ מבטלת את האיסוף</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← "לעדכן את הנוסעים?" ← שליחה לכל משפחה</li><li>בעצירה הפתוחה: שבב זמן, "הגעתי" ← "אספתי ✓"</li><li>"אספתי ✓" הקטן ליד עומר, לפני נועה</li><li>הקשה על שורה עם ✓ מבטלת את האיסוף</li><li>אחרי האיסוף האחרון: "הגענו" ליד "ניווט לפארק" (ולפני כן, ליד הפארק בכביש)</li></ol></div>
         <div class="w-pc">
           <div class="pro"><h3>בעד</h3><ul><li>תמונה כוללת וגם מיקוד: רואים הכל, פועלים רק בעצירה הנוכחית</li><li>קל לתקן טעות: הקשה על ✓</li><li>סדר אחר בלי שום צעד נוסף: לכל עצירה כפתור משלה</li><li>שתי ההודעות של היום הופכות לשלב אחד ביציאה</li></ul></div>
           <div class="con"><h3>נגד</h3><ul><li>דף ארוך כשיש הרבה עצירות</li><li>יותר עבודת עיצוב (הכביש, המצבים, הבר התחתון)</li></ul></div>
@@ -463,7 +475,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="c"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"אישור שעה" ← שליחה לכל משפחה ← "יצאתי"</li><li>הקשה על אריח, בכל סדר: הגעתי; עוד הקשה: אספתי ✓</li><li>שבבי הזמן מתחת לאריח שנגעת בו אחרון</li><li>⋯ או לחיצה ארוכה: ניווט לכאן ואנשי קשר</li><li>"ביטול" בטוסט, ו"חזרה לפרטים"</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"אישור שעה" ← שליחה לכל משפחה ← "יצאתי"</li><li>הקשה על אריח, בכל סדר: הגעתי; עוד הקשה: אספתי ✓</li><li>שבבי הזמן מתחת לאריח שנגעת בו אחרון</li><li>⋯ או לחיצה ארוכה: ניווט לכאן ואנשי קשר</li><li>"ביטול" בטוסט, ו"חזרה לפרטים"</li><li>אריח "הגענו" אחרי הפארק, זמין כל הנסיעה</li></ol></div>
         <div class="w-pc">
           <div class="pro"><h3>בעד</h3><ul><li>מפריד בין הודעות (בחניה) לנהיגה</li><li>אפשר להבין במבט, גם בשמש ובלילה</li><li>כל אריח בכל סדר; Waze הולך תמיד לעצירה הראשונה שעוד לא נאספה</li></ul></div>
           <div class="con"><h3>נגד</h3><ul><li>שני עיצובים לתחזק</li><li>אריח שמתקדם בהקשה קל ללחוץ בטעות: חייבים טוסט "ביטול"</li><li>לחיצה ארוכה לא מוכרת לכולם</li><li>השינוי הגדול ביותר בקוד</li></ul></div>
@@ -486,14 +498,15 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <thead><tr><th scope="col"></th><th scope="col">A העצירה הבאה</th><th scope="col">B מסלול</th><th scope="col">C לפני / בנסיעה</th></tr></thead>
         <tbody>
           <tr><th scope="row">פעולות גלויות ברגע הזה <small class="muted">(היום: 11 לילד אחד, כ-41 לרכב הזה)</small></th><td><b class="n" data-count="ca2"></b></td><td class="rec"><b class="n" data-count="cb2"></b></td><td><b class="n" data-count="cc2"></b></td></tr>
-          <tr><th scope="row">הקשות להסעה של 3 עצירות <small class="muted">(כולל הודעות וניווט, בלי שבבי זמן, נספר באב-טיפוס)</small></th><td><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה Waze + הגעתי + אספתי = 9 · Waze לפארק 1 · הגענו 1 <span class="newtag">חדש</span></small></td><td class="rec"><b class="n">15</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה ניווט + הגעתי + אספתי = 9 · ניווט לפארק 1</small></td><td><b class="n">15</b><br><small>אישור שעה 1 · הודעות 3 · יצאתי 1 · לכל עצירה Waze + 2 הקשות על האריח = 9 · Waze לפארק 1</small></td></tr>
-          <tr><th scope="row">איסוף בסדר אחר <small class="muted">(עומר, נועה, מאיה ויואב; עם ניווט)</small></th><td><b class="n">18</b> הקשות<br><small>+2: פתיחת "כל העצירות" והקשה על עומר. סימון בלבד: 2 הקשות ("כל העצירות" ← "אספתי ✓")</small></td><td class="rec"><b class="n">16</b> הקשות<br><small>+1: הקשה על עומר לפתוח אותו (בשביל הניווט). סימון בלבד: הקשה אחת על הכפתור שלו</small></td><td><b class="n">16</b> הקשות<br><small>+1: ⋯ ← "ניווט לכאן". סימון בלבד: הקשה על האריח</small></td></tr>
+          <tr><th scope="row">הקשות להסעה של 3 עצירות <small class="muted">(כולל הודעות וניווט, בלי שבבי זמן, נספר באב-טיפוס)</small></th><td><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה Waze + הגעתי + אספתי = 9 · Waze לפארק 1 · הגענו 1</small></td><td class="rec"><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה ניווט + הגעתי + אספתי = 9 · ניווט לפארק 1 · הגענו 1</small></td><td><b class="n">16</b><br><small>אישור שעה 1 · הודעות 3 · יצאתי 1 · לכל עצירה Waze + 2 הקשות על האריח = 9 · Waze לפארק 1 · הגענו 1</small></td></tr>
+          <tr><th scope="row">איסוף בסדר אחר <small class="muted">(עומר, נועה, מאיה ויואב; עם ניווט)</small></th><td><b class="n">18</b> הקשות<br><small>+2: פתיחת "כל העצירות" והקשה על עומר. סימון בלבד: 2 הקשות ("כל העצירות" ← "אספתי ✓")</small></td><td class="rec"><b class="n">17</b> הקשות<br><small>+1: הקשה על עומר לפתוח אותו (בשביל הניווט). סימון בלבד: הקשה אחת על הכפתור שלו</small></td><td><b class="n">17</b> הקשות<br><small>+1: ⋯ ← "ניווט לכאן". סימון בלבד: הקשה על האריח</small></td></tr>
           <tr><th scope="row">"כמה זמן עד שאגיע" <small class="muted">(שבבים 2/5/10/15, הקשה אחת לעצירה)</small></th><td>בכרטיס הראשי</td><td class="rec">בעצירה הפתוחה</td><td>פס מתחת לאריח שנגעת בו אחרון</td></tr>
+          <tr><th scope="row">"הגענו" (סיום)</th><td>בבר התחתון אחרי האיסוף האחרון; לפני כן ב"כל העצירות"</td><td class="rec">ליד הפארק בכביש; אחרי האיסוף האחרון בבר, ליד "ניווט לפארק"</td><td>אריח גדול אחרי הפארק, כל הנסיעה</td></tr>
           <tr><th scope="row">איפה הניווט</th><td>הכפתור הגדול בכרטיס העצירה</td><td class="rec">בר תחתון קבוע, תמיד אל העצירה הבאה</td><td>שני אריחים גדולים בראש מצב הנסיעה</td></tr>
           <tr><th scope="row">איך שולחים הודעות</th><td>"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון בכרטיס</td><td class="rec">"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון אנשי הקשר של העצירה</td><td>שלב ② ברשימת ההכנה, לפני היציאה; "אני למטה" ב-⋯ / לחיצה ארוכה</td></tr>
           <tr><th scope="row">תיקון טעות</th><td>טוסט "ביטול"; ב"כל העצירות" אפשר לבטל איסוף</td><td class="rec">טוסט "ביטול"; הקשה על שורה עם ✓</td><td>טוסט "ביטול" ← "בוטל · {שם}"</td></tr>
           <tr><th scope="row">סדר אחר</th><td>"כל העצירות" ← "אספתי ✓" ליד כל עצירה, או הקשה שמעבירה אותה לכרטיס</td><td class="rec">כפתור קטן ליד כל עצירה; הקשה על עצירה פותחת אותה</td><td>כל אריח, בכל סדר</td></tr>
-          <tr><th scope="row">היקף שינוי בקוד</th><td>קטן-בינוני (+ "הגענו" אופציונלי, פעולה חדשה)</td><td class="rec">בינוני</td><td>גדול: שני מצבים, עיצוב כהה, לחיצה ארוכה</td></tr><tr><th scope="row">פעולה חדשה ב-reducer</th><td colspan="3">בכולן: פעולה קטנה אחת לשעת ההגעה של עצירה (נשמרת על ה-run). חוץ ממנה, ב-A בלבד: "הגענו" (אופציונלי).</td></tr>
+          <tr><th scope="row">היקף שינוי בקוד</th><td>קטן-בינוני</td><td class="rec">בינוני</td><td>גדול: שני מצבים, עיצוב כהה, לחיצה ארוכה</td></tr><tr><th scope="row">פעולה חדשה ב-reducer</th><td colspan="3">בכולן אותן שתיים: שעת הגעה לעצירה (השבבים, נשמרת על ה-run) ו-<code>endRun</code> ("הגענו").</td></tr>
         </tbody>
       </table>
     </div>
@@ -521,6 +534,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
           <tr><td>השעה עברה, עוד לא "הגעתי"</td><td><b>עוד רגע</b> (אף פעם לא מספר שלילי או "באיחור")</td></tr>
           <tr><td>"הגעתי"</td><td><b>משפחת לוי למטה! 🚗</b></td></tr>
           <tr><td>"אספתי ✓"</td><td><b>עלית לרכב ✓</b></td></tr>
+          <tr><td>"הגענו"</td><td><b>הגעתם ✓</b> (בחזור: <b>הנסיעה הסתיימה</b>)</td></tr>
         </tbody></table>
       </article>
       <article class="w-card">
@@ -541,12 +555,24 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     <h2 id="rules-h">משותף לכל החלופות</h2>
     <div class="w-cards">
       <article class="w-card">
-        <span class="lbl">1 · המשפחה של הנהג</span>
-        <h3>לא "מודיעים" לעצמנו</h3>
+        <span class="lbl">1 · המשפחה של הנהג <span class="tag ok">הוחלט</span></span>
+        <h3>הילדים של הנהג תמיד כבר ברכב</h3>
         <ul class="w-ul">
-          <li>המשפחה של הנהג לא מופיעה בעדכון הנוסעים, אף פעם.</li>
-          <li>בהלוך, הילדים של הנהג כבר ברכב מההתחלה: שורה אחת "איתי איתך ברכב", בלי עצירה ובלי כפתורים.</li>
-          <li>בחזור הם עולים בפארק עם כולם ומקבלים "אספתי ✓" כמו כולם.</li>
+          <li>הם אף פעם לא עצירה, ואף פעם לא מקבלים עדכון.</li>
+          <li>בהלוך: שורה אחת "איתי איתך ברכב", בלי כפתורים.</li>
+          <li>בחזור הם עולים בפארק כמו כולם: "אספתי ✓" בעצירה של הפארק, בלי סימון מראש.</li>
+        </ul>
+      </article>
+      <article class="w-card">
+        <span class="lbl">סיום <span class="tag ok">הוחלט</span></span>
+        <h3>"הגענו" מסיים את הנסיעה</h3>
+        <ul class="w-ul">
+          <li>בכל שלוש החלופות. זמין כל הזמן מרגע "יצאתי", גם אם לא כולם נאספו.</li>
+          <li>בלי אישור: רק טוסט "הנסיעה הסתיימה · ביטול".</li>
+          <li>בדפי כל הילדים ברכב: "הגעתם ✓" (בחזור: "הנסיעה הסתיימה").</li>
+          <li>אצל הנהג: מצב סיום קצר עם סיכום ("4 נוסעים · 16:24") וקישור חזרה לאירוע.</li>
+          <li>פעולה חדשה אחת ב-reducer: <code>endRun</code>.</li>
+          <li>הסיום לפי השעה נשאר כגיבוי כשהנהג שוכח: 30 דקות אחרי ההתחלה בהלוך, 90 דקות אחרי שעת האיסוף בחזור.</li>
         </ul>
       </article>
       <article class="w-card">
@@ -586,7 +612,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
           <li>כפתור אחד שמתקדם: הגעתי (<code>setArrived</code>) ← אספתי ✓ (<code>setPicked</code>).</li>
           <li>באחים שבאותה עצירה, "אספתי ✓" אחד שולח <code>setPicked</code> לכל אחד מהם.</li>
           <li>כל שינוי מצב: טוסט עם "ביטול".</li>
-          <li>פעולה חדשה אחת בכולן: שעת הגעה לעצירה (השבבים). ב-A גם "הגענו" (<span class="newtag">פעולה חדשה</span>).</li>
+          <li>שתי פעולות חדשות ב-reducer, זהות בכל החלופות: שעת הגעה לעצירה (השבבים) ו-<code>endRun</code> ("הגענו").</li>
         </ul>
       </article>
       <article class="w-card">
@@ -610,10 +636,10 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
       <article class="w-card">
         <span class="lbl">6 · חזור</span>
         <h3>עצירה אחת בפארק, ואז הביתה</h3>
-        <p class="small">בחזור כולם עולים בפארק: עצירה אחת, ובה "אספתי ✓" לכל ילד (כולל איתי). הבתים הם רק יעדי ניווט, בלי פעולות.</p>
+        <p class="small">בחזור כולם עולים בפארק: עצירה אחת, ובה "אספתי ✓" לכל ילד (כולל איתי, שלא מסומן מראש). הבתים הם רק יעדי ניווט, בלי פעולות. בסוף "הגענו".</p>
         <div class="mm" aria-label="דוגמה לחזור">
           <b>פארק הירקון, שער רוקח · 19:00</b>
-          <div class="mm-r"><span class="av" style="--fc:var(--f1)">א</span><b>איתי</b><span class="tag ok">אספתי ✓</span></div>
+          <div class="mm-r"><span class="av" style="--fc:var(--f1)">א</span><b>איתי</b><span class="btn sm">אספתי ✓</span></div>
           <div class="mm-r"><span class="av" style="--fc:var(--f2)">נ</span><b>נועה</b><span class="btn sm">אספתי ✓</span></div>
           <div class="mm-r"><span class="av" style="--fc:var(--f4)">מ</span><b>מאיה</b><span class="btn sm">אספתי ✓</span></div>
           <div class="small muted">ואז ניווט בלבד:</div>
@@ -628,7 +654,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     <div class="w-rec">
       <h2 id="rec-h">המלצת הארכיטקט</h2>
       <p><b>B, מסלול</b>, עם שני דברים מהחלופות האחרות: מ-A, פעולה ראשית אחת וענקית בבר התחתון; מ-C, ההודעות קורות פעם אחת, ביציאה, בגיליון אחד.</p>
-      <p>B נותן גם תמונה כוללת וגם מיקוד: רואים מי כבר ברכב ומי מחכה, ופועלים רק בעצירה הנוכחית. טעות מתוקנת בהקשה על ✓, ואיסוף בסדר אחר הוא פשוט הקשה על עצירה אחרת. B מטפל בסדר אחר בלי שום צעד נוסף: לכל עצירה שמחכה יש כפתור משלה, והעצירה הפתוחה והניווט זזים לבד. הוא נשען על סדר האיסוף הקיים (<code>pickupStops</code>, כהצעה) ועל הפעולות שכבר קיימות (<code>startRun</code>, <code>setArrived</code>, <code>setPicked</code>), ועוד פעולה קטנה אחת לשעת ההגעה.</p>
+      <p>B נותן גם תמונה כוללת וגם מיקוד: רואים מי כבר ברכב ומי מחכה, ופועלים רק בעצירה הנוכחית. טעות מתוקנת בהקשה על ✓, ואיסוף בסדר אחר הוא פשוט הקשה על עצירה אחרת. B מטפל בסדר אחר בלי שום צעד נוסף: לכל עצירה שמחכה יש כפתור משלה, והעצירה הפתוחה והניווט זזים לבד. הוא נשען על סדר האיסוף הקיים (<code>pickupStops</code>, כהצעה) ועל הפעולות שכבר קיימות (<code>startRun</code>, <code>setArrived</code>, <code>setPicked</code>), ועוד שתי פעולות קטנות שכל החלופות צריכות: שעת הגעה ו-<code>endRun</code> ("הגענו"). ב-B "הגענו" יושב ליד הפארק במסלול, ואחרי האיסוף האחרון עובר לבר התחתון ליד "ניווט לפארק".</p>
     </div>
   </section>
 
@@ -636,8 +662,6 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
   <section class="w-sec" id="q" aria-labelledby="q-h">
     <h2 id="q-h">שאלות פתוחות</h2>
     <ol class="w-q">
-      <li><div>הילד של הנהג באמת נחשב "ברכב" אוטומטית בהלוך?<small>ומה אם ההורה השני מביא אותו, או שהוא מצטרף מבית של חבר? אולי שורה "איתי איתך ברכב" עם "לא איתי" קטן.</small></div></li>
-      <li><div>להוסיף "הגענו / הורדתי את כולם" שמסיים את ההסעה, או להמשיך לסיים לפי השעה?<small>פעולה חדשה ב-reducer. היום ההסעה "נגמרת" 30 דקות אחרי ההתחלה.</small></div></li>
       <li><div>האם "הגעתי" צריך לפתוח מיד את ה-WhatsApp "אני למטה", או להישאר אייקון נפרד?<small>מיד = פחות הקשות, אבל יוצאים מהאפליקציה בכל עצירה, גם כשהילד כבר רואה "משפחת לוי למטה!" בדף שלו.</small></div></li>
       <li><div>Waze כברירת מחדל, או לזכור את הבחירה של כל נהג?<small>למשל: מי שהקיש פעם על Maps יקבל Maps בכפתור הגדול.</small></div></li>
       <li><div>האם "יצאתי" צריך לשאול מיד "בעוד כמה זמן לעצירה הראשונה?"<small>שתי הגרסאות למטה (על B).</small></div></li>
@@ -740,7 +764,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     if (n === "x" || n >= 1) { s.started = true; s.depOk = true; s.mode = "car"; STOPS.forEach(function (x) { s.sent[x.fam] = true; }); }
     if (n === "x") { s.st = [0, 0, 2]; return s; }
     for (var i = 0; i < 3; i++) s.st[i] = Math.max(0, Math.min(2, n - 1 - 2 * i));
-    if (n >= 8) s.venue = true;
+    if (n >= 8) { s.venue = true; s.endAt = "16:24"; }
     return s;
   }
   function key(s) { return JSON.stringify([s.started, s.st, s.venue]); }
@@ -796,6 +820,16 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
       (e ? '<p class="kidsee">בדף של ' + names(i) + ": «הגעה בערך ב-" + e.at + "» · עודכן ב-" + e.set + "</p>" : '<p class="small muted ksee">בדף של ' + names(i) + ": «בדרך», בלי שעה</p>") + "</div>";
   }
 
+  /* ---------- done state ("הגענו", shared by A, B, C) ---------- */
+  function paxCount(s) { var n = 0; STOPS.forEach(function (x, i) { if (s.st[i] === 2) n += x.kids.length; }); return n; }
+  function renderDone(s) {
+    var h = hdr() + '<div class="content">' + evl() + '<section class="acard donec" aria-label="הנסיעה הסתיימה"><span class="lbl2">הנסיעה הסתיימה</span><h3 class="anames">הגענו ✓</h3>' +
+      '<p class="addr">' + I.pin + VENUE.full + '</p><p><b>' + (paxCount(s) === 1 ? "נוסע אחד" : paxCount(s) + " נוסעים") + " · " + s.endAt + "</b></p>" +
+      '<p class="kidsee">בדפי הילדים: «הגעתם ✓»</p></section>' + own() +
+      '<button type="button" class="lnk" data-act="toevent" style="align-self:center">חזרה לאירוע</button></div>';
+    return { body: h, bar: "" };
+  }
+
   /* ---------- A · next stop ---------- */
   function renderA(s) {
     var cur = current(s, "a"), done = picked(s), h = hdr() + '<div class="content">' + evl();
@@ -815,9 +849,9 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         '<button type="button" class="mini" data-act="contact" data-arg="' + i + '">עוד</button></div></section>' +
         '<div class="navbig"><button type="button" class="btn xl dark" data-act="waze" data-arg="' + i + '">' + I.nav + "ניווט ל" + names(i) + '</button><button type="button" class="lnk" data-act="maps">Google Maps · כל העצירות</button></div>';
     } else {
-      h += '<section class="acard' + (s.venue ? " dim" : "") + '"><span class="lbl2">' + (s.venue ? "הגעתם · 16:27" : "היעד") + '</span><h3 class="anames">' + VENUE.name + '</h3><p class="addr">' + I.pin + VENUE.gate + " · יום הולדת לנועה 16:30</p>" +
-        '<p class="small muted">' + (s.venue ? "ההסעה הסתיימה. בדפי הילדים: «ההסעה הזאת הסתיימה»." : "כולם ברכב ✓ · " + OWN + ", נועה, מאיה, יואב, עומר · " + VENUE.eta) + "</p></section>";
-      if (!s.venue) h += '<div class="navbig"><button type="button" class="btn xl dark" data-act="waze" data-arg="v">' + I.nav + 'ניווט לפארק</button></div>';
+      h += '<section class="acard"><span class="lbl2">היעד</span><h3 class="anames">' + VENUE.name + '</h3><p class="addr">' + I.pin + VENUE.gate + " · יום הולדת לנועה 16:30</p>" +
+        '<p class="small muted">' + "כולם ברכב ✓ · " + OWN + ", נועה, מאיה, יואב, עומר · " + VENUE.eta + "</p></section>";
+      h += '<div class="navbig"><button type="button" class="btn xl dark" data-act="waze" data-arg="v">' + I.nav + 'ניווט לפארק</button></div>';
     }
     if (s.started) {
       h += '<button type="button" class="arow" data-act="list" aria-expanded="' + s.list + '"><span>כל העצירות · אספתי ' + done + "/3</span>" + I.chev + "</button>";
@@ -828,14 +862,14 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
           var main = k === cur || s.st[k] === 2 ? '<div class="lrow">' + inner + "</div>" : '<button type="button" class="lrow" data-act="focus" data-arg="' + k + '" aria-label="לעצור קודם אצל ' + names(k) + '">' + inner + "</button>";
           return '<li class="' + (s.st[k] === 2 ? "done" : k === cur ? "cur" : "") + '">' + main +
             (s.st[k] === 2 ? '<button type="button" class="mini" data-act="unpick" data-arg="' + k + '">ביטול</button>' : k !== cur ? '<button type="button" class="mini" data-act="pick" data-arg="' + k + '">אספתי ✓</button>' : "") + "</li>";
-        }).join("") + "</ol>";
+        }).join("") + (cur >= 0 ? '<li class="end">' + I.flag + '<span class="grow1"><b>' + VENUE.name + '</b><span class="stt">אפשר לסיים גם לפני שכולם נאספו</span></span><button type="button" class="mini" data-act="venue">הגענו</button></li>' : "") + "</ol>";
       }
     }
     h += "</div>";
     var bar = "";
     if (!s.started) bar = '<button type="button" class="btn xl" data-act="start">יצאתי</button>';
     else if (cur >= 0) bar = '<button type="button" class="btn xl" data-act="step" data-arg="' + cur + '">' + (s.st[cur] === 0 ? "הגעתי" : "אספתי ✓") + "</button>";
-    else if (!s.venue) bar = '<button type="button" class="btn xl" data-act="venue">הגענו <span class="newtag">פעולה חדשה</span></button>';
+    else bar = '<button type="button" class="btn xl" data-act="venue">הגענו</button>';
     return { body: h, bar: bar };
   }
 
@@ -863,14 +897,16 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         h += '<li class="rt-n"><span class="rt-m" aria-hidden="true">' + (i + 1) + '</span><div class="rt-row">' + avs(i) + '<span class="grow1"><b>' + names(i) + "</b><small>" + FAM[x.fam].addr + "</small></span>" + tag + "</div></li>";
       }
     });
-    h += '<li class="rt-n end"><span class="rt-m" aria-hidden="true">' + I.flag + '</span><div class="rt-t"><b>' + VENUE.full + "</b><small>יום הולדת לנועה · 16:30</small></div></li></ol>";
+    h += '<li class="rt-n end"><span class="rt-m" aria-hidden="true">' + I.flag + '</span><div class="rt-pend"><div class="rt-t grow1"><b>' + VENUE.full + "</b><small>יום הולדת לנועה · 16:30</small></div>" +
+      (s.started && !all ? '<button type="button" class="btn sm ghost" data-act="venue">הגענו</button>' : "") + "</div></li></ol>";
     if (!s.started) h += '<p class="small muted">הסדר הוא הצעה. אחרי "יצאתי" אפשר לאסוף בכל סדר.</p>';
     h += "</div>";
     var bar;
     if (!s.started) bar = '<button type="button" class="btn xl" data-act="start">יצאתי</button>';
     else {
       var tgt = cur >= 0 ? names(cur) : "פארק הירקון";
-      bar = '<button type="button" class="btn xl" data-act="waze" data-arg="' + (cur >= 0 ? cur : "v") + '">' + I.nav + "ניווט ל" + tgt + '</button><button type="button" class="lnk" data-act="maps">Google Maps · כל העצירות</button>';
+      var nav = '<button type="button" class="btn xl" data-act="waze" data-arg="' + (cur >= 0 ? cur : "v") + '">' + I.nav + "ניווט ל" + tgt + "</button>";
+      bar = (all ? '<div class="brow">' + nav + '<button type="button" class="btn xl dark endb" data-act="venue">הגענו</button></div>' : nav) + '<button type="button" class="lnk" data-act="maps">Google Maps · כל העצירות</button>';
     }
     return { body: h, bar: bar };
   }
@@ -908,7 +944,8 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         '<button type="button" class="tile-more" data-act="contact" data-arg="' + i + '" aria-label="ניווט ואנשי קשר · ' + names(i) + '">⋯</button>' +
         (i === strip ? '<div class="cstrip">' + chips(s, i) + "</div>" : "") + "</div>";
     });
-    h += '<div class="tile end">' + I.flag + " " + VENUE.full + " · 16:30</div>" + own() + "</div>";
+    h += '<div class="tile end">' + I.flag + " " + VENUE.full + " · 16:30</div>" +
+      '<button type="button" class="tile tile-go' + (nx < 0 ? " hot" : "") + '" data-act="venue">הגענו<small>סיום הנסיעה' + (nx >= 0 ? ", גם לפני שכולם נאספו" : "") + "</small></button>" + own() + "</div>";
     return { body: h, bar: "", car: true };
   }
 
@@ -924,7 +961,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     function save(nm) { snap = { s: JSON.parse(JSON.stringify(s)), nm: nm }; }
     function render(keep) {
       var body = el.querySelector(".scr-body"), top = keep && body ? body.scrollTop : 0;
-      var r = v === "a" ? renderA(s) : v === "b" ? renderB(s) : renderC(s);
+      var r = s.venue ? renderDone(s) : v === "a" ? renderA(s) : v === "b" ? renderB(s) : renderC(s);
       var ov = "";
       if (s.sheet === "notify") ov = notifySheet(s);
       else if (s.sheet && s.sheet.indexOf("contact:") === 0) ov = contactSheet(+s.sheet.slice(8), v === "c");
@@ -981,7 +1018,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
           setToast({ html: "בדף של " + names(si) + ": «הגעה בערך ב-" + hm(nm0 + m) + "»" });
           break;
         }
-        case "venue": save("הגענו"); s.venue = true; setToast({ html: "הגענו · 16:27 <span class=\"newtag\">פעולה חדשה</span>", undo: true }); break;
+        case "venue": save("הגענו"); s.venue = true; s.endAt = hm(nowMin(s) + 4); s.sheet = null; setToast({ html: "הנסיעה הסתיימה", undo: true }); break;
         case "undo":
           if (snap) { var nm = snap.nm; s = snap.s; snap = null; s.sheet = null; setToast({ html: "בוטל · " + nm }); }
           break;
@@ -1065,7 +1102,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
   /* ---------- steppers under the phones ---------- */
   document.querySelectorAll("[data-ctrl]").forEach(function (ctrl) {
     var id = ctrl.dataset.ctrl, labels = STEP_LABELS.slice();
-    if (id === "a") labels.push('הגענו <span class="x">חדש</span>');
+    labels.push("הגענו");
     var extra = '<button type="button" data-n="x" aria-pressed="false">סדר אחר: עומר ראשון</button>';
     ctrl.innerHTML = '<div class="w-cnt"><span>פעולות על המסך: <b data-count="' + id + '"></b></span><span class="vs">היום: 11 לילד אחד</span><button type="button" class="w-reset" data-reset>איפוס</button></div>' +
       '<div class="w-steps" role="group" aria-label="קפיצה למצב">' + labels.map(function (l, n) { return '<button type="button" data-n="' + n + '" aria-pressed="false">' + l + "</button>"; }).join("") + extra + "</div>";
