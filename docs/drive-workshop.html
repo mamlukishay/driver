@@ -455,7 +455,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="b"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← "לעדכן את הנוסעים?" ← שליחה לכל משפחה</li><li>בעצירה הפתוחה: שבב זמן, "הגעתי" ← "אספתי ✓"</li><li>"אספתי ✓" הקטן ליד עומר, לפני נועה</li><li>הקשה על שורה עם ✓ מבטלת את האיסוף</li><li>אחרי האיסוף האחרון: "הגענו" ליד "ניווט לפארק" (ולפני כן, ליד הפארק בכביש)</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← "לעדכן את הנוסעים?" ← שליחה לכל משפחה</li><li>בעצירה הפתוחה: שבב זמן, "הגעתי" ← "אספתי ✓"</li><li>"אספתי ✓" הקטן ליד עומר, לפני נועה</li><li>הקשה על שורה עם ✓ מחזירה אותה ל"הגעתי"</li><li>אחרי האיסוף האחרון: "הגענו" ליד "ניווט לפארק" (ולפני כן, ליד הפארק בכביש)</li></ol></div>
         <div class="w-pc">
           <div class="pro"><h3>בעד</h3><ul><li>תמונה כוללת וגם מיקוד: רואים הכל, פועלים רק בעצירה הנוכחית</li><li>קל לתקן טעות: הקשה על ✓</li><li>סדר אחר בלי שום צעד נוסף: לכל עצירה כפתור משלה</li><li>שתי ההודעות של היום הופכות לשלב אחד ביציאה</li></ul></div>
           <div class="con"><h3>נגד</h3><ul><li>דף ארוך כשיש הרבה עצירות</li><li>יותר עבודת עיצוב (הכביש, המצבים, הבר התחתון)</li></ul></div>
@@ -475,10 +475,10 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="c"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"אישור שעה" ← שליחה לכל משפחה ← "יצאתי"</li><li>הקשה על אריח, בכל סדר: הגעתי; עוד הקשה: אספתי ✓</li><li>שבבי הזמן מתחת לאריח שנגעת בו אחרון</li><li>⋯ או לחיצה ארוכה: ניווט לכאן ואנשי קשר</li><li>"ביטול" בטוסט, ו"חזרה לפרטים"</li><li>אריח "הגענו" אחרי הפארק, זמין כל הנסיעה</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"אישור שעה" ← שליחה לכל משפחה ← "יצאתי"</li><li>הקשה על אריח, בכל סדר: הגעתי; עוד הקשה: אספתי ✓</li><li>שבבי הזמן מתחת לאריח שנגעת בו אחרון</li><li>⋯ או לחיצה ארוכה: ניווט לכאן ואנשי קשר</li><li>טעות? ⋯ ← "החזרה למצב קודם"; "חזרה לפרטים" למצב החניה</li><li>אריח "הגענו" אחרי הפארק, זמין כל הנסיעה</li></ol></div>
         <div class="w-pc">
           <div class="pro"><h3>בעד</h3><ul><li>מפריד בין הודעות (בחניה) לנהיגה</li><li>אפשר להבין במבט, גם בשמש ובלילה</li><li>כל אריח בכל סדר; Waze הולך תמיד לעצירה הראשונה שעוד לא נאספה</li></ul></div>
-          <div class="con"><h3>נגד</h3><ul><li>שני עיצובים לתחזק</li><li>אריח שמתקדם בהקשה קל ללחוץ בטעות: חייבים טוסט "ביטול"</li><li>לחיצה ארוכה לא מוכרת לכולם</li><li>השינוי הגדול ביותר בקוד</li></ul></div>
+          <div class="con"><h3>נגד</h3><ul><li>שני עיצובים לתחזק</li><li>אריח שמתקדם בהקשה קל ללחוץ בטעות; מתקנים דרך ⋯</li><li>לחיצה ארוכה לא מוכרת לכולם</li><li>השינוי הגדול ביותר בקוד</li></ul></div>
         </div>
       </div>
     </div>
@@ -504,7 +504,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
           <tr><th scope="row">"הגענו" (סיום)</th><td>בבר התחתון אחרי האיסוף האחרון; לפני כן ב"כל העצירות"</td><td class="rec">ליד הפארק בכביש; אחרי האיסוף האחרון בבר, ליד "ניווט לפארק"</td><td>אריח גדול אחרי הפארק, כל הנסיעה</td></tr>
           <tr><th scope="row">איפה הניווט</th><td>הכפתור הגדול בכרטיס העצירה</td><td class="rec">בר תחתון קבוע, תמיד אל העצירה הבאה</td><td>שני אריחים גדולים בראש מצב הנסיעה</td></tr>
           <tr><th scope="row">איך שולחים הודעות</th><td>"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון בכרטיס</td><td class="rec">"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון אנשי הקשר של העצירה</td><td>שלב ② ברשימת ההכנה, לפני היציאה; "אני למטה" ב-⋯ / לחיצה ארוכה</td></tr>
-          <tr><th scope="row">תיקון טעות</th><td>טוסט "ביטול"; ב"כל העצירות" אפשר לבטל איסוף</td><td class="rec">טוסט "ביטול"; הקשה על שורה עם ✓</td><td>טוסט "ביטול" ← "בוטל · {שם}"</td></tr>
+          <tr><th scope="row">תיקון טעות <small class="muted">(בלי טוסט ביטול)</small></th><td>ב"כל העצירות": הקשה על עצירה שנאספה מחזירה אותה</td><td class="rec">הקשה על שורה עם ✓ מחזירה אותה צעד אחורה</td><td>⋯ ← "החזרה למצב קודם"</td></tr>
           <tr><th scope="row">סדר אחר</th><td>"כל העצירות" ← "אספתי ✓" ליד כל עצירה, או הקשה שמעבירה אותה לכרטיס</td><td class="rec">כפתור קטן ליד כל עצירה; הקשה על עצירה פותחת אותה</td><td>כל אריח, בכל סדר</td></tr>
           <tr><th scope="row">היקף שינוי בקוד</th><td>קטן-בינוני</td><td class="rec">בינוני</td><td>גדול: שני מצבים, עיצוב כהה, לחיצה ארוכה</td></tr><tr><th scope="row">פעולה חדשה ב-reducer</th><td colspan="3">בכולן אותן שתיים: שעת הגעה לעצירה (השבבים, נשמרת על ה-run) ו-<code>endRun</code> ("הגענו").</td></tr>
         </tbody>
@@ -568,7 +568,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <h3>"הגענו" מסיים את הנסיעה</h3>
         <ul class="w-ul">
           <li>בכל שלוש החלופות. זמין כל הזמן מרגע "יצאתי", גם אם לא כולם נאספו.</li>
-          <li>בלי אישור: רק טוסט "הנסיעה הסתיימה · ביטול".</li>
+          <li>בלי אישור; "חזרה לנסיעה" במסך הסיום.</li>
           <li>בדפי כל הילדים ברכב: "הגעתם ✓" (בחזור: "הנסיעה הסתיימה").</li>
           <li>אצל הנהג: מצב סיום קצר עם סיכום ("4 נוסעים · 16:24") וקישור חזרה לאירוע.</li>
           <li>פעולה חדשה אחת ב-reducer: <code>endRun</code>.</li>
@@ -611,7 +611,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
           <li>אין תיבת סימון לצד כפתור שעושה אותו דבר.</li>
           <li>כפתור אחד שמתקדם: הגעתי (<code>setArrived</code>) ← אספתי ✓ (<code>setPicked</code>).</li>
           <li>באחים שבאותה עצירה, "אספתי ✓" אחד שולח <code>setPicked</code> לכל אחד מהם.</li>
-          <li>כל שינוי מצב: טוסט עם "ביטול".</li>
+          <li>בלי טוסט ביטול: מתקנים בהקשה חוזרת על אותה עצירה. (החלטה: KISS; נחזיר אם יתלוננו)</li>
           <li>שתי פעולות חדשות ב-reducer, זהות בכל החלופות: שעת הגעה לעצירה (השבבים) ו-<code>endRun</code> ("הגענו").</li>
         </ul>
       </article>
@@ -624,7 +624,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
             <tr><td class="old">מוכן/ה ✓</td><td class="new">✓ מחכה</td></tr>
             <tr><td class="old">הודיעו להורים שיצאת + שיתוף עם הנוסעים</td><td class="new">עדכון הנוסעים</td></tr>
             <tr><td class="old">בדרך (תגית)</td><td class="new">אספתי 1 מתוך 3</td></tr><tr><td class="old">את/ה הבא/ה בתור (דף הילד)</td><td class="new">הגעה בערך ב-16:10</td></tr>
-            <tr><td class="old">הגעתי ✓ (מתג)</td><td class="new">הגעתי (שלב, עם ביטול)</td></tr>
+            <tr><td class="old">הגעתי ✓ (מתג)</td><td class="new">הגעתי (שלב; מתקנים בהקשה חוזרת)</td></tr>
             <tr><td class="old">שליחה לתוני / WhatsApp לתוני / WhatsApp לישי</td><td class="new">אייקון WhatsApp אחד: "אני למטה"</td></tr>
             <tr><td class="old">התקשרות + מספר כקישור</td><td class="new">אייקון חיוג; המספר בגיליון</td></tr>
             <tr><td class="old">טלפון הילד/ה</td><td class="new">הטלפון של נועה</td></tr>
@@ -799,11 +799,12 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
       (any ? '<button type="button" class="btn big" data-act="close">סיום</button>' : '<button type="button" class="lnk" data-act="close" style="align-self:center">דלג</button>') +
       "</div></div>";
   }
-  function contactSheet(i, nav) {
+  function contactSheet(i, nav, st) {
     var cs = contacts(i);
     return '<div class="ov"><button type="button" class="scrim" data-act="close" data-nc aria-label="סגירה"></button><div class="sheet" role="dialog" aria-modal="true" aria-label="אנשי קשר"><span class="grab" aria-hidden="true"></span>' +
       '<div class="sheet-h">' + avs(i) + "<h3>" + names(i) + ' <small class="muted" style="font-size:13px;font-weight:400">' + FAM[STOPS[i].fam].name + '</small></h3><button type="button" class="xbtn" data-act="close" data-nc aria-label="סגירה">×</button></div>' +
       (nav ? '<button type="button" class="btn big dark" data-act="waze" data-arg="' + i + '">' + I.nav + "ניווט לכאן · Waze</button>" : "") +
+      (nav && st > 0 ? '<button type="button" class="btn big ghost" data-act="back" data-arg="' + i + '">החזרה למצב קודם <small class="muted">(' + (st === 2 ? "אספתי ✓ ← הגעתי" : "הגעתי ← עוד לא") + ")</small></button>" : "") +
       cs.map(function (c, j) {
         return '<div class="crow"><div class="grow1"><b>' + esc(c.name) + (j === 0 ? ' <span class="tag ok">ראשי</span>' : "") + "</b><small>" + esc(c.role) + '</small></div><span class="phone" dir="ltr">' + c.phone + "</span>" +
           '<button type="button" class="rnd sm" data-act="call" data-arg="' + i + ":" + j + '" aria-label="התקשרות ל' + esc(c.name) + '">' + I.phone + "</button>" +
@@ -826,7 +827,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     var h = hdr() + '<div class="content">' + evl() + '<section class="acard donec" aria-label="הנסיעה הסתיימה"><span class="lbl2">הנסיעה הסתיימה</span><h3 class="anames">הגענו ✓</h3>' +
       '<p class="addr">' + I.pin + VENUE.full + '</p><p><b>' + (paxCount(s) === 1 ? "נוסע אחד" : paxCount(s) + " נוסעים") + " · " + s.endAt + "</b></p>" +
       '<p class="kidsee">בדפי הילדים: «הגעתם ✓»</p></section>' + own() +
-      '<button type="button" class="lnk" data-act="toevent" style="align-self:center">חזרה לאירוע</button></div>';
+      '<div class="row" style="justify-content:center;gap:20px"><button type="button" class="lnk" data-act="reopen">חזרה לנסיעה</button><button type="button" class="lnk" data-act="toevent">חזרה לאירוע</button></div></div>';
     return { body: h, bar: "" };
   }
 
@@ -857,11 +858,11 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
       h += '<button type="button" class="arow" data-act="list" aria-expanded="' + s.list + '"><span>כל העצירות · אספתי ' + done + "/3</span>" + I.chev + "</button>";
       if (s.list) {
         h += '<ol class="alist">' + s.order.map(function (k) {
-          var stt = s.st[k] === 2 ? "אספתי ✓ " + STOPS[k].pick : s.st[k] === 1 ? "הגעתי ✓" : k === cur ? "בפוקוס" : "ממתין";
+          var stt = s.st[k] === 2 ? "אספתי ✓ " + STOPS[k].pick + " · הקשה מחזירה" : s.st[k] === 1 ? "הגעתי ✓" : k === cur ? "בפוקוס" : "ממתין";
           var inner = avs(k) + '<span class="grow1"><b>' + names(k) + '</b><span class="stt">' + short(FAM[STOPS[k].fam].addr) + " · " + stt + "</span></span>";
-          var main = k === cur || s.st[k] === 2 ? '<div class="lrow">' + inner + "</div>" : '<button type="button" class="lrow" data-act="focus" data-arg="' + k + '" aria-label="לעצור קודם אצל ' + names(k) + '">' + inner + "</button>";
+          var main = s.st[k] === 2 ? '<button type="button" class="lrow" data-act="unpick" data-arg="' + k + '" aria-label="החזרה ל״הגעתי״ · ' + names(k) + '">' + inner + "</button>" : k === cur ? '<div class="lrow">' + inner + "</div>" : '<button type="button" class="lrow" data-act="focus" data-arg="' + k + '" aria-label="לעצור קודם אצל ' + names(k) + '">' + inner + "</button>";
           return '<li class="' + (s.st[k] === 2 ? "done" : k === cur ? "cur" : "") + '">' + main +
-            (s.st[k] === 2 ? '<button type="button" class="mini" data-act="unpick" data-arg="' + k + '">ביטול</button>' : k !== cur ? '<button type="button" class="mini" data-act="pick" data-arg="' + k + '">אספתי ✓</button>' : "") + "</li>";
+            (s.st[k] === 2 ? "" : k !== cur ? '<button type="button" class="mini" data-act="pick" data-arg="' + k + '">אספתי ✓</button>' : "") + "</li>";
         }).join("") + (cur >= 0 ? '<li class="end">' + I.flag + '<span class="grow1"><b>' + VENUE.name + '</b><span class="stt">אפשר לסיים גם לפני שכולם נאספו</span></span><button type="button" class="mini" data-act="venue">הגענו</button></li>' : "") + "</ol>";
       }
     }
@@ -884,7 +885,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     STOPS.forEach(function (x, i) {
       var tag = x.ready && s.st[i] < 2 ? '<span class="tag ok">✓ מחכה</span>' : "";
       if (s.st[i] === 2) {
-        h += '<li class="rt-n done"><span class="rt-m" aria-hidden="true">✓</span><button type="button" class="rt-row" data-act="unpick" data-arg="' + i + '" aria-label="ביטול אספתי · ' + names(i) + '">' + avs(i) + '<span class="grow1"><b>' + names(i) + "</b><small>אספתי ✓ " + x.pick + " · הקשה מבטלת</small></span></button></li>";
+        h += '<li class="rt-n done"><span class="rt-m" aria-hidden="true">✓</span><button type="button" class="rt-row" data-act="unpick" data-arg="' + i + '" aria-label="החזרה ל״הגעתי״ · ' + names(i) + '">' + avs(i) + '<span class="grow1"><b>' + names(i) + "</b><small>אספתי ✓ " + x.pick + " · הקשה מחזירה</small></span></button></li>";
       } else if (i === cur) {
         h += '<li class="rt-n cur"><span class="rt-m" aria-hidden="true">' + (i + 1) + '</span><div class="rt-card"><div class="row">' + avs(i, "lg") + '<div class="grow1"><h3 class="anames">' + names(i) + '</h3><small class="muted">' + FAM[x.fam].name + "</small></div>" + tag + "</div>" +
           '<p class="addr">' + I.pin + FAM[x.fam].addr + "</p>" + (s.st[i] === 1 ? kidsee(i) : chips(s, i)) +
@@ -953,22 +954,21 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
   var phones = {};
   function Phone(el, v, id, initStep) {
     var s = initStep ? stepState(initStep) : fresh();
-    var snap = null, timer = null, lpTimer = null, lpFired = false;
+    var timer = null, lpTimer = null, lpFired = false;
     function setToast(t) {
       s.toast = t; clearTimeout(timer);
-      if (t) timer = setTimeout(function () { s.toast = null; render(true); }, t.undo ? 7000 : 4500);
+      if (t) timer = setTimeout(function () { s.toast = null; render(true); }, 4500);
     }
-    function save(nm) { snap = { s: JSON.parse(JSON.stringify(s)), nm: nm }; }
     function render(keep) {
       var body = el.querySelector(".scr-body"), top = keep && body ? body.scrollTop : 0;
       var r = s.venue ? renderDone(s) : v === "a" ? renderA(s) : v === "b" ? renderB(s) : renderC(s);
       var ov = "";
       if (s.sheet === "notify") ov = notifySheet(s);
-      else if (s.sheet && s.sheet.indexOf("contact:") === 0) ov = contactSheet(+s.sheet.slice(8), v === "c");
+      else if (s.sheet && s.sheet.indexOf("contact:") === 0) ov = contactSheet(+s.sheet.slice(8), v === "c", s.st[+s.sheet.slice(8)]);
       var t = s.toast;
       el.classList.toggle("car", !!r.car);
       el.innerHTML = sbar(r.car) + '<div class="scr-body">' + r.body + "</div>" + (r.bar ? '<div class="bbar">' + r.bar + "</div>" : "") + ov +
-        '<div class="toast-live' + (r.bar ? " hi" : "") + '" aria-live="polite">' + (t ? '<div class="toast"><span>' + t.html + "</span>" + (t.undo ? '<button type="button" data-act="undo" data-nc>ביטול</button>' : "") + "</div>" : "") + "</div>";
+        '<div class="toast-live' + (r.bar ? " hi" : "") + '" aria-live="polite">' + (t ? '<div class="toast"><span>' + t.html + "</span>" + "</div>" : "") + "</div>";
       body = el.querySelector(".scr-body");
       if (keep) body.scrollTop = top;
       sync();
@@ -989,8 +989,8 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
       var i = arg != null && arg !== "v" ? +arg : null;
       switch (a) {
         case "start":
-          save("יצאתי"); s.started = true; s.focus = null;
-          if (v === "c") { s.mode = "car"; s.depOk = true; setToast({ html: "יצאתי 16:02 · בדפי הילדים: «משפחת לוי יצאה לדרך»", undo: true }); }
+          s.started = true; s.focus = null;
+          if (v === "c") { s.mode = "car"; s.depOk = true; setToast(null); }
           else { s.sheet = "notify"; setToast(null); }
           break;
         case "send": s.sent[arg] = true; break;
@@ -1001,27 +1001,28 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         case "focus": s.focus = i; s.cf = i; break;
         case "step":
           if (s.st[i] >= 2) return;
-          save(names(i)); s.st[i]++; s.cf = i; if (s.st[i] === 2 && s.focus === i) s.focus = null;
-          setToast({ html: (s.st[i] === 1 ? "הגעתי" : "אספתי ✓") + " · " + names(i), undo: true });
+          s.st[i]++; s.cf = i; if (s.st[i] === 2 && s.focus === i) s.focus = null;
+          setToast(null);
           break;
         case "pick":
-          save(names(i)); s.st[i] = 2; if (s.focus === i) s.focus = null;
-          setToast({ html: "אספתי ✓ · " + names(i), undo: true });
+          s.st[i] = 2; if (s.focus === i) s.focus = null;
+          setToast(null);
           break;
         case "unpick":
-          save(names(i)); s.st[i] = 1; s.focus = i;
-          setToast({ html: "בוטל · אספתי · " + names(i), undo: true });
+          s.st[i] = 1; s.focus = i;
+          setToast(null);
+          break;
+        case "back":
+          if (s.st[i] > 0) s.st[i]--; s.sheet = null; s.cf = i;
+          setToast(null);
           break;
         case "eta": {
           var q = arg.split(":"), si = +q[0], m = +q[1], nm0 = nowMin(s);
           s.eta[si] = { m: m, at: hm(nm0 + m), set: hm(nm0) };
-          setToast({ html: "בדף של " + names(si) + ": «הגעה בערך ב-" + hm(nm0 + m) + "»" });
           break;
         }
-        case "venue": save("הגענו"); s.venue = true; s.endAt = hm(nowMin(s) + 4); s.sheet = null; setToast({ html: "הנסיעה הסתיימה", undo: true }); break;
-        case "undo":
-          if (snap) { var nm = snap.nm; s = snap.s; snap = null; s.sheet = null; setToast({ html: "בוטל · " + nm }); }
-          break;
+        case "venue": s.venue = true; s.endAt = hm(nowMin(s) + 4); s.sheet = null; setToast(null); break;
+        case "reopen": s.venue = false; setToast(null); break;
         case "contact": s.sheet = "contact:" + i; s.cf = i; break;
         case "call": case "wa": {
           var p = arg.split(":"), c = contacts(+p[0])[+p[1]];
@@ -1052,8 +1053,8 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     el.addEventListener("contextmenu", function (ev) { if (ev.target.closest("[data-lp]")) ev.preventDefault(); });
     render(false);
     return {
-      go: function (n) { s = stepState(n); snap = null; setToast(null); if (v === "c" && n === 0) s.mode = "prep"; render(false); },
-      reset: function () { s = fresh(); snap = null; setToast(null); render(false); }
+      go: function (n) { s = stepState(n); setToast(null); if (v === "c" && n === 0) s.mode = "prep"; render(false); },
+      reset: function () { s = fresh(); setToast(null); render(false); }
     };
   }
 
