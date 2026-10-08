@@ -292,11 +292,6 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
 .cart{display:flex;align-items:center;justify-content:space-between;gap:8px;min-block-size:44px}
 .cart .lnk{color:var(--on-asphalt);font-size:14.5px}
 .cart b{font-size:15px}
-.cnav{display:grid;grid-template-columns:1.5fr 1fr;gap:10px}
-.cnav button{min-block-size:78px;border-radius:16px;border:0;font-weight:700;font-size:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:6px}
-.cnav button small{font-size:13px;font-weight:500}
-.cnav .wz{background:var(--accent);color:var(--on-accent)}
-.cnav .mp{background:var(--asphalt-2);color:var(--on-asphalt);border:1.5px solid var(--on-asphalt-2)}
 .tile{position:relative;border-radius:18px;background:var(--asphalt-2);border:2px solid var(--on-asphalt-2)}
 .tile-b{inline-size:100%;min-block-size:108px;border:0;background:transparent;color:inherit;text-align:start;padding:12px 16px;padding-inline-end:64px;display:flex;flex-direction:column;align-items:flex-start;gap:0;border-radius:16px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .tile-n{font-family:var(--ff-mono);font-size:12.5px;opacity:.8}
@@ -313,9 +308,31 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
 .carok{background:var(--ok);color:var(--asphalt);border-radius:12px;padding:8px 12px;font-weight:700}
 .car .own{background:var(--asphalt-2);color:var(--on-asphalt)}
 
+/* navigation button + app picker */
+.nlogo{inline-size:28px;block-size:28px;border-radius:8px;background:#fff;display:grid;place-items:center;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.14)}
+.navb{display:flex;align-items:stretch;inline-size:100%;border-radius:16px;overflow:hidden;background:var(--accent);color:var(--on-accent);flex:1;min-inline-size:0}
+.navb.dark{background:var(--ink);color:var(--bg)}
+.navb button{border:0;background:transparent;color:inherit;font-weight:700;cursor:pointer}
+.navb-go{flex:1;min-inline-size:0;display:flex;align-items:center;justify-content:center;gap:10px;min-block-size:60px;font-size:19px;padding:8px 12px}
+.navb-go span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navb-sel{flex:none;inline-size:48px;min-block-size:44px;border-inline-start:1.5px solid color-mix(in srgb,currentColor 28%,transparent)!important;display:grid;place-items:center}
+.navb.md .navb-go{min-block-size:52px;font-size:17px}
+.navb.car-nav .navb-go{min-block-size:72px;font-size:20px}
+.navb:focus-within{outline:3px solid var(--focus);outline-offset:2px}
+.navopt{display:flex;align-items:center;gap:12px;inline-size:100%;min-block-size:56px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:6px 12px;text-align:start;font-size:16px}
+.navopt[aria-pressed="true"]{border-color:var(--ink);border-width:2px}
+.navopt .ck{font-weight:700;color:var(--ok);font-size:18px}
+.setrow{display:flex;flex-direction:column;gap:6px;border-block-start:1px solid var(--line);padding-block-start:10px}
+.seg2{display:flex;background:var(--sunk);border-radius:12px;padding:3px;gap:3px}
+.seg2 button{flex:1;min-inline-size:0;display:flex;align-items:center;justify-content:center;gap:6px;min-block-size:44px;border:0;background:transparent;border-radius:10px;font-weight:500;font-size:14px;padding:0 4px;white-space:nowrap}
+.seg2 button .nlogo{inline-size:24px;block-size:24px}
+.seg2 button[aria-checked="true"]{background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-weight:700}
+.fdot{inline-size:12px;block-size:12px;border-radius:50%;background:var(--fc);display:inline-block;flex:none}
+.dev.setd{block-size:600px}
+
 /* הגענו */
 .brow{display:flex;gap:8px;inline-size:100%}
-.brow .btn.xl{flex:1;min-inline-size:0;font-size:18px;padding-inline:10px}
+.brow .navb-go{font-size:17px;padding-inline:8px}
 .brow .btn.endb{flex:none;inline-size:auto;padding-inline:18px}
 .alist li.end{border-style:dashed}
 .alist li.end svg{flex:none;color:var(--ink-3)}
@@ -372,6 +389,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
 }
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><clipPath id="gm-pin"><path d="M12 1.8a7.3 7.3 0 00-7.3 7.3c0 5.3 7.3 13.1 7.3 13.1s7.3-7.8 7.3-13.1A7.3 7.3 0 0012 1.8z"/></clipPath></defs></svg>
 <div dir="rtl" lang="he">
 <nav class="w-ctl" aria-label="חלקי הסדנה">
   <div class="w-seg" id="seg">
@@ -435,7 +453,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="a"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← לשלוח לכל משפחה ← סיום</li><li>"הגעתי" ← "אספתי ✓" בכל עצירה</li><li>שבב "5 דק׳": מה שרואים בדף הילד</li><li>סדר אחר: "כל העצירות" ← "אספתי ✓" ליד עומר, או הקשה על עומר כדי לפתוח אותו בכרטיס</li><li>"עוד" בכרטיס: איש הקשר השני</li><li>"הגענו" בבר אחרי האיסוף האחרון (או ב"כל העצירות" לפני כן)</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← לשלוח לכל משפחה ← סיום</li><li>"הגעתי" ← "אספתי ✓" בכל עצירה</li><li>שבב "5 דק׳": מה שרואים בדף הילד</li><li>סדר אחר: "כל העצירות" ← "אספתי ✓" ליד עומר, או הקשה על עומר כדי לפתוח אותו בכרטיס</li><li>"עוד" בכרטיס: איש הקשר השני</li><li>⌄ על כפתור הניווט: Waze או Google Maps (משתנה בכל הטלפונים בדף)</li><li>"הגענו" בבר אחרי האיסוף האחרון (או ב"כל העצירות" לפני כן)</li></ol></div>
         <div class="w-pc">
           <div class="pro"><h3>בעד</h3><ul><li>אפס מחשבה: תמיד ברור מה הצעד הבא</li><li>מטרות לחיצה ענקיות, בטוח בטלפון שמחובר למתקן ברכב</li><li>הניווט הוא הכפתור הגדול בכרטיס</li><li>איש קשר אחד גלוי; השני ב"עוד"</li></ul></div>
           <div class="con"><h3>נגד</h3><ul><li>מסתיר את התמונה הכוללת: מי כבר ברכב, מי עוד מחכה</li><li>איסוף בסדר אחר רחוק בצעד אחד יותר מאשר ב-B: קודם פותחים את "כל העצירות", ורק אז מגיעים ל"אספתי ✓" של עצירה אחרת</li><li>לפני שכולם נאספו, "הגענו" נמצא רק בתוך "כל העצירות"</li></ul></div>
@@ -455,7 +473,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="b"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← "לעדכן את הנוסעים?" ← שליחה לכל משפחה</li><li>בעצירה הפתוחה: שבב זמן, "הגעתי" ← "אספתי ✓"</li><li>"אספתי ✓" הקטן ליד עומר, לפני נועה</li><li>הקשה על שורה עם ✓ מחזירה אותה ל"הגעתי"</li><li>אחרי האיסוף האחרון: "הגענו" ליד "ניווט לפארק" (ולפני כן, ליד הפארק בכביש)</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"יצאתי" ← "לעדכן את הנוסעים?" ← שליחה לכל משפחה</li><li>בעצירה הפתוחה: שבב זמן, "הגעתי" ← "אספתי ✓"</li><li>⌄ על "ניווט ל…": לבחור אפליקציה</li><li>"אספתי ✓" הקטן ליד עומר, לפני נועה</li><li>הקשה על שורה עם ✓ מחזירה אותה ל"הגעתי"</li><li>אחרי האיסוף האחרון: "הגענו" ליד "ניווט לפארק" (ולפני כן, ליד הפארק בכביש)</li></ol></div>
         <div class="w-pc">
           <div class="pro"><h3>בעד</h3><ul><li>תמונה כוללת וגם מיקוד: רואים הכל, פועלים רק בעצירה הנוכחית</li><li>קל לתקן טעות: הקשה על ✓</li><li>סדר אחר בלי שום צעד נוסף: לכל עצירה כפתור משלה</li><li>שתי ההודעות של היום הופכות לשלב אחד ביציאה</li></ul></div>
           <div class="con"><h3>נגד</h3><ul><li>דף ארוך כשיש הרבה עצירות</li><li>יותר עבודת עיצוב (הכביש, המצבים, הבר התחתון)</li></ul></div>
@@ -475,9 +493,9 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <div class="w-ctrl" data-ctrl="c"></div>
       </div>
       <div class="w-side">
-        <div class="w-try"><b>לנסות:</b><ol><li>"אישור שעה" ← שליחה לכל משפחה ← "יצאתי"</li><li>הקשה על אריח, בכל סדר: הגעתי; עוד הקשה: אספתי ✓</li><li>שבבי הזמן מתחת לאריח שנגעת בו אחרון</li><li>⋯ או לחיצה ארוכה: ניווט לכאן ואנשי קשר</li><li>טעות? ⋯ ← "החזרה למצב קודם"; "חזרה לפרטים" למצב החניה</li><li>אריח "הגענו" אחרי הפארק, זמין כל הנסיעה</li></ol></div>
+        <div class="w-try"><b>לנסות:</b><ol><li>"אישור שעה" ← שליחה לכל משפחה ← "יצאתי"</li><li>הקשה על אריח, בכל סדר: הגעתי; עוד הקשה: אספתי ✓</li><li>שבבי הזמן מתחת לאריח שנגעת בו אחרון</li><li>⋯ או לחיצה ארוכה: ניווט לכאן ואנשי קשר</li><li>⌄ על כפתור הניווט: Waze או Google Maps</li><li>טעות? ⋯ ← "החזרה למצב קודם"; "חזרה לפרטים" למצב החניה</li><li>אריח "הגענו" אחרי הפארק, זמין כל הנסיעה</li></ol></div>
         <div class="w-pc">
-          <div class="pro"><h3>בעד</h3><ul><li>מפריד בין הודעות (בחניה) לנהיגה</li><li>אפשר להבין במבט, גם בשמש ובלילה</li><li>כל אריח בכל סדר; Waze הולך תמיד לעצירה הראשונה שעוד לא נאספה</li></ul></div>
+          <div class="pro"><h3>בעד</h3><ul><li>מפריד בין הודעות (בחניה) לנהיגה</li><li>אפשר להבין במבט, גם בשמש ובלילה</li><li>כל אריח בכל סדר; כפתור הניווט הולך תמיד לעצירה הראשונה שעוד לא נאספה</li></ul></div>
           <div class="con"><h3>נגד</h3><ul><li>שני עיצובים לתחזק</li><li>אריח שמתקדם בהקשה קל ללחוץ בטעות; מתקנים דרך ⋯</li><li>לחיצה ארוכה לא מוכרת לכולם</li><li>השינוי הגדול ביותר בקוד</li></ul></div>
         </div>
       </div>
@@ -498,11 +516,11 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         <thead><tr><th scope="col"></th><th scope="col">A העצירה הבאה</th><th scope="col">B מסלול</th><th scope="col">C לפני / בנסיעה</th></tr></thead>
         <tbody>
           <tr><th scope="row">פעולות גלויות ברגע הזה <small class="muted">(היום: 11 לילד אחד, כ-41 לרכב הזה)</small></th><td><b class="n" data-count="ca2"></b></td><td class="rec"><b class="n" data-count="cb2"></b></td><td><b class="n" data-count="cc2"></b></td></tr>
-          <tr><th scope="row">הקשות להסעה של 3 עצירות <small class="muted">(כולל הודעות וניווט, בלי שבבי זמן, נספר באב-טיפוס)</small></th><td><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה Waze + הגעתי + אספתי = 9 · Waze לפארק 1 · הגענו 1</small></td><td class="rec"><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה ניווט + הגעתי + אספתי = 9 · ניווט לפארק 1 · הגענו 1</small></td><td><b class="n">16</b><br><small>אישור שעה 1 · הודעות 3 · יצאתי 1 · לכל עצירה Waze + 2 הקשות על האריח = 9 · Waze לפארק 1 · הגענו 1</small></td></tr>
+          <tr><th scope="row">הקשות להסעה של 3 עצירות <small class="muted">(כולל הודעות וניווט, בלי שבבי זמן, נספר באב-טיפוס)</small></th><td><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה ניווט + הגעתי + אספתי = 9 · ניווט לפארק 1 · הגענו 1</small></td><td class="rec"><b class="n">16</b><br><small>יצאתי 1 · הודעות 3 + סיום 1 · לכל עצירה ניווט + הגעתי + אספתי = 9 · ניווט לפארק 1 · הגענו 1</small></td><td><b class="n">16</b><br><small>אישור שעה 1 · הודעות 3 · יצאתי 1 · לכל עצירה ניווט + 2 הקשות על האריח = 9 · ניווט לפארק 1 · הגענו 1</small></td></tr>
           <tr><th scope="row">איסוף בסדר אחר <small class="muted">(עומר, נועה, מאיה ויואב; עם ניווט)</small></th><td><b class="n">18</b> הקשות<br><small>+2: פתיחת "כל העצירות" והקשה על עומר. סימון בלבד: 2 הקשות ("כל העצירות" ← "אספתי ✓")</small></td><td class="rec"><b class="n">17</b> הקשות<br><small>+1: הקשה על עומר לפתוח אותו (בשביל הניווט). סימון בלבד: הקשה אחת על הכפתור שלו</small></td><td><b class="n">17</b> הקשות<br><small>+1: ⋯ ← "ניווט לכאן". סימון בלבד: הקשה על האריח</small></td></tr>
           <tr><th scope="row">"כמה זמן עד שאגיע" <small class="muted">(שבבים 2/5/10/15, הקשה אחת לעצירה)</small></th><td>בכרטיס הראשי</td><td class="rec">בעצירה הפתוחה</td><td>פס מתחת לאריח שנגעת בו אחרון</td></tr>
           <tr><th scope="row">"הגענו" (סיום)</th><td>בבר התחתון אחרי האיסוף האחרון; לפני כן ב"כל העצירות"</td><td class="rec">ליד הפארק בכביש; אחרי האיסוף האחרון בבר, ליד "ניווט לפארק"</td><td>אריח גדול אחרי הפארק, כל הנסיעה</td></tr>
-          <tr><th scope="row">איפה הניווט</th><td>הכפתור הגדול בכרטיס העצירה</td><td class="rec">בר תחתון קבוע, תמיד אל העצירה הבאה</td><td>שני אריחים גדולים בראש מצב הנסיעה</td></tr>
+          <tr><th scope="row">איפה הניווט <small class="muted">(בכולן: כפתור אחד עם לוגו האפליקציה + ⌄ לבחירה)</small></th><td>הכפתור הגדול בכרטיס העצירה</td><td class="rec">בר תחתון קבוע, תמיד אל העצירה הפתוחה</td><td>כפתור רחב בראש מצב הנסיעה; "ניווט לכאן" ב-⋯</td></tr>
           <tr><th scope="row">איך שולחים הודעות</th><td>"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון בכרטיס</td><td class="rec">"לעדכן את הנוסעים?" אחרי יצאתי; "אני למטה" באייקון אנשי הקשר של העצירה</td><td>שלב ② ברשימת ההכנה, לפני היציאה; "אני למטה" ב-⋯ / לחיצה ארוכה</td></tr>
           <tr><th scope="row">תיקון טעות <small class="muted">(בלי טוסט ביטול)</small></th><td>ב"כל העצירות": הקשה על עצירה שנאספה מחזירה אותה</td><td class="rec">הקשה על שורה עם ✓ מחזירה אותה צעד אחורה</td><td>⋯ ← "החזרה למצב קודם"</td></tr>
           <tr><th scope="row">סדר אחר</th><td>"כל העצירות" ← "אספתי ✓" ליד כל עצירה, או הקשה שמעבירה אותה לכרטיס</td><td class="rec">כפתור קטן ליד כל עצירה; הקשה על עצירה פותחת אותה</td><td>כל אריח, בכל סדר</td></tr>
@@ -576,6 +594,17 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         </ul>
       </article>
       <article class="w-card">
+        <span class="lbl">ניווט <span class="tag ok">הוחלט</span></span>
+        <h3>אפליקציית ניווט</h3>
+        <p>Waze כברירת מחדל; בוחרים מהחץ שעל כפתור הניווט או בהגדרות; נשמר בטלפון (לא בקבוצה), חל על כל הקבוצות.</p>
+        <ul class="w-ul">
+          <li>כפתור ניווט אחד בכל מקום, עם לוגו האפליקציה בתחילתו ו-⌄ בסופו.</li>
+          <li>שתי האפליקציות מנווטות לאותו יעד אחד: העצירה שבפוקוס, הבאה, או הפארק. בלי מסלול עם כל העצירות.</li>
+          <li>"לכל משתמש" = לכל טלפון: אין חשבונות, אז זה נשמר בטלפון, ליד "המשפחה בטלפון הזה".</li>
+        </ul>
+        <div class="dev setd"><div class="scr" data-settings></div></div>
+      </article>
+      <article class="w-card">
         <span class="lbl">סדר</span>
         <h3>סדר האיסוף הוא הצעה, לא חובה</h3>
         <ul class="w-ul">
@@ -629,7 +658,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
             <tr><td class="old">התקשרות + מספר כקישור</td><td class="new">אייקון חיוג; המספר בגיליון</td></tr>
             <tr><td class="old">טלפון הילד/ה</td><td class="new">הטלפון של נועה</td></tr>
             <tr><td class="old">רשימת איסוף</td><td class="new">מסלול / כל העצירות</td></tr>
-            <tr><td class="old">Google Maps · כל העצירות / Waze · לעצירה הבאה</td><td class="new">ניווט לנועה (Waze) + קישור Maps</td></tr>
+            <tr><td class="old">Google Maps · כל העצירות / Waze · לעצירה הבאה</td><td class="new">כפתור אחד "ניווט לנועה" עם לוגו ו-⌄ (Waze או Google Maps)</td></tr>
           </tbody>
         </table>
       </article>
@@ -663,7 +692,6 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     <h2 id="q-h">שאלות פתוחות</h2>
     <ol class="w-q">
       <li><div>האם "הגעתי" צריך לפתוח מיד את ה-WhatsApp "אני למטה", או להישאר אייקון נפרד?<small>מיד = פחות הקשות, אבל יוצאים מהאפליקציה בכל עצירה, גם כשהילד כבר רואה "משפחת לוי למטה!" בדף שלו.</small></div></li>
-      <li><div>Waze כברירת מחדל, או לזכור את הבחירה של כל נהג?<small>למשל: מי שהקיש פעם על Maps יקבל Maps בכפתור הגדול.</small></div></li>
       <li><div>האם "יצאתי" צריך לשאול מיד "בעוד כמה זמן לעצירה הראשונה?"<small>שתי הגרסאות למטה (על B).</small></div></li>
     </ol>
     <div class="w-cmp" tabindex="0" aria-label="שתי גרסאות ל'יצאתי'">
@@ -727,6 +755,26 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     chev: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     users: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.8 20c.5-3.4 3-5.4 6.2-5.4s5.7 2 6.2 5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path fill="currentColor" d="M16.5 5.2a3 3 0 011.6 5.6 4.6 4.6 0 013.7 4.6h-2a3 3 0 00-2.6-2.9l-.8-.1v-1.6l.6-.3a1.4 1.4 0 00-.5-2.7z"/></svg>'
   };
+
+  /* ---------- navigation app (shared by every prototype, saved on this phone) ---------- */
+  var NAVAPPS = {
+    waze: { name: "Waze", logo: '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6c4.9 0 8.4 3.2 8.4 7.4 0 3-1.9 5.2-4.5 6.3a3.8 3.8 0 01-7.2.9c-2.8-.6-5.1-2.6-5.7-5.2-.8-.3-1.4-1-1.4-1.8 1.1 0 1.8-.6 2-1.6.6-3.6 4-6 8.4-6z" fill="#5AC8F5" stroke="#1C1F23" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.6" cy="10" r="1.25" fill="#1C1F23"/><circle cx="14.6" cy="10" r="1.25" fill="#1C1F23"/><path d="M9.4 13.1c1.4 1.3 3.9 1.3 5.3 0" fill="none" stroke="#1C1F23" stroke-width="1.5" stroke-linecap="round"/></svg>' },
+    gmaps: { name: "Google Maps", logo: '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g clip-path="url(#gm-pin)"><rect width="24" height="24" fill="#34A853"/><path d="M0 0h24v9.5H0z" fill="#EA4335"/><path d="M12 9.5L24 1v13z" fill="#4285F4"/><path d="M12 9.5L0 3v10z" fill="#FBBC04"/></g><circle cx="12" cy="9.3" r="2.7" fill="#fff"/></svg>' }
+  };
+  var NAV = "waze";
+  try { NAV = localStorage.getItem("drive-ws-nav") === "gmaps" ? "gmaps" : "waze"; } catch (e) {}
+  function logo(k) { return '<span class="nlogo">' + NAVAPPS[k || NAV].logo + "</span>"; }
+  // One navigation button: provider logo at the start, label, and an attached ⌄ segment that picks the app.
+  function navBtn(label, arg, cls) {
+    return '<div class="navb ' + (cls || "") + '"><button type="button" class="navb-go" data-act="nav" data-arg="' + arg + '" aria-label="' + label + " ב-" + NAVAPPS[NAV].name + '">' + logo() + "<span>" + label + "</span></button>" +
+      '<button type="button" class="navb-sel" data-act="navsel" aria-haspopup="dialog" aria-label="בחירת אפליקציית ניווט">' + I.chev + "</button></div>";
+  }
+  function navSheet() {
+    return '<div class="ov"><button type="button" class="scrim" data-act="close" data-nc aria-label="סגירה"></button><div class="sheet" role="dialog" aria-modal="true" aria-label="אפליקציית ניווט"><span class="grab" aria-hidden="true"></span>' +
+      '<div class="sheet-h"><h3>ניווט עם</h3><button type="button" class="xbtn" data-act="close" data-nc aria-label="סגירה">×</button></div>' +
+      ["waze", "gmaps"].map(function (k) { return '<button type="button" class="navopt" data-act="setnav" data-arg="' + k + '" aria-pressed="' + (k === NAV) + '">' + logo(k) + '<b class="grow1">' + NAVAPPS[k].name + "</b>" + (k === NAV ? '<span class="ck" aria-hidden="true">✓</span>' : "") + "</button>"; }).join("") +
+      '<p class="small muted">נשמר כברירת מחדל בטלפון הזה. אפשר לשנות גם בהגדרות.</p></div></div>';
+  }
 
   function sbar(dark) { return '<div class="sbar" aria-hidden="true"><span>16:0' + (dark ? "9" : "1") + '</span><span>●●● 5G ▮</span></div>'; }
   function hdr() {
@@ -803,7 +851,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     var cs = contacts(i);
     return '<div class="ov"><button type="button" class="scrim" data-act="close" data-nc aria-label="סגירה"></button><div class="sheet" role="dialog" aria-modal="true" aria-label="אנשי קשר"><span class="grab" aria-hidden="true"></span>' +
       '<div class="sheet-h">' + avs(i) + "<h3>" + names(i) + ' <small class="muted" style="font-size:13px;font-weight:400">' + FAM[STOPS[i].fam].name + '</small></h3><button type="button" class="xbtn" data-act="close" data-nc aria-label="סגירה">×</button></div>' +
-      (nav ? '<button type="button" class="btn big dark" data-act="waze" data-arg="' + i + '">' + I.nav + "ניווט לכאן · Waze</button>" : "") +
+      (nav ? navBtn("ניווט לכאן", i, "dark md") : "") +
       (nav && st > 0 ? '<button type="button" class="btn big ghost" data-act="back" data-arg="' + i + '">החזרה למצב קודם <small class="muted">(' + (st === 2 ? "אספתי ✓ ← הגעתי" : "הגעתי ← עוד לא") + ")</small></button>" : "") +
       cs.map(function (c, j) {
         return '<div class="crow"><div class="grow1"><b>' + esc(c.name) + (j === 0 ? ' <span class="tag ok">ראשי</span>' : "") + "</b><small>" + esc(c.role) + '</small></div><span class="phone" dir="ltr">' + c.phone + "</span>" +
@@ -848,11 +896,11 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
         '<button type="button" class="rnd wa" data-act="wa" data-arg="' + i + ':0" aria-label="WhatsApp ל' + esc(c.name) + ': אני למטה">' + I.wa + "</button>" +
         '<span class="who2 grow1">ל' + esc(c.name) + (c.role.indexOf("הורה") === 0 ? " (הורה)" : "") + "<br>«אני למטה»</span>" +
         '<button type="button" class="mini" data-act="contact" data-arg="' + i + '">עוד</button></div></section>' +
-        '<div class="navbig"><button type="button" class="btn xl dark" data-act="waze" data-arg="' + i + '">' + I.nav + "ניווט ל" + names(i) + '</button><button type="button" class="lnk" data-act="maps">Google Maps · כל העצירות</button></div>';
+        navBtn("ניווט ל" + names(i), i, "dark");
     } else {
       h += '<section class="acard"><span class="lbl2">היעד</span><h3 class="anames">' + VENUE.name + '</h3><p class="addr">' + I.pin + VENUE.gate + " · יום הולדת לנועה 16:30</p>" +
         '<p class="small muted">' + "כולם ברכב ✓ · " + OWN + ", נועה, מאיה, יואב, עומר · " + VENUE.eta + "</p></section>";
-      h += '<div class="navbig"><button type="button" class="btn xl dark" data-act="waze" data-arg="v">' + I.nav + 'ניווט לפארק</button></div>';
+      h += navBtn("ניווט לפארק", "v", "dark");
     }
     if (s.started) {
       h += '<button type="button" class="arow" data-act="list" aria-expanded="' + s.list + '"><span>כל העצירות · אספתי ' + done + "/3</span>" + I.chev + "</button>";
@@ -906,8 +954,8 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     if (!s.started) bar = '<button type="button" class="btn xl" data-act="start">יצאתי</button>';
     else {
       var tgt = cur >= 0 ? names(cur) : "פארק הירקון";
-      var nav = '<button type="button" class="btn xl" data-act="waze" data-arg="' + (cur >= 0 ? cur : "v") + '">' + I.nav + "ניווט ל" + tgt + "</button>";
-      bar = (all ? '<div class="brow">' + nav + '<button type="button" class="btn xl dark endb" data-act="venue">הגענו</button></div>' : nav) + '<button type="button" class="lnk" data-act="maps">Google Maps · כל העצירות</button>';
+      var nav = navBtn("ניווט ל" + tgt, cur >= 0 ? cur : "v", "");
+      bar = all ? '<div class="brow">' + nav + '<button type="button" class="btn xl dark endb" data-act="venue">הגענו</button></div>' : nav;
     }
     return { body: h, bar: bar };
   }
@@ -934,7 +982,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
   function renderCar(s) {
     var nx = nextStop(s), strip = stripStop(s);
     var h = '<div class="carb"><div class="cart"><button type="button" class="lnk" data-act="mode" data-arg="prep">→ חזרה לפרטים</button><b>' + progress(s) + "</b></div>";
-    h += '<div class="cnav"><button type="button" class="wz" data-act="waze" data-arg="' + (nx >= 0 ? nx : "v") + '">Waze<small>ל' + (nx >= 0 ? names(nx) : "פארק הירקון") + '</small></button><button type="button" class="mp" data-act="maps">Maps<small>כל העצירות</small></button></div>';
+    h += navBtn("ניווט ל" + (nx >= 0 ? names(nx) : "פארק הירקון"), nx >= 0 ? nx : "v", "car-nav");
     if (nx < 0) h += '<p class="carok">כולם ברכב ✓ · נוסעים לפארק</p>';
     STOPS.forEach(function (x, i) {
       var st = s.st[i], txt = st === 0 ? "הקשה = הגעתי" : st === 1 ? "הגעתי ✓ · הקשה = אספתי" : "אספתי ✓ " + x.pick;
@@ -964,6 +1012,7 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
       var r = s.venue ? renderDone(s) : v === "a" ? renderA(s) : v === "b" ? renderB(s) : renderC(s);
       var ov = "";
       if (s.sheet === "notify") ov = notifySheet(s);
+      else if (s.sheet === "navsel") ov = navSheet();
       else if (s.sheet && s.sheet.indexOf("contact:") === 0) ov = contactSheet(+s.sheet.slice(8), v === "c", s.st[+s.sheet.slice(8)]);
       var t = s.toast;
       el.classList.toggle("car", !!r.car);
@@ -1030,8 +1079,9 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
           setToast(a === "call" ? { html: "חיוג ל" + esc(c.name) + ' · <span dir="ltr" class="num">' + c.phone + "</span>" } : { html: "WhatsApp ל" + esc(c.name) + ':<span class="bub">' + esc(c.wa) + "</span>" });
           break;
         }
-        case "waze": s.sheet = null; setToast({ html: "נפתח Waze ← " + (arg === "v" ? VENUE.full : FAM[STOPS[i].fam].addr) }); break;
-        case "maps": setToast({ html: "נפתח Google Maps · " + (3 - picked(s)) + " עצירות ← " + VENUE.name }); break;
+        case "nav": s.sheet = null; setToast({ html: "נפתח " + NAVAPPS[NAV].name + " ← " + (arg === "v" ? VENUE.full : FAM[STOPS[i].fam].addr) }); break;
+        case "navsel": s.sheet = "navsel"; break;
+        case "setnav": s.sheet = null; setNav(arg); return;
         default: return;
       }
       render(a !== "start" || v !== "c");
@@ -1054,7 +1104,8 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     render(false);
     return {
       go: function (n) { s = stepState(n); setToast(null); if (v === "c" && n === 0) s.mode = "prep"; render(false); },
-      reset: function () { s = fresh(); setToast(null); render(false); }
+      reset: function () { s = fresh(); setToast(null); render(false); },
+      refresh: function () { render(true); }
     };
   }
 
@@ -1069,6 +1120,30 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
     }
     phones[p] = Phone(el, p.slice(-1), p, p.length === 2 ? 4 : 0);
   });
+
+  function setNav(k) {
+    NAV = k === "gmaps" ? "gmaps" : "waze";
+    try { localStorage.setItem("drive-ws-nav", NAV); } catch (e) {}
+    Object.keys(phones).forEach(function (id) { phones[id].refresh(); });
+    drawSettings(); drawQ();
+  }
+
+  /* ---------- settings mock ("המשפחה בטלפון הזה" + navigation app) ---------- */
+  function drawSettings() {
+    var el = document.querySelector("[data-settings]");
+    if (!el) return;
+    el.innerHTML = sbar() + '<div class="scr-body"><header class="hdr"><div class="hdr-row"><button type="button" class="bk" aria-label="חזרה">' + I.back + '</button><div class="grow1"><span class="grp">הגדרות הקבוצה</span><div class="attl">גן אלון · כיתה ב׳</div></div></div></header>' +
+      '<div class="content"><section class="card"><h2 class="hs">המשפחה בטלפון הזה</h2><p class="row"><span class="fdot" style="--fc:var(--f1)" aria-hidden="true"></span><b>משפחת לוי</b></p>' +
+      '<div class="row"><span class="btn ghost grow1">עריכת פרטים</span><span class="btn ghost grow1">החלפת משפחה</span></div>' +
+      '<div class="setrow"><b>אפליקציית ניווט</b><div class="seg2" role="radiogroup" aria-label="אפליקציית ניווט">' +
+      ["waze", "gmaps"].map(function (k) { return '<button type="button" role="radio" aria-checked="' + (k === NAV) + '" data-setnav="' + k + '">' + logo(k) + NAVAPPS[k].name + "</button>"; }).join("") +
+      '</div><small class="muted">נשמר בטלפון הזה, לכל הקבוצות.</small></div>' +
+      '<span class="lnk">התנתקות מהטלפון הזה</span></section>' +
+      '<section class="card"><h2 class="hs">קישור לקבוצה</h2><p class="small muted">שלחו רק בקבוצת ההורים.</p></section></div></div>';
+  }
+  var setEl = document.querySelector("[data-settings]");
+  if (setEl) setEl.addEventListener("click", function (ev) { var bt = ev.target.closest("[data-setnav]"); if (bt) setNav(bt.dataset.setnav); });
+  drawSettings();
 
   /* ---------- kid page mocks ---------- */
   function kidHtml(who, after) {
@@ -1094,11 +1169,13 @@ code{font-family:var(--ff-mono);font-size:.88em;background:var(--sunk);border-ra
   drawKids(0);
 
   /* ---------- open question: what "יצאתי" does ---------- */
-  document.querySelectorAll("[data-q]").forEach(function (el) {
-    var s = stepState(1), r = renderB(s), ask = el.dataset.q === "b";
-    el.innerHTML = sbar() + '<div class="scr-body">' + r.body + '</div><div class="bbar">' + r.bar + "</div>" + (ask ? notifySheet(fresh(), true) : "");
-    el.addEventListener("click", function (e) { e.preventDefault(); });
-  });
+  function drawQ() {
+    document.querySelectorAll("[data-q]").forEach(function (el) {
+      var s = stepState(1), r = renderB(s), ask = el.dataset.q === "b";
+      el.innerHTML = sbar() + '<div class="scr-body">' + r.body + '</div><div class="bbar">' + r.bar + "</div>" + (ask ? notifySheet(fresh(), true) : "");
+    });
+  }
+  drawQ();
 
   /* ---------- steppers under the phones ---------- */
   document.querySelectorAll("[data-ctrl]").forEach(function (ctrl) {
