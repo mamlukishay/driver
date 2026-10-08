@@ -188,7 +188,7 @@ export function withQuery(path: string, q: Record<string, string | undefined>): 
  * the screen (e.g. `/join/:g?new=1&next=…`) and is kept while a sheet opens and closes, so opening an
  * overlay never changes what the screen (or its guards/redirects) sees.
  */
-const SHEET_PARAMS = ["sheet", "fam", "kid", "offer"];
+const SHEET_PARAMS = ["sheet", "fam", "kid", "offer", "photo"];
 
 export function useSheet() {
   const loc = useLocation();

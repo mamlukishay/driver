@@ -1,16 +1,25 @@
 /** File picker + drop zone that downsizes on a canvas to JPEG (≤ MAX_IMAGE_BYTES) before upload. */
 import type { ComponentChildren } from "preact";
 import { useRef, useState } from "preact/hooks";
+import { outputSize, type Rect } from "../../shared/crop.ts";
 import { MAX_IMAGE_BYTES } from "../../shared/types.ts";
 import { he } from "../i18n/he.ts";
 import { cx } from "../util.ts";
 
 export async function downscale(file: Blob, maxDim: number): Promise<Blob> {
   const img = await loadImage(file);
-  let scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  return encodeJpeg(img, { x: 0, y: 0, w: img.width, h: img.height }, maxDim);
+}
+
+/**
+ * Draws `rect` of a loaded image (source pixels) to a canvas, long side ≤ `maxDim`, and encodes a
+ * JPEG of at most MAX_IMAGE_BYTES (lower quality first, then smaller). Throws "too_large".
+ */
+export async function encodeJpeg(img: LoadedImage, rect: Rect, maxDim: number): Promise<Blob> {
+  let { w: ow, h: oh } = outputSize(rect, maxDim);
   for (let round = 0; round < 4; round++) {
-    const w = Math.max(1, Math.round(img.width * scale));
-    const h = Math.max(1, Math.round(img.height * scale));
+    const w = Math.max(1, Math.round(ow));
+    const h = Math.max(1, Math.round(oh));
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
@@ -18,17 +27,25 @@ export async function downscale(file: Blob, maxDim: number): Promise<Blob> {
     if (!ctx) throw new Error("no canvas");
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img.source, 0, 0, w, h);
+    ctx.drawImage(img.source, rect.x, rect.y, rect.w, rect.h, 0, 0, w, h);
     for (const q of [0.8, 0.7, 0.6, 0.5]) {
       const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", q));
       if (blob && blob.size <= MAX_IMAGE_BYTES) return blob;
     }
-    scale *= 0.75;
+    ow *= 0.75;
+    oh *= 0.75;
   }
   throw new Error("too_large");
 }
 
-async function loadImage(file: Blob): Promise<{ source: CanvasImageSource; width: number; height: number }> {
+export interface LoadedImage {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+}
+
+/** Decodes an image file (EXIF orientation applied where the browser supports it). */
+export async function loadImage(file: Blob): Promise<LoadedImage> {
   if ("createImageBitmap" in window) {
     try {
       const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -51,7 +68,9 @@ async function loadImage(file: Blob): Promise<{ source: CanvasImageSource; width
 interface Props {
   id: string;
   maxDim: number;
-  onPicked: (blob: Blob) => void;
+  onPicked?: (blob: Blob) => void;
+  /** Hands over the picked file as is (no downscale; e.g. to crop it first). `onPicked` is then unused. */
+  onFile?: (file: Blob) => void;
   /** Drop zone look (invite) vs. a small button (car photo). */
   variant: "drop" | "button";
   children: ComponentChildren;
@@ -65,7 +84,7 @@ interface Props {
 /** Reading images from the clipboard needs the async Clipboard API's `read()` (not just `readText()`). */
 const canReadClipboard = () => typeof navigator !== "undefined" && !!navigator.clipboard && "read" in navigator.clipboard;
 
-export function ImagePicker({ id, maxDim, onPicked, variant, children, sub, compact, paste }: Props) {
+export function ImagePicker({ id, maxDim, onPicked, onFile, variant, children, sub, compact, paste }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -74,9 +93,14 @@ export function ImagePicker({ id, maxDim, onPicked, variant, children, sub, comp
   const handle = async (file: Blob | undefined | null) => {
     if (!file) return;
     setErr(null);
+    if (onFile) {
+      onFile(file);
+      if (input.current) input.current.value = "";
+      return;
+    }
     setBusy(true);
     try {
-      onPicked(await downscale(file, maxDim));
+      onPicked?.(await downscale(file, maxDim));
     } catch (e) {
       setErr(e instanceof Error && e.message === "too_large" ? he.image.tooBig : he.image.failed);
     } finally {

@@ -3,6 +3,7 @@ import type { CarPublic, Offer } from "../../shared/types.ts";
 import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { cx, famColor, initial } from "../util.ts";
+import { ZoomPhoto } from "./PhotoViewer.tsx";
 
 export function CarGlyph({ color, size = 24 }: { color: number; size?: number }) {
   return (
@@ -27,8 +28,9 @@ export function SteeringGlyph({ size = 22 }: { size?: number }) {
   );
 }
 
-/** Car photo thumbnail, or a family-tinted car glyph. */
-export function CarPic({ group, car, color }: { group: string; car: CarPublic; color: number }) {
+/** Car photo thumbnail, or a family-tinted car glyph. With `zoomKey`, tapping the photo opens it full screen. */
+export function CarPic({ group, car, color, zoomKey }: { group: string; car: CarPublic; color: number; zoomKey?: string }) {
+  if (car.photoId && zoomKey) return <ZoomPhoto photoKey={zoomKey} src={api.imageUrl(group, car.photoId)} alt={car.label} class="cth" lazy />;
   return (
     <span class={cx("cth", !car.photoId && "nop")}>
       {car.photoId ? <img src={api.imageUrl(group, car.photoId)} alt={car.label} loading="lazy" /> : <CarGlyph color={color} />}
@@ -122,7 +124,7 @@ export function CarCard({ group, offer, car, familyLabel, driverName, color, min
   return (
     <article class={cx("car", mine && "me")} style={{ "--fc": famColor(color) }}>
       <div class="car-h">
-        {car ? <CarPic group={group} car={car} color={color} /> : <CarGlyph color={color} />}
+        {car ? <CarPic group={group} car={car} color={color} zoomKey={offer.id} /> : <CarGlyph color={color} />}
         <div class="grow1">
           <div class="row">
             <b>{driverName ? `${driverName} · ${familyLabel}` : familyLabel}</b>

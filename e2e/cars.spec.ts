@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiGroup, createEventManually, createGroup, familyIdOf, he, newUser, registerFamily, rsvpBothLegs, type User } from "./helpers.ts";
+import { apiGroup, createEventManually, createGroup, expectImageLoaded, familyIdOf, he, makePng, newUser, registerFamily, rsvpBothLegs, type User } from "./helpers.ts";
 
 const FAMILY = { name: "לוי", parent: "דנה", phone: "052-222-3333", kid: "יואב" };
 
@@ -99,4 +99,62 @@ test("the family page with no cars shows the hint; removing a car on the cars pa
 
   await page.goto(`/g/${groupId}/me`);
   await expect(page.getByRole("region", { name: he.cars.summary })).toContainText(he.cars.none);
+});
+
+test("car photo: crop at upload, cancel keeps the old photo, tap opens it full screen", async ({ browser }) => {
+  user = await newUser(browser);
+  const { page } = user;
+  const { groupId } = await createGroup(page, "קבוצת רכבים 3");
+  await page.getByRole("link", { name: he.newGroup.continue }).click();
+  await registerFamily(page, groupId, { ...FAMILY, car: { label: "מאזדה" } });
+  await page.goto(`/g/${groupId}/me/cars`);
+  await expect(page.locator("#car-0-label")).toHaveValue("מאזדה");
+  const crop = page.getByRole("dialog", { name: he.crop.title });
+  const photo = page.locator(".carph-img img");
+
+  // Pick → crop sheet → zoom in → "בחירה": the larger preview shows the 3:2 crop.
+  await page.locator("#car-0-photo").setInputFiles({ name: "red.png", mimeType: "image/png", buffer: makePng(120) });
+  await expect(crop).toBeVisible();
+  await expect(crop.getByRole("img", { name: he.crop.frame })).toBeVisible();
+  await crop.getByLabel(he.crop.zoom).fill("2");
+  await crop.getByRole("button", { name: he.crop.confirm }).click();
+  await expect(crop).toBeHidden();
+  await expectImageLoaded(photo);
+  expect(await photo.evaluate((el) => [(el as HTMLImageElement).naturalWidth, (el as HTMLImageElement).naturalHeight])).toEqual([60, 40]);
+  await page.getByRole("button", { name: he.common.save }).click();
+  await expect(page.getByText(he.cars.saved)).toBeVisible();
+  await expect.poll(() => photo.getAttribute("src")).toContain(`/api/g/${groupId}/images/`);
+  const savedSrc = await photo.getAttribute("src");
+
+  // Another pick, then "ביטול" (and, again, back): the saved photo stays.
+  const blue = { name: "blue.png", mimeType: "image/png", buffer: makePng(80, [40, 80, 220]) };
+  await page.locator("#car-0-photo").setInputFiles(blue);
+  await expect(crop).toBeVisible();
+  await crop.getByRole("button", { name: he.common.cancel }).click();
+  await expect(crop).toBeHidden();
+  expect(await photo.getAttribute("src")).toBe(savedSrc);
+  await page.locator("#car-0-photo").setInputFiles(blue);
+  await expect(crop).toBeVisible();
+  await page.goBack();
+  await expect(crop).toBeHidden();
+  expect(await photo.getAttribute("src")).toBe(savedSrc);
+  await expect(page).toHaveURL(new RegExp(`/g/${groupId}/me/cars$`));
+
+  // Tapping the photo opens it full screen; ×, Escape and back each close it.
+  const open = page.getByRole("button", { name: he.photo.open("מאזדה") });
+  const viewer = page.getByRole("dialog", { name: "מאזדה" });
+  await open.click();
+  await expect(viewer).toBeVisible();
+  await expectImageLoaded(viewer.getByRole("img", { name: "מאזדה" }));
+  await viewer.getByRole("button", { name: he.common.close }).click();
+  await expect(viewer).toBeHidden();
+  await open.click();
+  await expect(viewer).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(viewer).toBeHidden();
+  await open.click();
+  await expect(viewer).toBeVisible();
+  await page.goBack();
+  await expect(viewer).toBeHidden();
+  await expect(page).toHaveURL(new RegExp(`/g/${groupId}/me/cars$`));
 });

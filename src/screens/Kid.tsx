@@ -6,6 +6,7 @@ import { formatPhoneLocal, telHref } from "../../shared/phone.ts";
 import { kidLegStatus, legOver } from "../../shared/view.ts";
 import { CarSide, PlateIL } from "../components/CarCard.tsx";
 import { CheckIcon } from "../components/icons.tsx";
+import { ZoomPhoto } from "../components/PhotoViewer.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
 import { toast } from "../components/Toast.tsx";
 import { PhoneIcon } from "../components/WaButton.tsx";
@@ -355,7 +356,7 @@ function TicketCar({ group, r }: { group: string; r: KidRide }) {
   );
   return c.photoId ? (
     <>
-      <img class="tk-photo" src={api.imageUrl(group, c.photoId)} alt={c.label} loading="lazy" />
+      <ZoomPhoto photoKey={r.offerId} src={api.imageUrl(group, c.photoId)} alt={c.label} class="tk-photo-b" imgClass="tk-photo" lazy />
       <div class="tk-car">
         {meta}
         <PlateIL plate={c.plate} />

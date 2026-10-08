@@ -58,18 +58,30 @@ test("a car photo uploaded on the cars page renders and persists", async () => {
   await page.getByLabel(he.form.carLabel).fill("סובארו כחולה");
   await page.locator("#car-0-photo").setInputFiles(png);
 
-  // Instant preview in the form.
+  // The crop sheet: the picked image under a 3:2 frame, "בחירה" keeps the framed part.
+  const crop = page.getByRole("dialog", { name: he.crop.title });
+  await expect(crop).toBeVisible();
+  await expect(page).toHaveURL(/[?&]sheet=crop/);
+  await crop.getByRole("button", { name: he.crop.confirm }).click();
+  await expect(crop).toBeHidden();
+  await expect(page).not.toHaveURL(/sheet=/);
+
+  // Instant preview in the form, at card width.
   await expect(page.getByRole("button", { name: he.common.save })).toBeEnabled();
   await expect(page.getByText(he.form.carPhotoReplace)).toBeVisible();
-  const preview = page.getByRole("img", { name: "סובארו כחולה" });
+  const preview = page.locator(".carph-img img");
   await expectImageLoaded(preview);
+  expect(await preview.getAttribute("alt")).toBe("סובארו כחולה");
+  expect((await preview.boundingBox())!.width).toBeGreaterThan(250);
+  // The stored photo is the 3:2 crop of the square test image (96×64).
+  expect(await preview.evaluate((el) => [(el as HTMLImageElement).naturalWidth, (el as HTMLImageElement).naturalHeight])).toEqual([96, 64]);
 
   await page.getByRole("button", { name: he.common.save }).click();
   await expect(page.getByText(he.cars.saved)).toBeVisible();
 
   // After a reload the photo comes from the server.
   await page.reload();
-  const saved = page.getByRole("img", { name: "סובארו כחולה" });
+  const saved = page.locator(".carph-img img");
   await expectImageLoaded(saved);
   expect(await saved.getAttribute("src")).toContain(`/api/g/${groupId}/images/`);
 });
