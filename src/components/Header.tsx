@@ -3,11 +3,13 @@ import { useEffect } from "preact/hooks";
 import { he } from "../i18n/he.ts";
 import type { FamilyPublic, GroupResponse } from "../../shared/types.ts";
 import { getIdentity, onIdentityChange, touchGroup } from "../identity.ts";
-import { useBack } from "../nav.ts";
+import { useBack, useSheet } from "../nav.ts";
 import { api } from "../api.ts";
 import { keys, useResource } from "../store.ts";
 import { famColor, famLabel, useForce } from "../util.ts";
+import { GearIcon, MenuIcon } from "./icons.tsx";
 import { Logo } from "./Logo.tsx";
+import { NAV_SHEET, NavSheet } from "./NavSheet.tsx";
 
 /** This device's family id for the group (re-renders on change). */
 export function useIdentity(group: string | undefined): string | null {
@@ -55,77 +57,64 @@ interface Props {
   noChip?: boolean;
   /** A small muted group-name line above the title, linking to the group home (group-scoped screens). */
   groupLine?: boolean;
-  /** A small link line above the title instead (the group home: "הקבוצות שלי"). */
-  crumb?: { href: string; label: string };
   /** A small muted line under the title saying what the screen is (settings: "הגדרות הקבוצה", with a gear). */
   sub?: string;
-  /** Hide the header gear (the settings screen itself). */
-  noGear?: boolean;
   /** The title is the group's name: the identity chip drops its "· group" suffix (group home, settings). */
   titleIsGroup?: boolean;
   children?: ComponentChildren;
 }
 
-export function Header({ title, up, group, noChip, groupLine, crumb, sub, noGear, titleIsGroup, children }: Props) {
+/** The screen header: back arrow (or the app mark), title, the ☰ menu (`?sheet=nav`) and the identity chip. */
+export function Header({ title, up, group, noChip, groupLine, sub, titleIsGroup, children }: Props) {
   const back = useBack(up ?? "/");
+  const sheet = useSheet();
   useEffect(() => {
     if (group) touchGroup(group);
   }, [group]);
   return (
-    <header class="hdr">
-      <div class="hdr-row">
-        {up !== undefined ? (
-          <button type="button" class="bk" onClick={back} aria-label={he.common.back}>
-            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </button>
-        ) : (
-          <Logo class="brand" size={30} />
-        )}
-        {crumb || (groupLine && group) || sub ? (
-          <div class="attl-w">
-            {crumb ? (
-              <a class="hdr-grp" href={crumb.href}>
-                {crumb.label}
-              </a>
-            ) : groupLine && group ? (
-              <GroupLine group={group} />
-            ) : null}
+    <>
+      <header class="hdr">
+        <div class="hdr-row">
+          {up !== undefined ? (
+            <button type="button" class="bk" onClick={back} aria-label={he.common.back}>
+              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          ) : (
+            <Logo class="brand" size={30} />
+          )}
+          {(groupLine && group) || sub ? (
+            <div class="attl-w">
+              {groupLine && group && <GroupLine group={group} />}
+              <h1 class="attl">{title}</h1>
+              {sub && (
+                <p class="hdr-sub">
+                  <GearIcon size={14} />
+                  {sub}
+                </p>
+              )}
+            </div>
+          ) : (
             <h1 class="attl">{title}</h1>
-            {sub && (
-              <p class="hdr-sub">
-                <GearIcon size={14} />
-                {sub}
-              </p>
-            )}
-          </div>
-        ) : (
-          <h1 class="attl">{title}</h1>
-        )}
-        {children}
-        {group && !noGear && (
-          <a class="gear" href={`/g/${group}/settings`} aria-label={he.identity.settings} title={he.identity.settings}>
-            <GearIcon size={22} />
-          </a>
-        )}
-      </div>
-      {group && !noChip && <IdentityChip group={group} noGroupName={titleIsGroup} />}
-    </header>
-  );
-}
-
-function GearIcon({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linejoin="round"
-        d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zm7.4-3.2c0-.5 0-.9-.1-1.3l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-2.2-1.3L14.3 3h-4l-.4 2.4a7.6 7.6 0 00-2.2 1.3l-2.4-1-2 3.4 2 1.6a7.9 7.9 0 000 2.6l-2 1.6 2 3.4 2.4-1c.7.6 1.4 1 2.2 1.3l.4 2.4h4l.4-2.4c.8-.3 1.5-.7 2.2-1.3l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.3z"
-      />
-    </svg>
+          )}
+          {children}
+          <button
+            type="button"
+            class="menu-btn"
+            onClick={() => sheet.open(NAV_SHEET)}
+            aria-label={he.nav.menu}
+            title={he.nav.menu}
+            aria-haspopup="dialog"
+            aria-expanded={sheet.name === NAV_SHEET}
+          >
+            <MenuIcon size={22} />
+          </button>
+        </div>
+        {group && !noChip && <IdentityChip group={group} noGroupName={titleIsGroup} />}
+      </header>
+      <NavSheet group={group} />
+    </>
   );
 }
 

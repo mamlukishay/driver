@@ -41,8 +41,16 @@ export const he = {
     actingAs: "פועל/ת בתור:",
     viewOnly: "צפייה בלבד",
     joinCta: "מי אתם?",
-    settings: "הגדרות",
     chipHint: "לחצו לפרטי המשפחה",
+  },
+
+  /** The header ☰ menu (`?sheet=nav`). Its other rows reuse group.myFamily, settings.title, home.title, newGroup.title. */
+  nav: {
+    menu: "תפריט",
+    thisGroup: "בקבוצה הזו",
+    events: "אירועים",
+    myCars: "הרכבים שלי",
+    allGroups: "כל הקבוצות",
   },
 
   who: {
