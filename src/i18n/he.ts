@@ -371,6 +371,8 @@ export const he = {
     setPicked: (kid: string, picked: boolean) => (picked ? `${kid} עלה/תה לרכב` : `ביטלו איסוף של ${kid}`),
     setKidReady: (kid: string) => `${kid} מוכן/ה`,
     setArrived: (kid: string, arrived: boolean) => (arrived ? `הגיעו לאסוף את ${kid}` : `ביטלו "הגעתי" אצל ${kid}`),
+    setEta: (kids: string, minutes: number) => `עדכנו זמן הגעה ל${kids}: בעוד ${minutes} דק׳`,
+    endRun: (ended: boolean) => (ended ? "סיימו את הנסיעה" : "חזרו לנסיעה"),
     editEvent: "עדכנו את פרטי האירוע",
     editEventChanges: (changes: string[]) => `עדכנו את פרטי האירוע: ${changes.join(", ")}`,
     cancelEvent: "ביטלו את האירוע",
@@ -452,12 +454,19 @@ export const he = {
     status: {
       waiting: "עוד מחפשים לך הסעה",
       onTheWay: (driver: string) => `${driver} יצא/ה לדרך`,
-      next: "את/ה הבא/ה בתור",
-      nextHint: "תתכוננו, עוד רגע מגיעים",
+      /** The driver's ETA for this kid, as a local clock time. */
+      eta: (time: string) => `הגעה בערך ב-${time}`,
+      /** Shown instead of the time once the ETA has passed (never an overdue count). */
+      etaSoon: "עוד רגע",
+      etaUpdated: (time: string) => `עודכן ב-${time}`,
       arrived: (driver: string) => `${driver} למטה! 🚗`,
       arrivedHint: "צאו לרכב",
       picked: "עלית לרכב ✓",
       done: "ההסעה הזאת הסתיימה",
+      /** The driver tapped "הגענו" on the out leg. */
+      endedOut: "הגעתם ✓",
+      /** The driver tapped "הגענו" on the back leg. */
+      endedBack: "הנסיעה הסתיימה",
     },
   },
 
