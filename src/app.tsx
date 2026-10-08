@@ -9,6 +9,7 @@ import { isBrowsing, isGroupDeleted } from "./identity.ts";
 import { FeedbackHost } from "./feedback/Feedback.tsx";
 import { useHistoryEffects } from "./nav.ts";
 import { Board } from "./screens/Board.tsx";
+import { Cars } from "./screens/Cars.tsx";
 import { Drive } from "./screens/Drive.tsx";
 import { EventPage } from "./screens/EventPage.tsx";
 import { GroupGone } from "./screens/GroupGone.tsx";
@@ -72,6 +73,7 @@ const routes = {
   invite: guarded((x) => <Invite group={p(x, "group")} event={p(x, "event")} />),
   drive: guarded((x) => <Drive group={p(x, "group")} event={p(x, "event")} leg={p(x, "leg") as Leg} />),
   me: guarded((x) => <Profile group={p(x, "group")} />),
+  cars: guarded((x) => <Cars group={p(x, "group")} />),
   settings: guarded((x) => <Settings group={p(x, "group")} />),
   kid: gated((x) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} />),
   kidEvent: gated((x) => <Kid group={p(x, "group")} kidId={p(x, "kidId")} event={p(x, "event")} />),
@@ -92,6 +94,7 @@ function Shell() {
         <Route path="/g/:group/who" component={routes.who} />
         <Route path="/g/:group/new" component={routes.newEvent} />
         <Route path="/g/:group/me" component={routes.me} />
+        <Route path="/g/:group/me/cars" component={routes.cars} />
         <Route path="/g/:group/settings" component={routes.settings} />
         <Route path="/g/:group/kid/:kidId" component={routes.kid} />
         <Route path="/g/:group/kid/:kidId/e/:event" component={routes.kidEvent} />

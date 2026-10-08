@@ -175,7 +175,7 @@ function BoardBody({ group, ev, leg }: { group: string; ev: EventView; leg: Leg 
         )}
         {me && !frozen && !myOffer && myFam && myFam.cars.length === 0 && (
           <p class="note small">
-            {he.board.noCarInProfile} <a href={`/g/${group}/me`}>{he.board.toProfile}</a>
+            {he.board.noCar} <a href={`/g/${group}/me/cars?add=1`}>{he.board.addCarLink}</a>
           </p>
         )}
       </section>
