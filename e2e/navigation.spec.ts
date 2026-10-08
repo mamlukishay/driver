@@ -93,15 +93,14 @@ test("back and forward move between group, event tabs and drive mode", async () 
   await expect.poll(path).toBe(`${eventUrl}/drive/out`);
   await expect(page.getByRole("heading", { level: 1, name: he.drive.title("out") })).toBeVisible();
 
-  // The in-app back arrow always goes up: drive → event הילדים שלי → group. The entry behind each is the
-  // board, not the parent, so each step replaces the entry instead of walking history.
+  // The in-app back arrow from drive mode steps back to the tab it was opened from (an event tab counts as
+  // the event parent); the board's arrow then goes up (its previous entry is the group, so it replaces).
+  await page.getByRole("button", { name: he.common.back }).click();
+  await expect.poll(path).toBe(`${eventUrl}/out`);
   await page.getByRole("button", { name: he.common.back }).click();
   await expect.poll(path).toBe(eventUrl);
   await page.getByRole("button", { name: he.common.back }).click();
   await expect.poll(path).toBe(`/g/${groupId}`);
-  // Browser back still works: the board entry is still behind.
-  await page.goBack();
-  await expect.poll(path).toBe(`${eventUrl}/out`);
 });
 
 test("the back arrow steps back when the previous entry is the parent", async () => {

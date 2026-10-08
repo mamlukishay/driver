@@ -2827,3 +2827,127 @@ details.past[open] > summary {
 .settings .hs + .muted {
   margin-block-start: -4px;
 }
+
+/* ---------- car photos: zoomable thumbnails, full-screen viewer, crop sheet ---------- */
+/* A photo that opens full screen (components/PhotoViewer.tsx). */
+.zoomph {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+button.cth {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+}
+.tk-photo-b {
+  display: block;
+  inline-size: 100%;
+  border-radius: 12px;
+}
+/* The cars form: the photo at card width (3:2), its controls under it. */
+.carph {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.carph-img {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sunk);
+}
+.carph-img img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+/* Just picked (and cropped): a short ring so the swap is seen. */
+.carph-img.fresh {
+  animation: photo-ring 1.1s ease-out;
+}
+@keyframes photo-ring {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent);
+    opacity: 0.4;
+  }
+  25% {
+    box-shadow: 0 0 0 5px var(--accent);
+    opacity: 1;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.pv {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgba(0, 0, 0, 0.92);
+  display: grid;
+  place-items: center;
+  padding: calc(56px + env(safe-area-inset-top, 0px)) 8px calc(16px + env(safe-area-inset-bottom, 0px));
+  animation: fade-in 0.15s ease-out;
+  cursor: zoom-out;
+}
+.pv-img {
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
+  object-fit: contain;
+}
+.pv-x {
+  position: absolute;
+  inset-block-start: calc(10px + env(safe-area-inset-top, 0px));
+  inset-inline-end: 10px;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+}
+.crop {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.crop-stage {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.crop-stage:active {
+  cursor: grabbing;
+}
+.crop-stage canvas {
+  display: block;
+}
+.crop-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 14px;
+}
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.crop-zoom input {
+  flex: 1;
+  accent-color: var(--accent);
+}

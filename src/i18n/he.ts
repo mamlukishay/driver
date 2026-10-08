@@ -591,6 +591,21 @@ export const he = {
     home: "לדף הבית",
   },
 
+  /** Car-photo crop sheet (components/PhotoCrop.tsx). */
+  crop: {
+    title: "מיקום התמונה",
+    hint: "גררו את התמונה כדי שהרכב יהיה במרכז המסגרת. להגדלה: צביטה או הפס.",
+    frame: "התמונה במסגרת החיתוך",
+    zoom: "הגדלה",
+    confirm: "בחירה",
+  },
+
+  /** Full-screen photo viewer (components/PhotoViewer.tsx). */
+  photo: {
+    title: "תמונה",
+    open: (label: string) => (label.trim() ? `הצגת התמונה של ${label.trim()} במסך מלא` : "הצגת התמונה במסך מלא"),
+  },
+
   image: {
     processing: "מכינים את התמונה…",
     failed: "לא הצלחנו לקרוא את התמונה. נסו קובץ אחר (JPG או PNG).",

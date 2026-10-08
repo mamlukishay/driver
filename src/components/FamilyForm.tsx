@@ -12,6 +12,10 @@ import { cx } from "../util.ts";
 import { CarGlyph } from "./CarCard.tsx";
 import { Field, PhoneInput, phoneError, Stepper } from "./Field.tsx";
 import { ImagePicker } from "./ImagePicker.tsx";
+import { PhotoCrop } from "./PhotoCrop.tsx";
+import { ZoomPhoto } from "./PhotoViewer.tsx";
+import { Sheet } from "./Sheet.tsx";
+import { useSheet } from "../nav.ts";
 
 export interface CarDraft {
   id?: string;
@@ -468,6 +472,10 @@ function KidSlugField({
   );
 }
 
+const CROP_SHEET = "crop";
+/** Long side of a stored car photo (the crop is 3:2, so 800×533). */
+const CAR_PHOTO_MAX_DIM = 800;
+
 /** The car cards (label, seats, color, plate, photo, remove) + "+ רכב": registration and `/g/:group/me/cars`. */
 export function CarsFields({
   group,
@@ -485,6 +493,25 @@ export function CarsFields({
   heading?: boolean;
 }) {
   const up = (f: (x: CarDraft[]) => CarDraft[]) => onChange((x) => f(x.map((c) => ({ ...c }))));
+  const sheet = useSheet();
+  // The picked file waits here while the crop sheet (`?sheet=crop`) is open; back or "ביטול" leaves
+  // the car's photo as it was.
+  const [cropping, setCropping] = useState<{ i: number; file: Blob } | null>(null);
+  useEffect(() => {
+    // A reload with the sheet in the URL: the file is gone, so drop the sheet.
+    if (sheet.name === CROP_SHEET) sheet.close();
+  }, []);
+  const cropDone = (blob: Blob) => {
+    const i = cropping!.i;
+    up((x) => {
+      const car = x[i]!;
+      car.photoBlob = blob;
+      car.photoPreview = URL.createObjectURL(blob);
+      delete car.photoId;
+      return x;
+    });
+    sheet.close();
+  };
   return (
     <section class="card" {...(heading ? { "aria-labelledby": "cars-h" } : { "aria-label": he.form.cars })}>
       {heading && (
@@ -501,47 +528,52 @@ export function CarsFields({
             <Field id={`car-${i}-color`} label={he.form.carColor} value={c.color} onInput={(v) => up((x) => (x[i]!.color = v, x))} />
             <Field id={`car-${i}-plate`} label={he.form.carPlate} value={c.plate} inputMode="numeric" maxLength={3} dir="ltr" error={err(`car-${i}-plate`)} onInput={(v) => up((x) => (x[i]!.plate = v.replace(/\D/g, ""), x))} />
           </div>
-          <div class="row">
-            <span class="cth">
-              {c.photoPreview || c.photoId ? (
-                <img src={c.photoPreview ?? api.imageUrl(group, c.photoId!)} alt={c.label} />
-              ) : (
-                <CarGlyph color={0} size={22} />
+          <div class="carph">
+            {c.photoPreview || c.photoId ? (
+              <ZoomPhoto
+                // A new element per photo, so a fresh pick replays its highlight.
+                key={c.photoPreview ?? c.photoId}
+                photoKey={`car-${i}`}
+                src={c.photoPreview ?? api.imageUrl(group, c.photoId!)}
+                alt={c.label}
+                class={cx("carph-img", c.photoPreview && "fresh")}
+              />
+            ) : null}
+            <div class="row">
+              {!(c.photoPreview || c.photoId) && (
+                <span class="cth">
+                  <CarGlyph color={0} size={22} />
+                </span>
               )}
-            </span>
-            <ImagePicker
-              id={`car-${i}-photo`}
-              variant="button"
-              maxDim={800}
-              onPicked={(blob) =>
-                up((x) => {
-                  const car = x[i]!;
-                  car.photoBlob = blob;
-                  car.photoPreview = URL.createObjectURL(blob);
-                  delete car.photoId;
-                  return x;
-                })
-              }
-            >
-              {c.photoPreview || c.photoId ? he.form.carPhotoReplace : he.form.carPhoto}
-            </ImagePicker>
-            {(c.photoPreview || c.photoId) && (
-              <button
-                type="button"
-                class="lnk"
-                onClick={() =>
-                  up((x) => {
-                    const car = x[i]!;
-                    delete car.photoId;
-                    delete car.photoBlob;
-                    delete car.photoPreview;
-                    return x;
-                  })
-                }
+              <ImagePicker
+                id={`car-${i}-photo`}
+                variant="button"
+                maxDim={CAR_PHOTO_MAX_DIM}
+                onFile={(file) => {
+                  setCropping({ i, file });
+                  sheet.open(CROP_SHEET);
+                }}
               >
-                {he.form.carPhotoRemove}
-              </button>
-            )}
+                {c.photoPreview || c.photoId ? he.form.carPhotoReplace : he.form.carPhoto}
+              </ImagePicker>
+              {(c.photoPreview || c.photoId) && (
+                <button
+                  type="button"
+                  class="lnk"
+                  onClick={() =>
+                    up((x) => {
+                      const car = x[i]!;
+                      delete car.photoId;
+                      delete car.photoBlob;
+                      delete car.photoPreview;
+                      return x;
+                    })
+                  }
+                >
+                  {he.form.carPhotoRemove}
+                </button>
+              )}
+            </div>
           </div>
           <button type="button" class="lnk bad" onClick={() => up((x) => (x.splice(i, 1), x))}>
             {he.form.removeCar}
@@ -553,6 +585,9 @@ export function CarsFields({
           {he.form.addCar}
         </button>
       )}
+      <Sheet open={sheet.name === CROP_SHEET && !!cropping} title={he.crop.title} onClose={sheet.close}>
+        {cropping && <PhotoCrop file={cropping.file} maxDim={CAR_PHOTO_MAX_DIM} onDone={cropDone} onCancel={sheet.close} />}
+      </Sheet>
     </section>
   );
 }
