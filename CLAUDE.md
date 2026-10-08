@@ -2,7 +2,10 @@
 
 ## Deploying: a push to `main` IS the deploy
 
-- **Live app:** https://trempush.mamlukishay.workers.dev (Cloudflare Workers, free plan).
+- **Live app:** https://trempush.com (Cloudflare Workers, free plan). The domain is attached to
+  the `trempush` Worker as a Custom Domain in the Cloudflare dashboard (not in `wrangler.jsonc`).
+  The old https://trempush.mamlukishay.workers.dev still serves the same Worker, but some Israeli
+  cellular carriers block `*.workers.dev`, so always hand out `trempush.com` links.
 - **Pipeline:** every push to `main` runs `.github/workflows/deploy.yml` ("Test & deploy") on
   GitHub Actions: `bun install` → `bun test` → `bun run typecheck` → `bun run build` →
   `wrangler deploy` → syncs optional Worker secrets. If any step fails, nothing deploys and the
@@ -13,9 +16,10 @@
   (`git fetch origin main && git checkout main && git pull`). If work already happened on another
   branch, merge it into `main`, run the full suite on the merged result, then push `main`.
 - **Verify the deploy** with the GitHub tools (`actions_list` → `list_workflow_runs` for
-  `deploy.yml` on `main`; the job log ends with `Deployed trempush triggers` and the URL). A
-  session cannot reach `*.workers.dev` or `api.cloudflare.com`, and has no Cloudflare login, so
-  never run `wrangler deploy` from a session and never claim the live site was checked.
+  `deploy.yml` on `main`; the job log ends with `Deployed trempush triggers` and the workers.dev
+  URL; the custom domain is not listed there). A session cannot reach `trempush.com`,
+  `*.workers.dev` or `api.cloudflare.com`, and has no Cloudflare login, so never run
+  `wrangler deploy` from a session and never claim the live site was checked.
 - **Secrets/bindings** live in GitHub Actions secrets (`CLOUDFLARE_API_TOKEN`,
   `CLOUDFLARE_ACCOUNT_ID`, `GH_FEEDBACK_TOKEN`, optional `ANTHROPIC_API_KEY`,
   `GOOGLE_MAPS_API_KEY`) and `wrangler.jsonc` (Durable Object `GROUP`, R2 `IMAGES` =
@@ -103,5 +107,5 @@ fails, check whether it fails on `main` too before assuming it is yours.
 A finished task ends with something the owner can open on the phone. When the checks pass,
 the main agent pushes to `main`; the `Test & deploy` workflow deploys it. Wait for that run
 to succeed (GitHub Actions), then give the owner the URL of the page the change is on:
-`https://trempush.mamlukishay.workers.dev/...`. Production cannot be reached from a session's
-network, so say what was verified (CI, tests) and what the owner should try on the phone.
+`https://trempush.com/...`. Production cannot be reached from a session's network, so say
+what was verified (CI, tests) and what the owner should try on the phone.

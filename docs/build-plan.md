@@ -222,7 +222,7 @@ bunx wrangler secret put ANTHROPIC_API_KEY
 bunx wrangler secret put GITHUB_FEEDBACK_TOKEN   # feedback → GitHub issues (see README "Feedback")
 ```
 
-Result: `https://trempush.<account>.workers.dev`. No card needed for the base app.
+Result: `https://trempush.<account>.workers.dev`. No card needed for the base app. Production is served at `https://trempush.com` (a Cloudflare Custom Domain on the same Worker, set in the dashboard; some cellular carriers block `*.workers.dev`).
 
 ## 8. Out of scope for v1
 

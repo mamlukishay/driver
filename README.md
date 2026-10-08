@@ -61,7 +61,7 @@ bunx wrangler login
 bun run deploy      # vite build + wrangler deploy
 ```
 
-The app is served at `https://trempush.<your-account>.workers.dev`. The base app needs no card.
+The app is served at `https://trempush.<your-account>.workers.dev`. The base app needs no card. The live instance also has its own domain, `https://trempush.com`, attached as a Custom Domain in the Cloudflare dashboard (Workers & Pages → trempush → Settings → Domains & Routes). Prefer an own domain: some cellular carriers block `*.workers.dev`.
 
 ### Images and the R2 bucket `trempush-images`
 
