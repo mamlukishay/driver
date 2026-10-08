@@ -2,6 +2,7 @@ import { useLocation } from "preact-iso";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { normalizeWaGroupUrl } from "../../shared/whatsapp.ts";
 import { Field } from "../components/Field.tsx";
+import { NAV_APP_NAME, NavLogo } from "../components/NavLogo.tsx";
 import { Header, useMe, whoUrl } from "../components/Header.tsx";
 import { ConfirmSentence, Sheet } from "../components/Sheet.tsx";
 import { toast } from "../components/Toast.tsx";
@@ -10,6 +11,7 @@ import { api } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { forgetGroup, removeIdentity, setBrowsing } from "../identity.ts";
 import { useSheet } from "../nav.ts";
+import { NAV_APPS, setNavApp, useNavApp } from "../navApp.ts";
 import { keys, setData, useGroup } from "../store.ts";
 import type { GroupResponse } from "../../shared/types.ts";
 import { appUrl, famColor } from "../util.ts";
@@ -79,6 +81,7 @@ export function Settings({ group }: { group: string }) {
               </a>
             </>
           )}
+          <NavAppRow />
         </section>
         {me && grp.data && <NameSection group={group} data={grp.data} />}
         <section class="card" aria-labelledby="share-h">
@@ -282,5 +285,24 @@ function DeleteSection({ group }: { group: string }) {
         />
       </Sheet>
     </section>
+  );
+}
+
+/** Per phone, for every group: the app driver mode navigates with. */
+function NavAppRow() {
+  const app = useNavApp();
+  return (
+    <div class="setrow">
+      <b id="navapp-h">{he.settings.navApp}</b>
+      <div class="seg2" role="radiogroup" aria-labelledby="navapp-h">
+        {NAV_APPS.map((a) => (
+          <button type="button" role="radio" aria-checked={a === app} onClick={() => setNavApp(a)}>
+            <NavLogo app={a} />
+            {NAV_APP_NAME[a]}
+          </button>
+        ))}
+      </div>
+      <small class="muted">{he.settings.navAppHint}</small>
+    </div>
   );
 }

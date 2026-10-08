@@ -323,12 +323,14 @@ export interface KidRide {
   ready: boolean;
   /** The driver tapped "הגעתי" at this kid's stop (and hasn't picked them up yet). */
   arrived: boolean;
-  /** Kids at earlier stops in the pickup order who are not picked up yet (0 = this kid is next). */
-  ahead: number;
+  /** The driver's latest "I'll be there in N minutes" for this kid, as clock times (ms). */
+  eta: { at: number; setAt: number } | null;
+  /** The driver tapped "הגענו" (the run is over). */
+  ended: boolean;
 }
 
 /** Live status of one leg on the kid page (see `kidLegStatus` in view.ts). */
-export type KidLegStatus = "waiting" | "assigned" | "onTheWay" | "next" | "arrived" | "picked" | "done";
+export type KidLegStatus = "waiting" | "assigned" | "onTheWay" | "arrived" | "picked" | "done";
 
 export interface KidLegView {
   needed: boolean;

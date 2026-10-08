@@ -6,7 +6,7 @@ import { he } from "../i18n/he.ts";
 import { keys, refetch, setData } from "../store.ts";
 import { appUrl, eventIndex, fmtDate, legTime } from "../util.ts";
 
-/** Runs an action with optimistic-concurrency, updates the cache and shows the undo toast. */
+/** Runs an action with optimistic-concurrency, updates the cache and shows the undo toast (or, with `undo: false`, a plain one unless the text is empty). */
 export async function runAction(
   group: string,
   ev: EventView,
@@ -17,13 +17,39 @@ export async function runAction(
   try {
     const r = await api.act(group, ev.id, action, ev.version);
     setData<EventView>(keys.event(group, ev.id), r.event);
-    if (opts.undo === false) toast.info(toastText);
+    // Without undo, an empty text means no toast at all (driver mode: the screen itself shows the change).
+    if (opts.undo === false) {
+      if (toastText) toast.info(toastText);
+    }
     else toast.undoable(toastText, { group, event: ev.id, logId: r.logId });
     return true;
   } catch (e) {
     if (e instanceof ApiError && (e.code === "stale" || e.code === "seat_taken" || e.code === "car_full")) {
       await refetch(keys.event(group, ev.id));
     }
+    toast.error(e);
+    return false;
+  }
+}
+
+/**
+ * Runs several actions in a row (siblings at one stop), each against the version the previous one
+ * returned. No toast on success; on failure the event is refetched and the error shown.
+ */
+export async function runActions(group: string, ev: EventView, actions: PublicAction[]): Promise<boolean> {
+  let version = ev.version;
+  let last: EventView | null = null;
+  try {
+    for (const action of actions) {
+      const r = await api.act(group, ev.id, action, version);
+      last = r.event;
+      version = r.event.version;
+    }
+    if (last) setData<EventView>(keys.event(group, ev.id), last);
+    return true;
+  } catch (e) {
+    if (last) setData<EventView>(keys.event(group, ev.id), last);
+    if (e instanceof ApiError && e.code === "stale") await refetch(keys.event(group, ev.id));
     toast.error(e);
     return false;
   }
@@ -140,6 +166,12 @@ export function logLine(ev: EventView, entry: EventView["log"][number]): string 
       break;
     case "setArrived":
       text = L.setArrived(idx.kidName(a.kidId), a.arrived);
+      break;
+    case "setEta":
+      text = L.setEta(a.kidIds.map(idx.kidName).join(", "), a.minutes);
+      break;
+    case "endRun":
+      text = L.endRun(a.ended);
       break;
     case "editEvent": {
       const changes = Object.keys(a.prev ?? {}).map((k) => {

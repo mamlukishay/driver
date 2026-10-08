@@ -13,7 +13,7 @@ import { api, ApiError } from "../api.ts";
 import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { keys, refetch, useKid } from "../store.ts";
-import { cx, fmtDate, kidPath, nowLocal, todayYmd, useForce } from "../util.ts";
+import { cx, fmtClock, fmtDate, kidPath, nowLocal, todayYmd, useForce } from "../util.ts";
 
 /**
  * The read-only kid page. Without `event`: the next upcoming rides (permanent link). With `event`:
@@ -130,30 +130,45 @@ function KidEvent({
 /** First name of the driver's parent, for "X יצא/ה לדרך" / "X למטה!". */
 const driverName = (r: KidRide) => r.driver.parents[0]?.name || he.family(familyDisplayName(r.driver));
 
-/** What a ticket says for a status: the road sign, the huge line (arrived), the hint, the stamp. */
+/** What a ticket says for a status: the road sign, the huge line (arrived), the hint, its small note, the stamp. */
 export interface TicketCopy {
   sign: string | null;
   hint: string | null;
+  /** Small print under the hint ("עודכן ב-HH:MM"). */
+  note?: string;
   big?: string;
   stamp?: string;
+  /** The stamp carries a check mark (picked up, arrived). */
+  check?: boolean;
 }
 
-/** The one place that maps a leg status to its words. */
-export function ticketCopy(status: KidLegStatus, ride: KidRide | null): TicketCopy {
+/**
+ * The one place that maps a leg status to its words. `own`: the kid rides in their own family's car
+ * (the driver's kids are picked as the run starts, so "picked" there just means on the way).
+ */
+export function ticketCopy(status: KidLegStatus, ride: KidRide | null, leg: Leg, own = false, now = Date.now()): TicketCopy {
   switch (status) {
     case "waiting":
       return { sign: he.kid.status.waiting, hint: he.kid.status.waitingHint };
     case "assigned":
       return { sign: he.kid.status.assigned, hint: null };
-    case "onTheWay":
-      return { sign: he.kid.status.onTheWaySign, hint: ride ? he.kid.status.onTheWay(driverName(ride)) : null };
-    case "next":
-      return { sign: he.kid.status.next, hint: he.kid.status.nextHint };
+    case "onTheWay": {
+      const eta = ride?.eta;
+      if (!eta) return { sign: he.kid.status.onTheWaySign, hint: ride ? he.kid.status.onTheWay(driverName(ride)) : null };
+      // Once the ETA has passed, "עוד רגע" instead of a time (the page re-renders every minute).
+      return {
+        sign: he.kid.status.onTheWaySign,
+        hint: now > eta.at ? he.kid.status.etaSoon : he.kid.status.eta(fmtClock(eta.at)),
+        note: he.kid.status.etaUpdated(fmtClock(eta.setAt)),
+      };
+    }
     case "arrived":
       return { sign: null, big: ride ? he.kid.status.arrived(driverName(ride)) : "", hint: he.kid.status.arrivedHint };
     case "picked":
-      return { sign: he.kid.status.picked, hint: null, stamp: he.kid.status.pickedStamp };
+      if (own) return { sign: he.kid.status.onTheWaySign, hint: null };
+      return { sign: he.kid.status.picked, hint: null, stamp: he.kid.status.pickedStamp, check: true };
     case "done":
+      if (ride?.ended) return { sign: null, hint: null, stamp: leg === "out" ? he.kid.status.endedOut : he.kid.status.endedBack, check: leg === "out" };
       return { sign: null, hint: null, stamp: he.kid.status.doneStamp };
   }
 }
@@ -193,8 +208,8 @@ function KidLeg({
         {label} · {he.kid.status.done}
       </p>
     );
-  const copy = ticketCopy(status, r);
   const home = he.kid.home;
+  const copy = ticketCopy(status, r, leg, r?.driver.familyId === familyId);
   if (!r)
     return (
       <article class="tk wait">
@@ -238,7 +253,7 @@ function KidLeg({
   const showReady = !own && status !== "done" && !r.picked && (r.ready || (canReady && status !== "arrived"));
   return (
     <div class="kleg">
-      <article class={cx("tk", arr && "arr", status === "picked" && "pk", status === "done" && "done")}>
+      <article class={cx("tk", arr && "arr", status === "picked" && "pk", status === "done" && "done", status === "done" && r.ended && "ended")}>
         <div class="tk-main" {...statusAttrs}>
           {arr ? (
             <>
@@ -268,10 +283,11 @@ function KidLeg({
                 </div>
               </div>
               <p class="tk-who">{own ? he.kid.withFamily : <Who family={familyDisplayName(r.driver)} />}</p>
-              {copy.hint && <p class="tk-hint">{copy.hint}</p>}
+              {copy.hint && <p class={cx("tk-hint", copy.note && "tk-eta")}>{copy.hint}</p>}
+              {copy.note && <small class="tk-note">{copy.note}</small>}
               {copy.stamp && (
                 <span class="stamp">
-                  {status === "picked" && <CheckIcon size={22} />}
+                  {copy.check && <CheckIcon size={22} />}
                   {copy.stamp}
                 </span>
               )}

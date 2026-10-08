@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  apiEvent,
   apiGroup,
   createGroup,
   emptySeat,
@@ -103,34 +104,49 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     await expect(backStatus).toContainText(he.kid.status.waiting);
     await expect(kid.page.getByRole("button", { name: he.kid.ready })).toBeVisible();
 
-    // --- Driver mode: the share card lists the kid with a wa.me link to the kid's own phone ---
+    // --- Driver mode, "יצאתי": the kid page updates live (no reload). ---
     await b.page.goto(`${eventUrl}/drive/out`);
-    const share = b.page.getByRole("region", { name: he.drive.shareTitle });
-    await expect(share).toContainText(A.kid);
-    const shareLink = share.getByRole("link", { name: he.drive.shareTo(A.kid) });
+    await b.page.getByRole("button", { name: he.drive.start }).click();
+    // The departure sheet: one message for A's family, to the kid's own phone, with the per-event kid link.
+    const depart = b.page.getByRole("dialog", { name: he.drive.departTitle });
+    const shareLink = depart.getByRole("link", { name: he.drive.sendLabel(A.kid) });
     await expect(shareLink).toHaveAttribute("href", /^https:\/\/wa\.me\/972531111111\?text=/);
     const shareText = new URL((await shareLink.getAttribute("href"))!).searchParams.get("text")!;
     expect(shareText).toContain(`/g/${groupId}/kid/${kidId}/e/${eventId}`);
+    await depart.getByRole("button", { name: he.drive.skip }).click();
+    await expect(b.page.getByText(he.drive.progress(0, 1))).toBeVisible();
+    await expect(outStatus).toHaveAttribute("data-status", "onTheWay");
+    await expect(outStatus).toContainText(he.kid.status.onTheWay(B.parent));
 
-    // --- "יצאתי": the kid page updates live (no reload). A is the only stop, so "next". ---
-    await b.page.getByRole("button", { name: he.drive.start }).click();
-    await expect(b.page.getByText(he.drive.onTheWay, { exact: true })).toBeVisible();
-    await expect(share).toHaveClass(/\bhl\b/);
-    await expect(outStatus).toHaveAttribute("data-status", /^(onTheWay|next)$/);
-    await expect(outStatus).toContainText(he.kid.status.next);
+    // --- The driver sends an ETA ("בעוד 10 דק׳"): the kid sees a clock time and when it was set ---
+    const bFamily = await familyIdOf(b.page, groupId);
+    const act = async (action: object) => {
+      const r = await b.page.request.post(`/api/g/${groupId}/events/${eventId}/actions`, { data: action, headers: { "X-Family-Id": bFamily } });
+      expect(r.ok()).toBeTruthy();
+    };
+    const offerId = (await apiEvent(b.page, groupId, eventId, bFamily)).offers.out[0]!.id;
+    await act({ type: "setEta", offerId, kidIds: [kidId], minutes: 10 });
+    await expect(outStatus).toHaveAttribute("data-status", "onTheWay");
+    await expect(outStatus).toContainText(/הגעה בערך ב-\d{2}:\d{2}/);
+    await expect(outStatus).toContainText(/עודכן ב-\d{2}:\d{2}/);
 
     // --- "הגעתי" at the kid's stop → "דוד למטה!" ---
-    await b.page.getByRole("button", { name: he.drive.arrivedLabel(A.kid) }).click();
-    await expect(b.page.getByRole("button", { name: he.drive.arrivedLabel(A.kid) })).toHaveAttribute("aria-pressed", "true");
+    await b.page.getByRole("button", { name: he.drive.arriveLabel(A.kid) }).click();
+    await expect(b.page.getByRole("button", { name: he.drive.pickLabel(A.kid) })).toBeVisible();
     await expect(outStatus).toHaveAttribute("data-status", "arrived");
     await expect(outStatus).toContainText(he.kid.status.arrived(B.parent));
 
     // --- Picked up → "עלית לרכב ✓" ---
-    await b.page.getByRole("button", { name: he.drive.pickedBtn, exact: true }).click();
-    await expect(b.page.getByRole("checkbox", { name: new RegExp(A.kid) })).toHaveAttribute("aria-checked", "true");
+    await b.page.getByRole("button", { name: he.drive.pickLabel(A.kid) }).click();
+    await expect(b.page.getByText(he.drive.allIn)).toBeVisible();
     await expect(outStatus).toHaveAttribute("data-status", "picked");
     await expect(outStatus).toContainText(he.kid.status.picked);
     await expect(backStatus).toHaveAttribute("data-status", "waiting");
+
+    // --- "הגענו" ends the run → "הגעתם" ---
+    await act({ type: "endRun", offerId, ended: true });
+    await expect(outStatus).toHaveAttribute("data-status", "done");
+    await expect(outStatus).toContainText(he.kid.status.endedOut);
   } finally {
     for (const u of users) await u.ctx.close();
   }

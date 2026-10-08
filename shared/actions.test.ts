@@ -275,6 +275,103 @@ describe("setArrived", () => {
   });
 });
 
+describe("own kids ride along on the out leg", () => {
+  test("startRun on out puts the driver's own seated kids in picked", () => {
+    const s = run([offerA("out"), seat("fama", "o1", "a1"), seat("famb", "o1", "b1"), seat("fama", "o1", "a2")]);
+    const { after, entry } = logged(s, "fama", { type: "startRun", offerId: "o1" });
+    expect(after.offers.out[0]!.run).toEqual({ startedAt: NOW, picked: ["a1", "a2"] });
+    // Undo still resets the whole run.
+    expect(body(ok(undo(after, ctx(), entry, "fama", NOW)))).toEqual(body(s));
+  });
+
+  test("not on the back leg", () => {
+    const s = run([offerA("back"), seat("fama", "o1", "a1"), seat("famb", "o1", "b1"), ["fama", { type: "startRun", offerId: "o1" }]]);
+    expect(s.offers.back[0]!.run).toEqual({ startedAt: NOW, picked: [] });
+  });
+
+  test("seating an own kid into a running out offer picks them; others and back stay unpicked", () => {
+    const s = run([offerA("out"), ["fama", { type: "startRun", offerId: "o1" }], seat("fama", "o1", "a1"), seat("famb", "o1", "b1")]);
+    expect(s.offers.out[0]!.run!.picked).toEqual(["a1"]);
+    const { after, entry } = logged(run([offerA("out"), ["fama", { type: "startRun", offerId: "o1" }]]), "fama", { type: "seatKid", offerId: "o1", kidId: "a2" });
+    expect(after.offers.out[0]!.run!.picked).toEqual(["a2"]);
+    expect(ok(undo(after, ctx(), entry, "fama", NOW)).offers.out[0]!.run).toEqual({ startedAt: NOW, picked: [] });
+    const back = run([offerA("back"), ["fama", { type: "startRun", offerId: "o1" }], seat("fama", "o1", "a1")]);
+    expect(back.offers.back[0]!.run!.picked).toEqual([]);
+  });
+});
+
+describe("setEta", () => {
+  const s = run([offerA(), seat("famb", "o1", "b1"), seat("famc", "o1", "c1")]);
+  const started = run([["fama", { type: "startRun", offerId: "o1" }]], s);
+  const eta = (kidIds: string[], minutes: number): Action => ({ type: "setEta", offerId: "o1", kidIds, minutes });
+
+  test("offer owner only; needs a run", () => {
+    expect(err(applyAction(s, ctx(), eta(["b1"], 5), "fama", NOW))).toBe("invalid");
+    expect(err(applyAction(started, ctx(), eta(["b1"], 5), "famb", NOW))).toBe("forbidden");
+    expect(err(applyAction(started, ctx(), { type: "setEta", offerId: "zz", kidIds: ["b1"], minutes: 5 }, "fama", NOW))).toBe("not_found");
+  });
+
+  test("validates minutes and kids", () => {
+    for (const m of [0, 61, 2.5, -1, Number.NaN]) expect(err(applyAction(started, ctx(), eta(["b1"], m), "fama", NOW))).toBe("invalid");
+    expect(err(applyAction(started, ctx(), eta([], 5), "fama", NOW))).toBe("invalid");
+    expect(err(applyAction(started, ctx(), { type: "setEta", offerId: "o1", kidIds: "b1", minutes: 5 } as unknown as Action, "fama", NOW))).toBe("invalid");
+    expect(err(applyAction(started, ctx(), eta(["b1", "a1"], 5), "fama", NOW))).toBe("not_found");
+  });
+
+  test("sets clock times for every kid of the stop; later calls overwrite", () => {
+    const a = ok(applyAction(started, ctx(), eta(["b1", "c1"], 5), "fama", NOW));
+    expect(a.offers.out[0]!.run!.eta).toEqual({ b1: { at: NOW + 300_000, setAt: NOW }, c1: { at: NOW + 300_000, setAt: NOW } });
+    const b = ok(applyAction(a, ctx(), eta(["b1"], 1), "fama", NOW + 1000));
+    expect(b.offers.out[0]!.run!.eta!.b1).toEqual({ at: NOW + 1000 + 60_000, setAt: NOW + 1000 });
+    expect(b.offers.out[0]!.run!.eta!.c1).toEqual({ at: NOW + 300_000, setAt: NOW });
+    expect(ok(applyAction(a, ctx(), eta(["b1"], 60), "fama", NOW)).offers.out[0]!.run!.eta!.b1!.at).toBe(NOW + 3_600_000);
+  });
+
+  test("undo restores the previous run", () => {
+    const first = logged(started, "fama", eta(["b1"], 5));
+    expect(body(ok(undo(first.after, ctx(), first.entry, "fama", NOW)))).toEqual(body(started));
+    const second = logged(first.after, "fama", eta(["b1", "c1"], 10), ctx(), NOW + 1000);
+    expect(body(ok(undo(second.after, ctx(), second.entry, "fama", NOW + 1000)))).toEqual(body(first.after));
+  });
+
+  test("unseating a kid drops their eta", () => {
+    const a = run([["fama", eta(["b1", "c1"], 5)], ["famb", { type: "unseatKid", offerId: "o1", kidId: "b1" }]], started);
+    expect(Object.keys(a.offers.out[0]!.run!.eta!)).toEqual(["c1"]);
+  });
+});
+
+describe("endRun", () => {
+  const s = run([offerA(), seat("famb", "o1", "b1")]);
+  const started = run([["fama", { type: "startRun", offerId: "o1" }]], s);
+  const end = (ended: boolean): Action => ({ type: "endRun", offerId: "o1", ended });
+
+  test("offer owner only; needs a run; validates", () => {
+    expect(err(applyAction(s, ctx(), end(true), "fama", NOW))).toBe("invalid");
+    expect(err(applyAction(started, ctx(), end(true), "famb", NOW))).toBe("forbidden");
+    expect(err(applyAction(started, ctx(), { type: "endRun", offerId: "o1", ended: 1 } as unknown as Action, "fama", NOW))).toBe("invalid");
+  });
+
+  test("sets and clears endedAt", () => {
+    const ended = ok(applyAction(started, ctx(), end(true), "fama", NOW + 5));
+    expect(ended.offers.out[0]!.run).toEqual({ startedAt: NOW, picked: [], endedAt: NOW + 5 });
+    const resumed = ok(applyAction(ended, ctx(), end(false), "fama", NOW + 6));
+    expect(resumed.offers.out[0]!.run).toEqual({ startedAt: NOW, picked: [] });
+  });
+
+  test("undo restores the previous value", () => {
+    const e = logged(started, "fama", end(true));
+    expect(body(ok(undo(e.after, ctx(), e.entry, "fama", NOW)))).toEqual(body(started));
+    const r = logged(e.after, "fama", end(false));
+    expect(body(ok(undo(r.after, ctx(), r.entry, "fama", NOW)))).toEqual(body(e.after));
+  });
+
+  test("setRun carries eta and endedAt (undo of removeOffer keeps them)", () => {
+    const busy = run([["fama", { type: "setEta", offerId: "o1", kidIds: ["b1"], minutes: 3 }], ["fama", end(true)]], started);
+    const { after, entry } = logged(busy, "fama", { type: "removeOffer", offerId: "o1" });
+    expect(body(ok(undo(after, ctx(), entry, "fama", NOW)))).toEqual(body(busy));
+  });
+});
+
 describe("editEvent", () => {
   test("any family; validates fields; slug never changes", () => {
     const s = ok(applyAction(baseEvent(), ctx(), { type: "editEvent", patch: { title: "  New  title ", start: "11:00", date: "2026-10-21" } }, "famb", NOW));
@@ -370,6 +467,8 @@ describe("cancel / restore", () => {
       ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],
       ["fama", { type: "unseatKid", offerId: "o1", kidId: "a1" }],
       ["fama", { type: "startRun", offerId: "o1" }],
+      ["fama", { type: "setEta", offerId: "o1", kidIds: ["a1"], minutes: 5 }],
+      ["fama", { type: "endRun", offerId: "o1", ended: true }],
       ["fama", { type: "setKidReady", offerId: "o1", kidId: "a1", ready: true }],
       ["fama", { type: "confirmDeparture", offerId: "o1" }],
     ];
