@@ -1,6 +1,9 @@
 import { nextEventDate } from "../../shared/myGroups.ts";
 import { useEffect } from "preact/hooks";
+import { useLocation } from "preact-iso";
+import { AccountCard, SignedInLine } from "../components/Account.tsx";
 import { Header } from "../components/Header.tsx";
+import { toast } from "../components/Toast.tsx";
 import { Logo } from "../components/Logo.tsx";
 import { he } from "../i18n/he.ts";
 import { allIdentities, myGroupsByLastUsed, onIdentityChange } from "../identity.ts";
@@ -28,10 +31,18 @@ function GroupRow({ group, familyId }: { group: string; familyId: string }) {
 
 export function Home() {
   const force = useForce();
+  const loginFailed = useLocation().query.login === "failed";
   useEffect(() => {
     const off = onIdentityChange(force);
     return () => void off();
   }, []);
+  useEffect(() => {
+    if (!loginFailed) return;
+    // `/auth/google/callback` sends failures (and a cancelled Google screen) here; drop the query so a reload is quiet.
+    history.replaceState(history.state, "", location.pathname);
+    const t = setTimeout(() => toast.warn(he.account.failed)); // after the toast host has subscribed
+    return () => clearTimeout(t);
+  }, [loginFailed]);
   const ids = allIdentities();
   const groups = myGroupsByLastUsed();
   return (
@@ -46,6 +57,7 @@ export function Home() {
               {he.home.create}
             </a>
             <p class="small muted center">{he.home.emptyHint}</p>
+            <AccountCard />
           </section>
         ) : (
           <>
@@ -60,8 +72,10 @@ export function Home() {
             <a class="btn ghost big" href="/new-group">
               {he.home.create}
             </a>
+            <AccountCard />
           </>
         )}
+        <SignedInLine />
       </main>
     </>
   );

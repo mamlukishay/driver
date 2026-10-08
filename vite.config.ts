@@ -28,7 +28,18 @@ function appVersion(): string {
   return sha ? `${version}+${sha}` : version;
 }
 
-export default defineConfig({
-  plugins: [preact(), cloudflare({ remoteBindings })],
+// Local fake sign-in (`/auth/dev-login`, worker/auth.ts) for dev and e2e: only `vite dev` (never a build, so
+// it can't reach a deploy) and only when the shell sets AUTH_DEV_LOGIN=1 (playwright.config.ts does).
+// The worker also refuses it on any host but localhost.
+const devLogin = (command: string) => command === "serve" && process.env.AUTH_DEV_LOGIN === "1";
+
+export default defineConfig(({ command }) => ({
+  plugins: [
+    preact(),
+    cloudflare({
+      remoteBindings,
+      ...(devLogin(command) ? { config: (c) => ({ vars: { ...c.vars, AUTH_DEV_LOGIN: "1" } }) } : {}),
+    }),
+  ],
   define: { __APP_VERSION__: JSON.stringify(appVersion()) },
-});
+}));

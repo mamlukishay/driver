@@ -15,7 +15,8 @@ export type ErrorCode =
   | "undo_expired"
   | "slug_taken"
   | "event_cancelled"
-  | "kid_slug_taken";
+  | "kid_slug_taken"
+  | "unauthorized";
 
 export const ERROR_STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
@@ -30,6 +31,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   slug_taken: 409,
   event_cancelled: 409,
   kid_slug_taken: 409,
+  unauthorized: 401,
 };
 
 /* ---------- families ---------- */
@@ -400,7 +402,35 @@ export interface ErrorResponse {
   error: ErrorCode;
 }
 export interface ConfigResponse {
-  features: { places: boolean; routes: boolean; inviteParse: boolean; slugSuggest: boolean };
+  /** `accounts`: optional Google sign-in is configured (or dev login is on locally). */
+  features: { places: boolean; routes: boolean; inviteParse: boolean; slugSuggest: boolean; accounts: boolean };
+}
+
+/* ---------- accounts (optional Google sign-in; see shared/account.ts) ---------- */
+
+/** One group saved on an account: the family this person picked there and when they last opened it. */
+export interface AccountGroup {
+  group: string;
+  familyId: string;
+  /** Epoch ms. */
+  lastUsed: number;
+}
+export interface AccountUser {
+  name: string;
+  email: string;
+  picture?: string;
+}
+/** `GET /api/me`: `user: null` and no groups when not signed in. */
+export interface MeResponse {
+  user: AccountUser | null;
+  groups: AccountGroup[];
+}
+/** `POST /api/me/sync` body; the reply is `{ groups }` (merged). */
+export interface SyncRequest {
+  groups: AccountGroup[];
+}
+export interface SyncResponse {
+  groups: AccountGroup[];
 }
 /** `POST /api/groups/suggest-slug` reply: a free English URL name for the group, when the AI came up with one. */
 export interface SuggestSlugResponse {

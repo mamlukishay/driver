@@ -130,6 +130,7 @@ export const he = {
     network: "אין חיבור לשרת. בדקו את האינטרנט ונסו שוב.",
     unknown: "משהו השתבש. נסו שוב בעוד רגע.",
     kid_slug_taken: "הכתובת הזו כבר תפוסה בקבוצה",
+    unauthorized: "צריך להתחבר שוב.",
   } satisfies Record<ClientErrorCode, string>,
 
   home: {
@@ -583,6 +584,29 @@ export const he = {
     waUpdate: (p: { title: string; date: string; lines: string[]; url: string }) =>
       `עדכון ל${p.title} (${p.date}): ${p.lines.join(". ")}.\nנהגים, בדקו את שעת היציאה.\n${p.url}`,
     waCancel: (p: { title: string; date: string; url: string }) => `בוטל: ${p.title} (${p.date}). ההסעות מבוטלות.\n${p.url}`,
+  },
+
+  /** Optional Google sign-in (src/account.ts): home card, ☰ menu, /privacy. */
+  account: {
+    cardTitle: "שמרו את הקבוצות שלכם",
+    cardHint: "התחברו עם Google והקבוצות שלכם יופיעו בכל טלפון.",
+    google: "התחברות עם Google",
+    signedInAs: "מחובר/ת בתור",
+    signOut: "התנתקות",
+    signedOut: "התנתקת מהחשבון. הקבוצות נשארו בטלפון הזה.",
+    failed: "ההתחברות לא הצליחה",
+    privacyLink: "מדיניות פרטיות",
+    navTitle: "החשבון",
+  },
+
+  privacy: {
+    title: "מדיניות פרטיות",
+    paragraphs: [
+      "אפשר להשתמש בטרמפוש בלי להתחבר. ההתחברות עם Google היא רשות, ונועדה רק לכך שהקבוצות שלכם יופיעו בכל טלפון ובכל דפדפן.",
+      "כשמתחברים עם Google אנחנו שומרים רק את השם, כתובת האימייל ותמונת הפרופיל ש-Google מוסרת, ואת רשימת הקבוצות שלכם: באיזו משפחה בחרתם בכל קבוצה ומתי פתחתם אותה לאחרונה.",
+      "המידע משמש רק כדי להציג לכם את הקבוצות שלכם בכל מכשיר. אנחנו לא משתפים אותו ולא מוכרים אותו לאף אחד.",
+      "התנתקות מהחשבון לא מוחקת את המידע. כדי למחוק אותו, כתבו לנו דרך כפתור המשוב באפליקציה.",
+    ],
   },
 
   notFound: {

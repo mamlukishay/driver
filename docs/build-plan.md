@@ -24,6 +24,7 @@ shared/                 pure TS, no DOM / no Workers APIs — imported by both s
   view.ts               viewFor(state, requester) → the event view (everyone sees everything; `me`)
   familyLabel.ts        "משפחת X" disambiguation parts for same-named families
   myGroups.ts           my-groups order (last used), next event date, join prefill from another group
+  account.ts            optional accounts: saved-group validation + merge (newer lastUsed wins), `next` sanitizing, cookies, id_token claims
   slug.ts               group/event/kid slug rules, suggestions, `-2`/`-3` clash handling
   slugSuggest.ts        Workers AI URL-name prompts and reply parsing per kind (group, event word, kid)
   kidSlug.ts            kid link names: resolution order, uniqueness in the group, rename → aliases
@@ -34,13 +35,16 @@ shared/                 pure TS, no DOM / no Workers APIs — imported by both s
 worker/
   index.ts              fetch handler: /api/* router → GroupDO stub; /api/config; invite/places proxies
   group-do.ts           class GroupDO (SQLite-backed DO): storage, actions, websockets, images
+  user-do.ts            class UserDO (SQLite-backed DO, one per Google account): profile, saved groups, session hashes (RPC)
+  auth.ts               /auth/* (Google OAuth code + PKCE, dev login, logout) and /api/me*
   google.ts             optional Places/Routes calls (only if GOOGLE_MAPS_API_KEY)
   invite.ts             invitation parse: Claude if ANTHROPIC_API_KEY, else Workers AI (AI binding); pure JSON parser in shared/inviteParse.ts
 src/
   main.tsx, app.tsx     LocationProvider + Router + routes table
   i18n/he.ts            ALL user-facing strings (Hebrew). Code/keys English.
   api.ts                typed client for §3, attaches X-Family-Id, error → i18n code
-  identity.ts           localStorage `trempush.identities` = {groupSlug → familyId}; `trempush.lastUsed` = {groupSlug → epoch ms} (separate key, so the identities format is unchanged); safe try/catch
+  identity.ts           localStorage `trempush.identities` = {groupSlug → familyId}; `trempush.lastUsed` = {groupSlug → epoch ms} (separate key, so the identities format is unchanged); safe try/catch; account hooks (`setAccountHooks`) and `mergeFromAccount` (writes the account's list in without sending anything back)
+  account.ts            optional account: `/api/me` at startup when `features.accounts`; signed in → `POST /api/me/sync` with this device's list and merge the reply into identity.ts; then fire-and-forget PUT/DELETE on identity changes
   live.ts               WebSocket subscribe per group/event + refetch fallback
   styles/tokens.css     palette/fonts from workshop.html (light + dark), logical CSS props only
   components/           Header (identity chip, ☰), NavSheet (the ☰ menu), Sheet (?sheet= aware), Toast (undo), SeatCar, KidChip, GapMeter, WaPreview…
@@ -52,7 +56,8 @@ e2e/                    Playwright smoke (mobile viewport, Hebrew)
 
 | Route | Screen |
 |---|---|
-| `/` | My groups on this device, most recently used first (`trempush.lastUsed`, set when a group screen with a header opens and on choosing/registering a family). Each row: group name, my kids in that group, "האירוע הבא: <date>" when there is an upcoming non-cancelled event. "צור קבוצה חדשה" (name → invite link to share). A stored group whose fetch 404s (deleted) is forgotten (identity and `lastUsed` removed) and drops off the list. |
+| `/` | My groups on this device, most recently used first (`trempush.lastUsed`, set when a group screen with a header opens and on choosing/registering a family). Each row: group name, my kids in that group, "האירוע הבא: <date>" when there is an upcoming non-cancelled event. "צור קבוצה חדשה" (name → invite link to share). A stored group whose fetch 404s (deleted) is forgotten (identity and `lastUsed` removed) and drops off the list. When `features.accounts` and signed out: a card "שמרו את הקבוצות שלכם" / "התחברו עם Google והקבוצות שלכם יופיעו בכל טלפון." with a white "התחברות עם Google" button (Google "G" mark, Google branding colors; full navigation to `/auth/google?next=/`) and a small "מדיניות פרטיות" link, in both the empty and the list state. Signed in: a quiet bottom line "מחובר/ת בתור <name>" + "התנתקות" (`POST /auth/logout`; toast "התנתקת מהחשבון. הקבוצות נשארו בטלפון הזה."; the device's list stays). `/?login=failed` (a failed or cancelled sign-in) shows the toast "ההתחברות לא הצליחה" and drops the query. |
+| `/privacy` | "מדיניות פרטיות" (Hebrew, static): sign-in is optional; with Google we keep only the name, email and profile picture plus the saved groups (family picked, last used); nothing shared or sold; used only to show your groups on any device; signing out keeps the data, deletion via the in-app feedback button. No email address on the page. Linked from the home sign-in card. |
 | `/new-group` | Create group form: name, English URL name (follows the name until edited: Latin letters/digits instantly; a name without them, e.g. Hebrew, keeps the `group-<4 random>` fallback and, when `features.slugSuggest`, asks `POST /api/groups/suggest-slug` 500 ms after the last keystroke, with a spinner in the field, and applies the reply only if the URL name is still untouched and the name unchanged; editing the URL name cancels it), optional "קישור לקבוצת הוואטסאפ (לא חובה)" (`whatsappUrl`, hint "קישור הזמנה מהגדרות הקבוצה בוואטסאפ"; invalid → form error). |
 | `/join/:group` | Invite link. No family on this device → "מי אתם?". `?new=1` → registration form (warns when the family name already exists: "זו המשפחה שלכם?"). When this device has a family in other groups, the form is prefilled from one of them (`GET /api/g/:other` with that group's `X-Family-Id`, `me`): a select "העתקה מ:" (default the most recently used group; "בלי העתקה" clears it) copies family name, parents, address (street and city) and cars (label, seats, color, plate; no photos, since images are per group). Kids become a checkbox list "מי מהילדים בקבוצה הזו?", all unchecked, plus "+ ילד/ה"; only checked or added kids are registered, at least one is required. An independent copy: no cross-group sync. |
 | `/g/:group/who?next=` | "מי אתם?": the group's families as big buttons (color dot, label, kids' names) → confirm sheet → back to `next`. Also "משפחה חדשה — הרשמה" and "רק להסתכל" (view-only for this tab). |
@@ -76,7 +81,7 @@ e2e/                    Playwright smoke (mobile viewport, Hebrew)
 
 **Navigation up** (`useBack` in `src/nav.ts`): the header back arrow never depends on browser back. It always goes to the screen's parent: board / drive / invite / leg tabs → event הילדים שלי; event הילדים שלי, profile, cars, settings, new event → group home (who → group home when this phone has a family there, else `/`); group home → `/`. The kid page has no arrow. When the previous in-app entry (`prev` in the history state) is exactly the parent it steps back (`history.back()`); otherwise it replaces the current entry with the parent, so the browser's back still returns to whatever was behind.
 
-**Menu** (`src/components/NavSheet.tsx`): every screen with a header (not the kid page) has a ☰ button at the end of the header row (`aria-label` "תפריט") that opens `?sheet=nav`. The sheet's title is the group name (else "טרמפוש"); with a group: a line with my family's color dot and label ("צפייה בלבד" without one), then "בקבוצה הזו": אירועים (`/g/:group`), המשפחה שלי (`/g/:group/me`) and הרכבים שלי (`/g/:group/me/cars`) when this phone has a family there, הגדרות הקבוצה (`/g/:group/settings`). Always: "הקבוצות שלי" with my other groups (most recently used first; my family's color dot, the group name, my family label), "כל הקבוצות" (`/`) and "קבוצה חדשה" (`/new-group`). The row for the current path is marked (`aria-current="page"`); tapping it just closes the menu. Tapping any other row **replaces** the menu's entry (`screen?sheet=nav`) with the target (`useReplaceLink`), which keeps that entry's `prev`: browser back from the target returns to the screen under the menu (never to the open menu), and the target's back arrow still goes up. Rows are real links (long-press / open in a new tab work). The menu slides up from below the screen on open (0.2 s) and back down on close (0.17 s, every way it closes), while the scrim fades; during the slide-down it is inert and lets taps through (`Sheet` `slide` prop; other sheets keep their short nudge). Reduced motion: no slide.
+**Menu** (`src/components/NavSheet.tsx`): every screen with a header (not the kid page) has a ☰ button at the end of the header row (`aria-label` "תפריט") that opens `?sheet=nav`. The sheet's title is the group name (else "טרמפוש"); with a group: a line with my family's color dot and label ("צפייה בלבד" without one), then "בקבוצה הזו": אירועים (`/g/:group`), המשפחה שלי (`/g/:group/me`) and הרכבים שלי (`/g/:group/me/cars`) when this phone has a family there, הגדרות הקבוצה (`/g/:group/settings`). Always: "הקבוצות שלי" with my other groups (most recently used first; my family's color dot, the group name, my family label), "כל הקבוצות" (`/`) and "קבוצה חדשה" (`/new-group`). When `features.accounts`: a last row "התחברות עם Google" (full navigation to `/auth/google?next=<current path>`) when signed out, or "מחובר/ת בתור <name>" + "התנתקות" when signed in. The row for the current path is marked (`aria-current="page"`); tapping it just closes the menu. Tapping any other row **replaces** the menu's entry (`screen?sheet=nav`) with the target (`useReplaceLink`), which keeps that entry's `prev`: browser back from the target returns to the screen under the menu (never to the open menu), and the target's back arrow still goes up. Rows are real links (long-press / open in a new tab work). The menu slides up from below the screen on open (0.2 s) and back down on close (0.17 s, every way it closes), while the scrim fades; during the slide-down it is inert and lets taps through (`Sheet` `slide` prop; other sheets keep their short nudge). Reduced motion: no slide.
 
 **Deleted group**: on `{ t: "deleted" }` from the group WebSocket, or a 404 on `GET /api/g/:group` for a group this phone has a family in, the client forgets the group (identity, `lastUsed`, "רק להסתכל") and every route of that group (`/g/:group/…`, `/join/:group`) shows "הקבוצה נמחקה" with "לקבוצות שלי" (`src/screens/GroupGone.tsx`) for the rest of the page view. All from the cached group (`useGroup`), never blocking render.
 
@@ -107,7 +112,11 @@ Rules for every call:
 
 | Method & path | Auth | Body → Response |
 |---|---|---|
-| `GET /api/config` | – | → `{ features: { places: bool, routes: bool, inviteParse: bool, slugSuggest: bool } }` (`slugSuggest` = the Workers AI binding `AI` exists) |
+| `GET /api/config` | – | → `{ features: { places: bool, routes: bool, inviteParse: bool, slugSuggest: bool, accounts: bool } }` (`slugSuggest` = the Workers AI binding `AI` exists; `accounts` = `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set, or local dev login is on) |
+| `GET /api/me` | session | → `{ user: { name, email, picture? } \| null, groups: { group, familyId, lastUsed }[] }`. Never 401: signed out (or an unknown session) → `{ user: null, groups: [] }`. |
+| `POST /api/me/sync` | session | `{ groups: { group, familyId, lastUsed }[] }` (≤ 200; slugs `isSlug`, family ids `isId` ≤ 32 chars, `lastUsed` a non-negative number) → `{ groups }` merged into the account: per group the newer `lastUsed` wins (a tie keeps the device's), most recent first, at most 200 kept · 400 `invalid` · 401 `unauthorized` |
+| `PUT /api/me/groups/:group` | session | `{ familyId, lastUsed }` → `{ ok: true }` (upsert; the newer `lastUsed` is kept) · 400 · 401 |
+| `DELETE /api/me/groups/:group` | session | → `{ ok: true }` · 401 |
 | `POST /api/groups` | – | `{ name, slug, whatsappUrl? }` → `{ groupId: slug }` · 400 `invalid` (bad slug or bad `whatsappUrl`) · 409 `{ error: "slug_taken", suggestion: "slug-2" }` ("taken" = that DO already has `meta`). No `slug` → a random 10-char one. |
 | `POST /api/groups/suggest-slug` | – | `{ name }` (≤ 60 chars) → `{ slug?: string }` · 400 `invalid` (empty name). Workers AI `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (JSON mode, prompt in `shared/slugSuggest.ts`) turns the name into 1–4 English words (`בר מצווה לתומר` → `tomer-bar-mitzvah`); the reply is `slugify`'d (≤ 30 chars), must pass `isSlug`, and is made free (`slug`, `slug-2`… up to 6). Any failure (no `AI` binding, model error, junk, 4 s timeout, nothing free) → `{}` with 200. |
 | `GET /api/g/:group` | optional | → `{ group, families: FamilyPublic[] (incl. phones, address), events: EventSummary[], me?: FamilyPrivate }` |
@@ -135,6 +144,13 @@ Rules for every call:
 | `POST /api/feedback/screenshot` | – | raw image body (`image/jpeg` / `png` / `webp`, ≤ 600 KB) → `{ screenshotId }` |
 | `GET /api/feedback/screenshot/:screenshotId` | – | → bytes |
 | `POST /api/feedback` | – | `{ kind: "improve" \| "keep", text (≤ 4000), audioId?, transcript?, audioSeconds? (recording length, rounded and clamped to 0..125, kept only with audioId), screenshotId?, context }` → `{ ok: true, id, issueUrl? }`. Always stores a JSON record; opens a GitHub issue when `GITHUB_FEEDBACK_TOKEN` is set (a GitHub failure still returns ok). |
+
+**Accounts (optional Google sign-in, `worker/auth.ts`).** Never required and never checked by group endpoints (`X-Family-Id` and the trust model are unchanged); an account only stores "my groups". `wrangler.jsonc` `assets.run_worker_first` includes `/auth/*`.
+- `GET /auth/google?next=<path>`: 404 unless both Google secrets are set (with dev login on and no secrets: 302 to `/auth/dev-login` as a fixed test user). Random `state` + PKCE `code_verifier`; cookie `tp_oauth` (HttpOnly, Secure, SameSite=Lax, Path=/auth, Max-Age 600) = `{ state, verifier, next }`; 302 to Google (`redirect_uri = <origin>/auth/google/callback`, scope `openid email profile`, S256, `prompt=select_account`).
+- `GET /auth/google/callback`: checks `state`, exchanges the code (client id + secret + verifier) at `oauth2.googleapis.com/token`, decodes the `id_token` payload (no signature check: it came straight from Google over TLS) and requires `iss` = accounts.google.com, `aud` = the client id, not expired (`profileFromIdToken`, shared/account.ts). Upserts the profile, opens a session, sets `tp_session`, clears `tp_oauth`, 302 to `next` (`safeNext`: a path starting with a single `/`, else `/`). Any failure or `error=` (user cancelled) → 302 `/?login=failed`.
+- `POST /auth/logout` → deletes this session, clears the cookie, 204.
+- `GET /auth/dev-login?sub=&name=&next=`: a fake sign-in for local dev and e2e (key `dev:<sub>`). Only when the Worker env has `AUTH_DEV_LOGIN=1` and the host is `localhost`/`127.0.0.1`; `vite.config.ts` sets that var only in `vite dev` when the shell has `AUTH_DEV_LOGIN=1` (`playwright.config.ts` does). Never in `wrangler.jsonc` or the deploy workflow. Otherwise 404.
+- Session cookie `tp_session` = `<user key>.<token>` (`g:<google sub>`, token 32 random bytes base64url), HttpOnly, Secure, SameSite=Lax, Path=/, Max-Age 1 year. The Worker routes to the UserDO named by the key; the DO checks the token's SHA-256 against its stored session hashes. No signing secret.
 
 Feedback endpoints (`worker/feedback.ts`, pure parts in `shared/feedback.ts`) have no auth, size caps, and a naive per-isolate rate limit of 10 requests/min/IP per endpoint (429 `rate_limited`). `context` is auto-collected by the client: route, group id/name, acting family id/name, kid-page flag, app version (`__APP_VERSION__`), user agent, viewport, time, screenshot state (`attached` / `removed` / `failed` / `none`).
 
@@ -192,6 +208,14 @@ Older stored families may still carry `keyHash` / `kidToken`; they are ignored (
 ```
 ```
 
+**UserDO** (one per account, `idFromName("g:<google sub>")`; binding `USER`, migration `v2`; KV API, called over RPC):
+
+```
+profile              { sub, email, name, picture? }   (from Google's id_token, refreshed on each sign-in)
+grp:{groupSlug}      { familyId, lastUsed }            (at most 200; the least recently used drop off)
+sess:{sha256(token)} { createdAt }                     (at most 50 sessions; the oldest is dropped)
+```
+
 Feedback storage: with the R2 binding `IMAGES`, records go to `feedback/{yyyy-mm-dd}/{id}.json`, audio to `feedback-audio/{id}`, screenshots to `feedback-shots/{id}`. Without R2 the same keys live in a dedicated GroupDO instance (`idFromName("__feedback__")`, keys prefixed `fb:`; blobs split into 1 MB chunks).
 
 ## 5. UX rules (from the workshop — non-negotiable)
@@ -232,6 +256,8 @@ bun run deploy                     # vite build + wrangler deploy
 bunx wrangler secret put GOOGLE_MAPS_API_KEY
 bunx wrangler secret put ANTHROPIC_API_KEY
 bunx wrangler secret put GITHUB_FEEDBACK_TOKEN   # feedback → GitHub issues (see README "Feedback")
+bunx wrangler secret put GOOGLE_CLIENT_ID        # optional Google sign-in (with GOOGLE_CLIENT_SECRET; README "Optional add-ons")
+bunx wrangler secret put GOOGLE_CLIENT_SECRET
 ```
 
 Result: `https://trempush.<account>.workers.dev`. No card needed for the base app. Production is served at `https://trempush.com` (a Cloudflare Custom Domain on the same Worker, set in the dashboard; some cellular carriers block `*.workers.dev`).

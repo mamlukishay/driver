@@ -2827,3 +2827,53 @@ details.past[open] > summary {
 .settings .hs + .muted {
   margin-block-start: -4px;
 }
+
+/* ---------- optional account (components/Account.tsx) ---------- */
+.acct-card {
+  margin-block-start: 6px;
+}
+.acct-t {
+  font-family: var(--ff-display);
+  font-size: 17px;
+  font-weight: 400;
+}
+/* Google sign-in button: white (dark: #131314) with the "G" mark, per Google's branding guidelines. */
+.gbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  inline-size: 100%;
+  min-block-size: var(--tap);
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--gbtn-line);
+  background: var(--gbtn-bg);
+  color: var(--gbtn-ink);
+  font-family: "Roboto", var(--ff-body);
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+}
+.gbtn:hover {
+  box-shadow: 0 1px 3px var(--shadow);
+}
+.gbtn svg {
+  flex: none;
+}
+.acct-line,
+.navm-acct {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 12px;
+  margin-block-start: 10px;
+}
+.navm-acct {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.privacy p {
+  line-height: 1.6;
+}

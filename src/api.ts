@@ -8,14 +8,17 @@ import type {
   EventView,
   FamilyInput,
   GroupResponse,
+  AccountGroup,
   ImageUploadResponse,
   InviteParseResponse,
   KidView,
+  MeResponse,
   PlacesResponse,
   PublicAction,
   RegisterFamilyResponse,
   SuggestGroupSlugRequest,
   SuggestSlugResponse,
+  SyncResponse,
   UndoResponse,
   UpdateGroupRequest,
   UpdateGroupResponse,
@@ -101,7 +104,7 @@ export const api = {
     if (!configPromise) {
       configPromise = req<ConfigResponse>("/api/config").catch(() => {
         configPromise = null;
-        return { features: { places: false, routes: false, inviteParse: false, slugSuggest: false } };
+        return { features: { places: false, routes: false, inviteParse: false, slugSuggest: false, accounts: false } };
       });
     }
     return configPromise;
@@ -167,6 +170,26 @@ export const api = {
 
   places: (group: string, q: string) =>
     req<PlacesResponse>(`${g(group)}/places?q=${encodeURIComponent(q)}`, { group }),
+
+  /* ---------- optional account (Google sign-in; the session is an HttpOnly cookie) ---------- */
+
+  me: () => req<MeResponse>("/api/me"),
+
+  /** Merges this device's groups into the account; the reply is the merged list. */
+  syncGroups: (groups: AccountGroup[]) => req<SyncResponse>("/api/me/sync", { body: { groups } }),
+
+  putAccountGroup: (group: string, familyId: string, lastUsed: number) =>
+    req<{ ok: true }>(`/api/me/groups/${encodeURIComponent(group)}`, { method: "PUT", body: { familyId, lastUsed } }),
+
+  deleteAccountGroup: (group: string) => req<{ ok: true }>(`/api/me/groups/${encodeURIComponent(group)}`, { method: "DELETE" }),
+
+  logout: async (): Promise<void> => {
+    try {
+      await fetch("/auth/logout", { method: "POST" });
+    } catch {
+      throw new ApiError("network");
+    }
+  },
 
   wsUrl: (group: string) =>
     `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${g(group)}/ws`,

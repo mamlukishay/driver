@@ -7,12 +7,22 @@ import { normalizeWaGroupUrl } from "../shared/whatsapp.ts";
 import { ApiError, errorResponse, isObj, json, readJson } from "./http.ts";
 import { handleFeedback } from "./feedback.ts";
 import { handleSuggestSlug } from "./slug-suggest.ts";
+import { accountsOn, handleAuth, handleMe } from "./auth.ts";
 
 export { GroupDO } from "./group-do.ts";
+export { UserDO } from "./user-do.ts";
 
-function configFor(env: Env): ConfigResponse {
+function configFor(env: Env, url: URL): ConfigResponse {
   const maps = Boolean(env.GOOGLE_MAPS_API_KEY);
-  return { features: { places: maps, routes: maps, inviteParse: Boolean(env.ANTHROPIC_API_KEY || env.AI), slugSuggest: Boolean(env.AI) } };
+  return {
+    features: {
+      places: maps,
+      routes: maps,
+      inviteParse: Boolean(env.ANTHROPIC_API_KEY || env.AI),
+      slugSuggest: Boolean(env.AI),
+      accounts: accountsOn(env, url),
+    },
+  };
 }
 
 /** The group's DO, addressed by its slug. */
@@ -56,10 +66,12 @@ async function createGroup(request: Request, env: Env, url: URL): Promise<Respon
 async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const seg = url.pathname.split("/").filter(Boolean);
+  if (seg[0] === "auth") return handleAuth(request, env, url);
   if (seg[0] !== "api") throw new ApiError("not_found");
   const method = request.method;
 
-  if (seg[1] === "config" && seg.length === 2 && method === "GET") return json(configFor(env));
+  if (seg[1] === "config" && seg.length === 2 && method === "GET") return json(configFor(env, url));
+  if (seg[1] === "me") return handleMe(request, env, seg);
   if (seg[1] === "groups" && seg.length === 2 && method === "POST") return createGroup(request, env, url);
   if (seg[1] === "groups" && seg[2] === "suggest-slug" && seg.length === 3 && method === "POST")
     return handleSuggestSlug(request, env, (s) => slugTaken(env, url, s));

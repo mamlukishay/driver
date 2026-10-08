@@ -21,6 +21,7 @@ import { Kid } from "./screens/Kid.tsx";
 import { NewEvent } from "./screens/NewEvent.tsx";
 import { NewGroup } from "./screens/NewGroup.tsx";
 import { NotFound } from "./screens/NotFound.tsx";
+import { Privacy } from "./screens/Privacy.tsx";
 import { Profile } from "./screens/Profile.tsx";
 import { Settings } from "./screens/Settings.tsx";
 import { Who } from "./screens/Who.tsx";
@@ -63,6 +64,7 @@ function LegacyKid(x: P) {
 const routes = {
   home: () => <Home />,
   newGroup: () => <NewGroup />,
+  privacy: () => <Privacy />,
   join: gated((x) => <Join group={p(x, "group")} />),
   who: gated((x) => <Who group={p(x, "group")} />),
   group: guarded((x) => <GroupHome group={p(x, "group")} />),
@@ -89,6 +91,7 @@ function Shell() {
       <Router>
         <Route path="/" component={routes.home} />
         <Route path="/new-group" component={routes.newGroup} />
+        <Route path="/privacy" component={routes.privacy} />
         <Route path="/join/:group" component={routes.join} />
         <Route path="/g/:group" component={routes.group} />
         <Route path="/g/:group/who" component={routes.who} />

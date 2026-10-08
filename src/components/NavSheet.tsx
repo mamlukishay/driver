@@ -7,10 +7,12 @@ import type { ComponentChildren } from "preact";
 import { useEffect } from "preact/hooks";
 import { useLocation } from "preact-iso";
 import { he } from "../i18n/he.ts";
+import { useAccount } from "../account.ts";
 import { allIdentities, myGroupsByLastUsed, onIdentityChange } from "../identity.ts";
 import { useReplaceLink, useSheet } from "../nav.ts";
 import { useGroup } from "../store.ts";
 import { famColor, famLabel, useForce } from "../util.ts";
+import { GoogleG, useSignOut } from "./Account.tsx";
 import { useGroupName, useMe } from "./Header.tsx";
 import { CalendarIcon, CarIcon, GearIcon, GroupsIcon, PeopleIcon, PlusIcon } from "./icons.tsx";
 import { Sheet } from "./Sheet.tsx";
@@ -69,7 +71,51 @@ function NavBody({ group }: { group?: string }) {
         <NavRow href="/" icon={<GroupsIcon size={22} />} label={he.nav.allGroups} />
         <NavRow href="/new-group" icon={<PlusIcon size={22} />} label={he.newGroup.title} />
       </ul>
+      <AccountRow />
     </nav>
+  );
+}
+
+/** Optional Google sign-in: "התחברות עם Google" when signed out, the name and "התנתקות" when signed in. */
+function AccountRow() {
+  const acct = useAccount();
+  const [busy, out] = useSignOut();
+  if (!acct.enabled || !acct.loaded) return null;
+  if (acct.user)
+    return (
+      <p class="navm-acct">
+        <span>
+          {he.account.signedInAs} <b>{acct.user.name}</b>
+        </span>
+        <button type="button" class="lnk quiet" onClick={out} disabled={busy}>
+          {he.account.signOut}
+        </button>
+      </p>
+    );
+  return (
+    <ul class="navm-list">
+      <li>
+        <a
+          class="navm-row"
+          href={`/auth/google?next=${encodeURIComponent(location.pathname)}`}
+          onClick={(e) => {
+            // A full page load (the router would treat /auth/* as an app route).
+            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            e.stopPropagation();
+            location.assign((e.currentTarget as HTMLAnchorElement).href);
+          }}
+        >
+          <span class="navm-ic">
+            <GoogleG size={20} />
+          </span>
+          <span class="navm-l">
+            <b>{he.account.google}</b>
+            <small>{he.account.cardTitle}</small>
+          </span>
+        </a>
+      </li>
+    </ul>
   );
 }
 

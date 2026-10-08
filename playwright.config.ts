@@ -21,6 +21,8 @@ export default defineConfig({
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure", ...common },
   webServer: {
     command: `bun run dev -- --port ${PORT} --strictPort`,
+    // Enables the local-only fake Google sign-in (`/auth/dev-login`) used by e2e/accounts.spec.ts.
+    env: { AUTH_DEV_LOGIN: "1" },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: true,
     timeout: 120_000,

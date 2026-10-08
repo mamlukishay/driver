@@ -1,6 +1,6 @@
 # טרמפוש (Trempush)
 
-A mobile-first, Hebrew (RTL) carpool coordinator for parents' groups. A parent opens a group for a class or club, shares one invite link, and every family registers once (kids, car, phone). For each event, families RSVP their kids, offer cars per leg (there / back), and seat kids on a live board. Every change is logged with a 10-second undo. No accounts and no app install: on a new phone you pick your family from the group's list ("מי אתם?"), and the choice is remembered on the device.
+A mobile-first, Hebrew (RTL) carpool coordinator for parents' groups. A parent opens a group for a class or club, shares one invite link, and every family registers once (kids, car, phone). For each event, families RSVP their kids, offer cars per leg (there / back), and seat kids on a live board. Every change is logged with a 10-second undo. No app install and no required accounts: on a new phone you pick your family from the group's list ("מי אתם?"), and the choice is remembered on the device. Optional Google sign-in saves "my groups" (which groups, which family) to an account, so they show up on any phone or browser.
 
 **Trust model:** groups are small and trust each other. Anyone with the group link can act as any family and sees every family's phones and addresses; guardrails (identity chip, confirmations, undo, permission rules) prevent mistakes, not malice. Don't store sensitive data.
 
@@ -80,6 +80,8 @@ The Workers AI binding has no local simulator, so `bun run dev` stubs it (parsin
 ```sh
 bunx wrangler secret put GOOGLE_MAPS_API_KEY   # address autocomplete, geocoding, routes
 bunx wrangler secret put ANTHROPIC_API_KEY     # optional: read invitations with Claude instead of Workers AI
+bunx wrangler secret put GOOGLE_CLIENT_ID      # optional Google sign-in ("my groups" on any device); needs both
+bunx wrangler secret put GOOGLE_CLIENT_SECRET
 ```
 
 Locally, put them in `.dev.vars` (gitignored):
@@ -89,11 +91,15 @@ GOOGLE_MAPS_API_KEY=...
 ANTHROPIC_API_KEY=...
 ```
 
+**Google sign-in (optional accounts).** In Google Cloud Console → APIs & Services → Credentials, create an OAuth client ID of type "Web application" with the authorized redirect URIs `https://trempush.com/auth/google/callback` (plus `https://trempush.mamlukishay.workers.dev/auth/google/callback` if that address should work too; the redirect URI is always `<the page's origin>/auth/google/callback`). The consent screen needs only the `openid email profile` scopes; link the privacy page `https://trempush.com/privacy`. Save the client id and secret as the Actions secrets `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`; the deploy workflow copies them into the Worker. Without both, `features.accounts` is false and the app shows no sign-in UI. Accounts live in the `UserDO` Durable Object (one per Google account; no D1).
+
+Locally (and in e2e) a fake sign-in replaces Google: `AUTH_DEV_LOGIN=1 bun run dev` enables `/auth/dev-login?sub=<id>&name=<name>&next=/` and makes the "התחברות עם Google" button use it. `vite.config.ts` passes the flag to the Worker only in `vite dev`, never in a build, and the Worker accepts it only on `localhost`; `playwright.config.ts` sets it for the e2e server.
+
 ## Feedback
 
 Every screen (the kid page too) has a small floating **משוב** button. It captures a screenshot of the visible screen, then opens a sheet with a לשיפור/לשימור toggle, a text field and a voice button (the recording shows as a small box with play and discard; its Workers AI Whisper transcript goes only into the GitHub issue, never into the form). Route, group, acting family, app version and device details are attached automatically. The Worker always stores a JSON record (R2 `feedback/…` or the Durable Object fallback); see `docs/build-plan.md` for the API.
 
-**GitHub issues (optional).** Create a fine-grained personal access token limited to this repository (`mamlukishay/driver`) with **Issues: read and write** and **Metadata: read**. Save it as the Actions secret `GH_FEEDBACK_TOKEN`; the deploy workflow copies it into the Worker as `GITHUB_FEEDBACK_TOKEN` (also synced when present: `ANTHROPIC_API_KEY`, `GOOGLE_MAPS_API_KEY`). Each feedback then opens an issue titled `[לשיפור] …` / `[לשימור] …` with labels `feedback` + `improve`/`keep`, the transcript, a player card that opens the original recording, the inline screenshot and a context table. `GITHUB_REPO` overrides the target repo. If the repository is public, **feedback issues are public**.
+**GitHub issues (optional).** Create a fine-grained personal access token limited to this repository (`mamlukishay/driver`) with **Issues: read and write** and **Metadata: read**. Save it as the Actions secret `GH_FEEDBACK_TOKEN`; the deploy workflow copies it into the Worker as `GITHUB_FEEDBACK_TOKEN` (also synced when present: `ANTHROPIC_API_KEY`, `GOOGLE_MAPS_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`). Each feedback then opens an issue titled `[לשיפור] …` / `[לשימור] …` with labels `feedback` + `improve`/`keep`, the transcript, a player card that opens the original recording, the inline screenshot and a context table. `GITHUB_REPO` overrides the target repo. If the repository is public, **feedback issues are public**.
 
 **Auto-triage with a Claude Code routine (optional).**
 

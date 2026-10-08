@@ -5,6 +5,7 @@
  * so the identities format stays unchanged.
  */
 import { byLastUsed } from "../shared/myGroups.ts";
+import type { AccountGroup } from "../shared/types.ts";
 
 const IDS_KEY = "trempush.identities";
 const BROWSE_KEY = "trempush.browse";
@@ -54,16 +55,72 @@ export function getIdentity(group: string): string | null {
 
 export function setIdentity(group: string, familyId: string): void {
   deleted.delete(group);
-  touchGroup(group);
+  touchLocal(group);
   save({ ...allIdentities(), [group]: familyId });
+  pushToAccount(group);
 }
 
-/** "התנתקות מהטלפון הזה", or the server no longer knows the family. */
+/** "התנתקות מהטלפון הזה", or the server no longer knows the family. Also drops it from the signed-in account. */
 export function removeIdentity(group: string): void {
   const all = { ...allIdentities() };
   if (!(group in all)) return;
   delete all[group];
   save(all);
+  pushed.delete(group);
+  accountHooks?.remove(group);
+}
+
+/* ---------- the signed-in account (src/account.ts registers these; nothing is sent when signed out) ---------- */
+
+export interface AccountHooks {
+  /** Saves the group on the account; false when not signed in (nothing sent). Fire-and-forget. */
+  put(group: string, familyId: string, lastUsed: number): boolean;
+  remove(group: string): void;
+}
+
+let accountHooks: AccountHooks | null = null;
+/** Groups already saved to the account in this page view (`touchGroup` sends each at most once). */
+const pushed = new Set<string>();
+
+export function setAccountHooks(h: AccountHooks | null): void {
+  accountHooks = h;
+  pushed.clear();
+}
+
+function pushToAccount(group: string): void {
+  const familyId = getIdentity(group);
+  if (familyId && accountHooks?.put(group, familyId, lastUsedMap()[group] ?? 0)) pushed.add(group);
+}
+
+/** This device's groups as the account stores them (family + last used). */
+export function localAccountGroups(): AccountGroup[] {
+  const lu = lastUsedMap();
+  return Object.entries(allIdentities()).map(([group, familyId]) => ({ group, familyId, lastUsed: lu[group] ?? 0 }));
+}
+
+/**
+ * Writes the account's merged list into this device (identities + last used) without sending anything
+ * back. A group touched here since the list was made keeps its local entry; groups not in it stay.
+ */
+export function mergeFromAccount(list: readonly AccountGroup[]): void {
+  const ids = { ...allIdentities() };
+  const lu = { ...lastUsedMap() };
+  let changed = false;
+  for (const g of list) {
+    if (deleted.has(g.group)) continue;
+    if (ids[g.group] && (lu[g.group] ?? 0) > g.lastUsed) continue;
+    if (ids[g.group] !== g.familyId || lu[g.group] !== g.lastUsed) changed = true;
+    ids[g.group] = g.familyId;
+    lu[g.group] = g.lastUsed;
+  }
+  if (!changed) return;
+  lastUsed = lu;
+  try {
+    localStorage.setItem(LAST_KEY, JSON.stringify(lu));
+  } catch {
+    /* private mode */
+  }
+  save(ids);
 }
 
 /* ---------- deleted groups ---------- */
@@ -116,8 +173,13 @@ export function lastUsedMap(): Record<string, number> {
   return lastUsed;
 }
 
-/** Marks a group as just opened on this device. */
+/** Marks a group as just opened on this device (and on the account, once per page view). */
 export function touchGroup(group: string): void {
+  touchLocal(group);
+  if (!pushed.has(group)) pushToAccount(group);
+}
+
+function touchLocal(group: string): void {
   lastUsed = { ...lastUsedMap(), [group]: Date.now() };
   try {
     localStorage.setItem(LAST_KEY, JSON.stringify(lastUsed));
