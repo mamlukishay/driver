@@ -88,7 +88,7 @@ function ProfileBody({ group, fam, places, data }: { group: string; fam: NonNull
         ) : (
           <ul class="list">
             {fam.cars.map((c) => (
-              <li class="row">
+              <li key={c.id} class="row">
                 <CarPic group={group} car={c} color={fam.color} />
                 <span class="grow1">
                   <b>{c.label}</b>
