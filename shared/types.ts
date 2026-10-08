@@ -149,6 +149,10 @@ export interface Run {
   picked: string[];
   /** Kids whose stop the driver reached ("הגעתי") and who are not picked yet. Absent on older runs. */
   arrived?: string[];
+  /** Per kid: when the driver said they'd be there ("בעוד 5 דק׳"), as clock times. Absent when never set. */
+  eta?: Record<string, { at: number; setAt: number }>;
+  /** The driver tapped "הגענו". Absent while the run is going. */
+  endedAt?: number;
 }
 
 export interface Offer {
@@ -197,6 +201,10 @@ export type PublicAction =
   | { type: "setPicked"; offerId: string; kidId: string; picked: boolean }
   | { type: "setKidReady"; offerId: string; kidId: string; ready: boolean }
   | { type: "setArrived"; offerId: string; kidId: string; arrived: boolean }
+  /** One stop's "I'll be there in N minutes" (all its kids at once). */
+  | { type: "setEta"; offerId: string; kidIds: string[]; minutes: number }
+  /** "הגענו" (ended: true) and "חזרה לנסיעה" (ended: false). */
+  | { type: "endRun"; offerId: string; ended: boolean }
   /** `prev` is filled in for the log (previous values of the changed fields); ignored on input. */
   | { type: "editEvent"; patch: EventPatch; prev?: EventPatch }
   | { type: "cancelEvent" }
