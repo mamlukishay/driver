@@ -151,3 +151,46 @@ test("per-event kid link: shared by the parent, live ride status as the driver g
     for (const u of users) await u.ctx.close();
   }
 });
+
+test("kid page: who else is in the car, the kid's stop, and who is already in", async ({ browser, request }) => {
+  // Seeded through the API: the board flow is covered above.
+  const call = async (path: string, data: object, fam?: string) => {
+    const r = await request.post(path, { data, headers: fam ? { "X-Family-Id": fam } : {} });
+    expect(r.ok(), await r.text()).toBeTruthy();
+    return r.json();
+  };
+  const { groupId } = await call("/api/groups", { name: "כיתה ה׳ 2" });
+  const family = async (input: object) => {
+    const { familyId } = await call(`/api/g/${groupId}/families`, { address: "", cars: [], ...input });
+    const g = await (await request.get(`/api/g/${groupId}`, { headers: { "X-Family-Id": familyId } })).json();
+    return { id: familyId as string, me: g.me };
+  };
+  const levi = await family({ name: "לוי", parents: [{ name: "דוד", phone: "054-222-2222" }], kids: [{ name: "יואב" }], cars: [{ label: "מאזדה 3", seats: 4, color: "אדום", plate: "567" }] });
+  const cohen = await family({ name: "כהן", parents: [{ name: "רונית", phone: "052-111-1111" }], kids: [{ name: "נועה" }] });
+  const mizrahi = await family({ name: "מזרחי", parents: [{ name: "מיכל", phone: "050-333-3333" }], kids: [{ name: "תמר" }] });
+  const yoav = levi.me.kids[0].id, noa = cohen.me.kids[0].id, tamar = mizrahi.me.kids[0].id;
+  const { eventId } = await call(`/api/g/${groupId}/events`, { title: "מסיבה", date: tomorrow(), start: "17:00", returnTime: "20:00", place: "פארק הירקון", address: "" }, cohen.id);
+  const act = (fam: string, a: object) => call(`/api/g/${groupId}/events/${eventId}/actions`, a, fam);
+  for (const [fam, k] of [[levi.id, yoav], [cohen.id, noa], [mizrahi.id, tamar]] as const)
+    await act(fam, { type: "setKidPlan", kidId: k, rsvp: "yes", out: true, back: false });
+  const r = await act(levi.id, { type: "offerCar", leg: "out", carId: levi.me.cars[0].id, driverId: levi.me.parents[0].id, seats: 4, departAt: "16:30" });
+  const offerId = r.event.offers.out[0].id;
+  for (const k of [yoav, noa, tamar]) await act(levi.id, { type: "seatKid", offerId, kidId: k });
+
+  const kid = await newUser(browser);
+  try {
+    await kid.page.goto(`/g/${groupId}/kid/${noa}/e/${eventId}`);
+    const riders = kid.page.getByRole("list", { name: he.kid.riders });
+    // The driver's own kid first, then the stops in order.
+    await expect(riders.getByRole("listitem")).toHaveText([/יואב/, new RegExp(he.kid.me), /תמר/]);
+    await expect(riders.getByRole("listitem", { name: he.kid.me, exact: true })).toBeVisible();
+    await expect(kid.page.getByText(he.kid.stop(1, 2))).toBeVisible();
+
+    // The run starts: the driver's own kid is in the car from the start (live, no reload).
+    await act(levi.id, { type: "startRun", offerId });
+    await expect(riders.getByRole("listitem", { name: he.kid.riderPicked("יואב") })).toBeVisible();
+    await expect(riders.getByRole("listitem", { name: "תמר", exact: true })).toBeVisible();
+  } finally {
+    await kid.ctx.close();
+  }
+});

@@ -504,6 +504,13 @@ export const he = {
     carMeta: (color: string | undefined, seats: number) => `${color ? `${color} · ` : ""}${seats} מקומות`,
     plateLabel: (plate: string) => `לוחית מסתיימת ב-${plate}`,
     callLabel: (name: string) => `חיוג ל${name}`,
+    /** "איתך ברכב": the other kids in the car. */
+    riders: "איתך ברכב",
+    /** The kid themself in the riders list. */
+    me: "אני",
+    /** Out leg: which pickup stop is this kid's. */
+    stop: (n: number, of: number) => `את/ה בעצירה ${n} מתוך ${of}`,
+    riderPicked: (name: string) => `${name}, כבר ברכב`,
     ready: "אני מוכן/ה",
     readyDone: "שלחת \"אני מוכן/ה\"",
     notComing: "סומן שלא מגיע/ה",

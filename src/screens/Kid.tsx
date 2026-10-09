@@ -304,6 +304,7 @@ function KidLeg({
         <div class="tk-stub">
           {arr && <b class="tk-find">{he.kid.findCar}</b>}
           <TicketCar group={group} r={r} />
+          <Riders r={r} />
           {caller?.phone && (
             <a class="kcall" href={telHref(caller.phone) ?? undefined} aria-label={he.kid.callLabel(caller.name)}>
               <span class="ic">
@@ -351,7 +352,6 @@ function TicketCar({ group, r }: { group: string; r: KidRide }) {
     <div class="meta">
       <b>{c.label}</b>
       <small>{he.kid.carMeta(c.color, c.seats)}</small>
-      {!c.photoId && <PlateIL plate={c.plate} />}
     </div>
   );
   return c.photoId ? (
@@ -366,6 +366,42 @@ function TicketCar({ group, r }: { group: string; r: KidRide }) {
     <div class="tk-car">
       <CarSide color={c.color} />
       {meta}
+      <PlateIL plate={c.plate} />
+    </div>
+  );
+}
+
+/** "איתך ברכב": every kid in the car (with a tick once picked up), and on the out leg this kid's stop. */
+function Riders({ r }: { r: KidRide }) {
+  const riders = r.riders ?? [];
+  if (riders.length < 2) return null;
+  const id = `riders-${r.offerId}`;
+  return (
+    <div class="tk-riders">
+      <div class="tk-riders-hd">
+        <small id={id}>{he.kid.riders}</small>
+        {r.stop && <span class="tk-stop">{he.kid.stop(r.stop.n, r.stop.of)}</span>}
+      </div>
+      <ul class="riders" aria-labelledby={id}>
+        {riders.map((k) => {
+          const name = k.me ? he.kid.me : k.name;
+          return (
+            <li key={k.id} class={cx("rider", k.me && "me", k.picked && "picked")} aria-label={k.picked ? he.kid.riderPicked(name) : name}>
+              <span class="av" aria-hidden="true">
+                {[...k.name][0] ?? ""}
+                {k.picked && (
+                  <i class="tick">
+                    <CheckIcon size={12} />
+                  </i>
+                )}
+              </span>
+              <span class="nm" aria-hidden="true">
+                {name}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

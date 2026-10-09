@@ -209,6 +209,8 @@ export function kidView(
   const family = families.find((f) => f.kids.some((k) => k.id === kidId));
   const kid = family?.kids.find((k) => k.id === kidId);
   if (!family || !kid) return null;
+  const kidIndex = new Map<string, { name: string; familyId: string }>();
+  for (const f of families) for (const k of f.kids) kidIndex.set(k.id, { name: k.name, familyId: f.id });
 
   const legView = (e: EventState, leg: Leg): KidLegView => {
     const plan = e.kidPlans[kid.id];
@@ -219,6 +221,21 @@ export function kidView(
     if (!offer || !driver || !car) return { needed, ride: null };
     const picked = offer.run?.picked ?? [];
     const person = offerDriver(offer, driver);
+    // Riders and stops, the way driver mode orders them: out, the driver's own kids ride from home
+    // and the others come in pickup-stop order; back, seating order.
+    const kidOf = (id: string) => kidIndex.get(id);
+    const seated = offer.kidIds.filter((k) => kidOf(k));
+    const famOf = (k: string) => kidOf(k)?.familyId;
+    let order = seated;
+    let stop: { n: number; of: number } | null = null;
+    if (leg === "out") {
+      const own = seated.filter((k) => famOf(k) === offer.familyId);
+      const stops = pickupStops("out", seated.filter((k) => famOf(k) !== offer.familyId), famOf);
+      order = [...own, ...stops.flat()];
+      const i = stops.findIndex((s) => s.includes(kid.id));
+      if (i >= 0 && stops.length > 1) stop = { n: i + 1, of: stops.length };
+    }
+    const riders = order.map((k) => ({ id: k, name: kidOf(k)!.name, me: k === kid.id, picked: picked.includes(k) }));
     return {
       needed,
       ride: {
@@ -238,6 +255,8 @@ export function kidView(
         arrived: !!offer.run?.arrived?.includes(kid.id),
         eta: offer.run?.eta?.[kid.id] ? { ...offer.run.eta[kid.id]! } : null,
         ended: offer.run?.endedAt !== undefined,
+        riders,
+        stop,
       },
     };
   };

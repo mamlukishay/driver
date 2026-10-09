@@ -152,6 +152,62 @@ describe("kidView: live fields and per-event focus", () => {
   });
 });
 
+describe("kidView: riders and stop", () => {
+  const group = { id: "grp", name: "Class", createdAt: 0, version: 1 };
+  const out = (st: EventState, kid: string) => kidView(group, FAMILIES, [st], kid, "2026-10-07")!.events[0]!.legs.out.ride!;
+  const names = (r: KidRide) => r.riders!.map((x) => x.name);
+  // B drives out; seated c1 (Mizrahi), a1 (Cohen), b1 (B's own), a2 (Cohen) — the seat count isn't the point here.
+  const s0 = chain([
+    ["famb", { type: "offerCar", leg: "out", carId: "carb", driverId: "p-famb", seats: 3, departAt: "09:30" }],
+    ["famc", { type: "seatKid", offerId: "o1", kidId: "c1" }],
+    ["fama", { type: "seatKid", offerId: "o1", kidId: "a1" }],
+    ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],
+  ]);
+  const s1: EventState = deepFreeze({ ...s0, offers: { ...s0.offers, out: [{ ...s0.offers.out[0]!, kidIds: ["c1", "a1", "b1", "a2"] }] } });
+
+  test("out: the driver's kids first, then pickup-stop order with siblings together; stop n of m", () => {
+    const r = out(s1, "a2");
+    expect(names(r)).toEqual(["Omer", "Yael", "Noa", "Tal"]);
+    expect(r.riders!.map((x) => x.me)).toEqual([false, false, false, true]);
+    expect(r.stop).toEqual({ n: 2, of: 2 });
+    expect(out(s1, "c1").stop).toEqual({ n: 1, of: 2 });
+  });
+
+  test("picked follows the run; the driver's own kid has no stop", () => {
+    const s2 = chain([["famb", { type: "startRun", offerId: "o1" }]], s1);
+    const s3 = chain([["famb", { type: "setPicked", offerId: "o1", kidId: "c1", picked: true }]], s2);
+    expect(out(s3, "a1").riders!.map((x) => x.picked)).toEqual([true, true, false, false]);
+    expect(out(s3, "b1").stop).toBeNull();
+  });
+
+  test("a single stop shows no stop line", () => {
+    expect(out(s0, "a1").stop).toEqual({ n: 2, of: 2 });
+    const one: EventState = deepFreeze({ ...s0, offers: { ...s0.offers, out: [{ ...s0.offers.out[0]!, kidIds: ["b1", "a1", "a2"] }] } });
+    expect(out(one, "a1").stop).toBeNull();
+    expect(names(out(one, "a1"))).toEqual(["Omer", "Noa", "Tal"]);
+  });
+
+  test("back: seating order, no stop; unknown kid ids are skipped", () => {
+    const r = kidView(group, FAMILIES, [state], "c1", "2026-10-07")!.events[0]!.legs.back.ride!;
+    expect(r.riders).toEqual([{ id: "c1", name: "Yael", me: true, picked: false }]);
+    expect(r.stop).toBeNull();
+    const ghost: EventState = deepFreeze({ ...s0, offers: { ...s0.offers, out: [{ ...s0.offers.out[0]!, kidIds: ["c1", "gone", "a1"] }] } });
+    expect(names(out(ghost, "a1"))).toEqual(["Yael", "Noa"]);
+  });
+
+  test("own family's car: riders listed, no stop", () => {
+    const own = chain([
+      ["fama", { type: "offerCar", leg: "out", carId: "cara", driverId: "p-fama", seats: 4, departAt: "09:30" }],
+      ["famb", { type: "seatKid", offerId: "o1", kidId: "b1" }],
+      ["fama", { type: "seatKid", offerId: "o1", kidId: "a1" }],
+      ["fama", { type: "seatKid", offerId: "o1", kidId: "a2" }],
+    ]);
+    const r = out(own, "a1");
+    expect(names(r)).toEqual(["Noa", "Tal", "Omer"]);
+    expect(r.stop).toBeNull();
+  });
+});
+
 describe("pickupStops", () => {
   const famOf = (k: string) => ({ a1: "A", a2: "A", b1: "B", c1: "C" })[k];
   test("out: one stop per family in seating order; back: one stop", () => {

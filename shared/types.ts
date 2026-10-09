@@ -364,6 +364,22 @@ export interface KidRide {
   eta: { at: number; setAt: number } | null;
   /** The driver tapped "הגענו" (the run is over). */
   ended: boolean;
+  /**
+   * Every kid seated in this offer ("איתך ברכב"). Out: the driver's own kids first, then the others
+   * in pickup-stop order (siblings together); back: seating order. `me` is the page's kid.
+   * Missing in views cached before it existed.
+   */
+  riders?: KidRider[];
+  /** Out leg only: the pickup stop this kid is at, of how many (null for own family, back, or a single stop). */
+  stop?: { n: number; of: number } | null;
+}
+
+/** One kid in the car, on the kid page. */
+export interface KidRider {
+  id: string;
+  name: string;
+  me: boolean;
+  picked: boolean;
 }
 
 /** Live status of one leg on the kid page (see `kidLegStatus` in view.ts). */
