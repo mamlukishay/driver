@@ -18,7 +18,7 @@ import { Avatar } from "../components/KidChip.tsx";
 import { NAV_APP_NAME, NavLogo } from "../components/NavLogo.tsx";
 import { Sheet } from "../components/Sheet.tsx";
 import { ErrorState, Loading } from "../components/States.tsx";
-import { PhoneIcon, WaButton } from "../components/WaButton.tsx";
+import { PhoneIcon, WaButton, WaIcon } from "../components/WaButton.tsx";
 import { he } from "../i18n/he.ts";
 import { useLive } from "../live.ts";
 import { useSheet } from "../nav.ts";
@@ -563,12 +563,12 @@ function StopCard(p: {
   const contactBtn = (kidId: string, sm?: boolean) => (
     <button
       type="button"
-      class={cx("rnd", sm && "sm")}
+      class={cx("rnd", "wa", sm && "sm")}
       onClick={() => p.onContact(kidId)}
       aria-label={he.drive.contacts(s.venue ? idx.kidName(kidId) : p.title)}
       aria-haspopup="dialog"
     >
-      <UsersIcon />
+      <WaIcon size={22} />
     </button>
   );
   return (
@@ -859,19 +859,6 @@ function FlagIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" d="M5 2h2v20H5zM8 3h11l-2.5 4L19 11H8z" />
-    </svg>
-  );
-}
-
-function UsersIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="9" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2" />
-      <path d="M2.8 20c.5-3.4 3-5.4 6.2-5.4s5.7 2 6.2 5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-      <path
-        fill="currentColor"
-        d="M16.5 5.2a3 3 0 011.6 5.6 4.6 4.6 0 013.7 4.6h-2a3 3 0 00-2.6-2.9l-.8-.1v-1.6l.6-.3a1.4 1.4 0 00-.5-2.7z"
-      />
     </svg>
   );
 }
