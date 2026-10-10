@@ -1,0 +1,73 @@
+name: Preview deploy
+
+# Every push to a branch other than main deploys a separate Worker, `trempush-preview`
+# (env.preview in wrangler.jsonc), at https://trempush-preview.mamlukishay.workers.dev.
+# One shared preview: the last push wins. Own Durable Objects and data, no R2, no feedback token.
+# Production (`trempush`) is deployed only by deploy.yml from main.
+
+on:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
+      PREVIEW_URL: https://trempush-preview.mamlukishay.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Cloudflare credentials
+        run: |
+          echo "CLOUDFLARE_API_TOKEN present: ${{ env.CLOUDFLARE_API_TOKEN != '' }}"
+          echo "CLOUDFLARE_ACCOUNT_ID present: ${{ env.CLOUDFLARE_ACCOUNT_ID != '' }}"
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test
+      - run: bun run typecheck
+      # Selects env.preview at build time; the generated dist/trempush/wrangler.json is named
+      # trempush-preview, and plain `wrangler deploy` picks it up via the redirected config.
+      - run: bun run build
+        env:
+          CLOUDFLARE_ENV: preview
+      - name: Deploy preview to Cloudflare
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: bunx wrangler deploy
+      - name: Deploy skipped
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
+        run: echo "::warning::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets to deploy."
+      - name: Sync optional Worker secrets
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          # Only secrets present in the repo are pushed; values go through stdin, never argv or logs.
+          # No GITHUB_FEEDBACK_TOKEN: feedback sent from the preview must not open real issues.
+          put() {
+            if [ -n "$2" ]; then
+              printf '%s' "$2" | bunx wrangler secret put "$1" --name trempush-preview >/dev/null && echo "Synced $1"
+            else
+              echo "Skipping $1 (no repository secret)"
+            fi
+          }
+          put ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
+          put GOOGLE_MAPS_API_KEY "$GOOGLE_MAPS_API_KEY"
+          put GOOGLE_CLIENT_ID "$GOOGLE_CLIENT_ID"
+          put GOOGLE_CLIENT_SECRET "$GOOGLE_CLIENT_SECRET"
+      - name: Summary
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          echo "### Preview deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "$PREVIEW_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch \`${GITHUB_REF_NAME}\` at \`${GITHUB_SHA::7}\`" >> "$GITHUB_STEP_SUMMARY"

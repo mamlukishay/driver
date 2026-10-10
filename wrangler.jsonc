@@ -27,7 +27,7 @@
   "vars": {
     // Vision model for invitation parsing. Alternative: "@cf/mistralai/mistral-small-3.1-24b-instruct"
     "INVITE_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct"
-  }
+  },
   // Optional secrets (the app works without them; /api/config reports which are set):
   //   bunx wrangler secret put GOOGLE_MAPS_API_KEY   -> places autocomplete, geocoding, routes
   //   bunx wrangler secret put ANTHROPIC_API_KEY     -> invitation parsing with Claude instead of Workers AI
@@ -35,4 +35,31 @@
   //   bunx wrangler secret put GOOGLE_CLIENT_SECRET     redirect URI <origin>/auth/google/callback)
   // Locally, put them in .dev.vars (gitignored). Never add AUTH_DEV_LOGIN here: it is a local-only
   // fake sign-in, enabled by vite.config.ts in `vite dev` (see worker/auth.ts).
+  "env": {
+    // Preview Worker for non-main branches (.github/workflows/preview.yml): built with
+    // `CLOUDFLARE_ENV=preview bun run build`, served at https://trempush-preview.mamlukishay.workers.dev.
+    // Its own Durable Objects (own, empty data). Bindings and vars are not inherited, so they are
+    // repeated here (migrations would be inherited; repeated to keep the env self-contained).
+    // No R2 binding on purpose: images live in the group DO, and preview never touches the
+    // production `trempush-images` bucket. The build's "IMAGES ... not on env.preview" warning
+    // is expected.
+    "preview": {
+      "name": "trempush-preview",
+      "durable_objects": {
+        "bindings": [
+          { "name": "GROUP", "class_name": "GroupDO" },
+          { "name": "USER", "class_name": "UserDO" }
+        ]
+      },
+      "migrations": [
+        { "tag": "v1", "new_sqlite_classes": ["GroupDO"] },
+        { "tag": "v2", "new_sqlite_classes": ["UserDO"] }
+      ],
+      "r2_buckets": [],
+      "ai": { "binding": "AI" },
+      "vars": {
+        "INVITE_MODEL": "@cf/meta/llama-4-scout-17b-16e-instruct"
+      }
+    }
+  }
 }

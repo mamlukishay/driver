@@ -262,6 +262,8 @@ bunx wrangler secret put GOOGLE_CLIENT_SECRET
 
 Result: `https://trempush.<account>.workers.dev`. No card needed for the base app. Production is served at `https://trempush.com` (a Cloudflare Custom Domain on the same Worker, set in the dashboard; some cellular carriers block `*.workers.dev`).
 
+Preview: pushes to non-`main` branches deploy `env.preview` of `wrangler.jsonc` (`CLOUDFLARE_ENV=preview bun run build`, `.github/workflows/preview.yml`) as the separate Worker `trempush-preview` at `https://trempush-preview.mamlukishay.workers.dev`: own Durable Objects and data, no R2, no feedback token; last push wins.
+
 ## 8. Out of scope for v1
 
 - Push/cron reminders

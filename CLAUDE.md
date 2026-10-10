@@ -9,7 +9,17 @@
 - **Pipeline:** every push to `main` runs `.github/workflows/deploy.yml` ("Test & deploy") on
   GitHub Actions: `bun install` → `bun test` → `bun run typecheck` → `bun run build` →
   `wrangler deploy` → syncs optional Worker secrets. If any step fails, nothing deploys and the
-  previous version stays live. There is no other deploy path, no staging, no manual step.
+  previous version stays live. There is no other production deploy path, no manual step.
+- **Preview (not production):** every push to any branch other than `main` runs
+  `.github/workflows/preview.yml` ("Preview deploy"): same tests, then
+  `CLOUDFLARE_ENV=preview bun run build` + `wrangler deploy` to a separate Worker,
+  `trempush-preview` (`env.preview` in `wrangler.jsonc`), at
+  https://trempush-preview.mamlukishay.workers.dev. One shared preview: the last push from any
+  branch wins. It has its own Durable Objects (own, initially empty data), no R2 (images in the
+  group DO) and no feedback token (preview feedback opens no issues). workers.dev is blocked on
+  some Israeli cellular carriers, so open it on Wi-Fi. Google sign-in there needs
+  `https://trempush-preview.mamlukishay.workers.dev/auth/google/callback` as an authorized
+  redirect URI. Pushing to `main` is still the only production deploy.
 - **CI does not run e2e.** So before pushing to `main`, the main agent runs the full suite
   locally (see "Before you push"): that is the only e2e gate before production.
 - **Sessions often start on a generated `claude/...` branch. Don't stay there.** Work on `main`

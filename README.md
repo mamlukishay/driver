@@ -51,7 +51,7 @@ wrangler.jsonc, vite.config.ts, playwright.config.ts
 
 ## Deploy to Cloudflare (free plan)
 
-**Automatic (GitHub Actions):** `.github/workflows/deploy.yml` runs tests, typecheck and build on every push, then `wrangler deploy` when the repository secrets `CLOUDFLARE_API_TOKEN` (template "Edit Cloudflare Workers", plus R2 edit) and `CLOUDFLARE_ACCOUNT_ID` are set. Without them it builds and skips the deploy.
+**Automatic (GitHub Actions):** `.github/workflows/deploy.yml` runs tests, typecheck and build on every push to `main`, then `wrangler deploy` when the repository secrets `CLOUDFLARE_API_TOKEN` (template "Edit Cloudflare Workers", plus R2 edit) and `CLOUDFLARE_ACCOUNT_ID` are set. Without them it builds and skips the deploy.
 
 **Manual:**
 
@@ -62,6 +62,8 @@ bun run deploy      # vite build + wrangler deploy
 ```
 
 The app is served at `https://trempush.<your-account>.workers.dev`. The base app needs no card. The live instance also has its own domain, `https://trempush.com`, attached as a Custom Domain in the Cloudflare dashboard (Workers & Pages → trempush → Settings → Domains & Routes). Prefer an own domain: some cellular carriers block `*.workers.dev`.
+
+**Preview of a branch:** every push to a branch other than `main` runs `.github/workflows/preview.yml`, which builds with `CLOUDFLARE_ENV=preview bun run build` (the `env.preview` section of `wrangler.jsonc`) and deploys a separate Worker, `trempush-preview`, at `https://trempush-preview.mamlukishay.workers.dev`. There is one shared preview (the last push from any branch wins), with its own Durable Objects and data (empty at first), no R2 bucket (images are stored in the group's Durable Object) and no feedback token (feedback there opens no GitHub issues); the Maps, Anthropic and Google sign-in secrets are synced to it. Some Israeli cellular carriers block `*.workers.dev`, so open it on Wi-Fi. For Google sign-in on the preview, add `https://trempush-preview.mamlukishay.workers.dev/auth/google/callback` as an authorized redirect URI. Production is still deployed only by a push to `main`.
 
 ### Images and the R2 bucket `trempush-images`
 
